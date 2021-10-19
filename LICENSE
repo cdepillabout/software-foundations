@@ -1,3 +1,5 @@
+This license is for the code that I've personally added to this repo:
+
 BSD 3-Clause License
 
 Copyright (c) 2021, Dennis Gosnell
@@ -27,3 +29,8 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+--------------------------------------
+
+I've also copied the Software Foundations packages into this repo, and that
+code is governed by its own license.  Please see the respective files.
