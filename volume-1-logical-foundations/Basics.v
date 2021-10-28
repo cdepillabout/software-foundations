@@ -352,9 +352,9 @@ Proof. simpl. reflexivity. Qed.
 Example test_andb32:                 (andb3 false true true) = false.
 Proof. simpl. reflexivity. Qed.
 Example test_andb33:                 (andb3 true false true) = false.
-(* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 Example test_andb34:                 (andb3 true true false) = false.
-(* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 (** [] *)
 
 (* ================================================================= *)
@@ -787,13 +787,16 @@ Fixpoint exp (base power : nat) : nat :=
 
     Translate this into Coq. *)
 
-Fixpoint factorial (n:nat) : nat
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint factorial (n:nat) : nat :=
+  match n with
+  | O => S O
+  | S n => mult (S n) (factorial n)
+  end.
 
 Example test_factorial1:          (factorial 3) = 6.
-(* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 Example test_factorial2:          (factorial 5) = (mult 10 12).
-(* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 (** [] *)
 
 (** Again, we can make numerical expressions easier to read and write
@@ -886,17 +889,20 @@ Proof. simpl. reflexivity.  Qed.
     function.  (It can be done with just one previously defined
     function, but you can use two if you want.) *)
 
-Definition ltb (n m : nat) : bool
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition ltb (n m : nat) : bool :=
+  match minus m n with
+  | O => false
+  | _ => true
+  end.
 
 Notation "x <? y" := (ltb x y) (at level 70) : nat_scope.
 
 Example test_ltb1:             (ltb 2 2) = false.
-(* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 Example test_ltb2:             (ltb 2 4) = true.
-(* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 Example test_ltb3:             (ltb 4 2) = false.
-(* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 (** [] *)
 
 (* ################################################################# *)
@@ -1028,9 +1034,9 @@ Proof.
   (* move both quantifiers into the context: *)
   intros n m.
   (* move the hypothesis into the context: *)
-  intros H.
+  intros.
   (* rewrite the goal using the hypothesis: *)
-  rewrite -> H.
+  rewrite <- H.
   reflexivity.  Qed.
 
 (** The first line of the proof moves the universally quantified
@@ -1058,7 +1064,11 @@ Proof.
 Theorem plus_id_exercise : forall n m o : nat,
   n = m -> m = o -> n + m = m + o.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m o nEqM mEqO.
+  rewrite nEqM.
+  rewrite mEqO.
+  reflexivity.
+  Qed.
 (** [] *)
 
 (** The [Admitted] command tells Coq that we want to skip trying
@@ -1080,6 +1090,26 @@ Proof.
 
 Check mult_n_O.
 (* ===> forall n : nat, 0 = n * 0 *)
+(* 
+Theorem my_mult_n_O : forall n : nat, 0 = n * 0.
+Proof.
+  intros.
+  simpl.
+  (* unfold "*".
+  simpl.
+  cbn.
+  symmetry.
+  simpl.
+   *)
+  induction n.
+  reflexivity.
+  unfold "*".
+  simpl.
+  cbn.
+  hnf.
+  cbv beta.
+  lazy beta. *)
+  
 
 Check mult_n_Sm.
 (* ===> forall n m : nat, n * m + n = n * S m *)
@@ -1106,7 +1136,11 @@ Proof.
 Theorem mult_n_1 : forall p : nat,
   p * 1 = p.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros p.
+  rewrite <- mult_n_Sm.
+  rewrite <- mult_n_O.
+  reflexivity.
+  Qed.
 
 (** [] *)
 
@@ -1147,7 +1181,7 @@ Abort.
 Theorem plus_1_neq_0 : forall n : nat,
   (n + 1) =? 0 = false.
 Proof.
-  intros n. destruct n as [| n'] eqn:E.
+  intros n. destruct n as [| n' ] eqn:E. 
   - reflexivity.
   - reflexivity.   Qed.
 
@@ -1217,7 +1251,7 @@ Theorem negb_involutive : forall b : bool,
 Proof.
   intros b. destruct b eqn:E.
   - reflexivity.
-  - reflexivity.  Qed.
+  - simpl. reflexivity.  Qed.
 
 (** Note that the [destruct] here has no [as] clause because
     none of the subcases of the [destruct] need to bind any variables,
