@@ -849,17 +849,26 @@ Search (?x + ?y = ?y + ?x).
 Theorem app_nil_r : forall l : natlist,
   l ++ [] = l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros l. induction l as [|h l' IHl'].
+  - reflexivity.
+  - simpl. rewrite IHl'. reflexivity.
+  Qed. 
 
 Theorem rev_app_distr: forall l1 l2 : natlist,
   rev (l1 ++ l2) = rev l2 ++ rev l1.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros l1 l2. induction l1 as [|h l1' IHl1'].
+  - simpl. rewrite app_nil_r. reflexivity.
+  - simpl. rewrite IHl1'. rewrite app_assoc. reflexivity.
+  Qed.
 
 Theorem rev_involutive : forall l : natlist,
   rev (rev l) = l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros l. induction l as [|h l' IHl'].
+  - simpl. reflexivity.
+  - simpl. rewrite rev_app_distr. simpl. rewrite IHl'. reflexivity.
+  Qed.
 
 (** There is a short solution to the next one.  If you find yourself
     getting tangled up, step back and try to look for a simpler
@@ -868,14 +877,30 @@ Proof.
 Theorem app_assoc4 : forall l1 l2 l3 l4 : natlist,
   l1 ++ (l2 ++ (l3 ++ l4)) = ((l1 ++ l2) ++ l3) ++ l4.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros l1 l2 l3 l4. simpl. destruct l1 as [|h l1'].
+  - simpl. rewrite app_assoc. reflexivity.
+  - simpl. rewrite app_assoc. rewrite app_assoc. reflexivity.
+  Qed.
+
+Theorem app_assoc5 : forall l1 l2 l3 l4 : natlist,
+  l1 ++ (l2 ++ (l3 ++ l4)) = ((l1 ++ l2) ++ l3) ++ l4.
+Proof.
+  intros l1 l2 l3 l4.
+  rewrite app_assoc.  rewrite app_assoc. rewrite app_assoc.
+  reflexivity.
+  Qed.
 
 (** An exercise about your implementation of [nonzeros]: *)
 
 Lemma nonzeros_app : forall l1 l2 : natlist,
   nonzeros (l1 ++ l2) = (nonzeros l1) ++ (nonzeros l2).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros l1 l2. induction l1 as [|h l1' IHl1'].
+  - simpl. reflexivity.
+  - simpl. rewrite IHl1'. destruct h as [|h'].
+    * reflexivity.
+    * reflexivity.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard (eqblist)
@@ -884,25 +909,32 @@ Proof.
     lists of numbers for equality.  Prove that [eqblist l l]
     yields [true] for every list [l]. *)
 
-Fixpoint eqblist (l1 l2 : natlist) : bool
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint eqblist (l1 l2 : natlist) : bool :=
+  match l1,l2 with
+  | [],[] => true
+  | h1 :: t1, h2 :: t2 => if h1 =? h2 then eqblist t1 t2 else false
+  | _, _ => false
+  end.
 
 Example test_eqblist1 :
   (eqblist nil nil = true).
- (* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 
 Example test_eqblist2 :
   eqblist [1;2;3] [1;2;3] = true.
-(* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 
 Example test_eqblist3 :
   eqblist [1;2;3] [1;2;4] = false.
- (* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 
 Theorem eqblist_refl : forall l:natlist,
   true = eqblist l l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros l. induction l as [|h l' IHl'].
+  - simpl. reflexivity.
+  - simpl. rewrite eqb_ref. rewrite IHl'. reflexivity.
+  Qed.
 (** [] *)
 
 (* ================================================================= *)
