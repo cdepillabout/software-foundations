@@ -711,13 +711,87 @@ Example test_filter_even_gt7_2 :
 Definition partition {X : Type}
                      (test : X -> bool)
                      (l : list X)
-                   : list X * list X
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+                   : list X * list X := (filter test l, filter (fun x => negb (test x)) l).
 
 Example test_partition1: partition odd [1;2;3;4;5] = ([1;3;5], [2;4]).
-(* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 Example test_partition2: partition (fun x => false) [5;9;0] = ([], [5;9;0]).
-(* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
+
+Fixpoint all_list {X: Type} (f : X -> bool) (l : list X) : bool :=
+  match l with
+  | [] => true
+  | h :: t => if f h then all_list f t else false
+  end.
+  
+Example test_all_list: all_list (fun x => x) [true; true; true] = true.
+Proof. reflexivity. Qed.
+
+Example test_all_list2: all_list (fun x => x) [true; false; true] = false.
+Proof. reflexivity. Qed.
+
+Theorem fst_partition_is_filter : forall {X: Type} (test : X -> bool) (l : list X), fst (partition test l) = filter test l.
+Proof.
+  intros X test l. simpl. reflexivity.
+  Qed.
+
+Theorem f_of_x_to_b_is_true_or_false : forall {X: Type} (f : X -> bool) (x : X), f x = true \/ f x = false.
+  intros X f x. destruct (f x).
+  - left. reflexivity.
+  - right. reflexivity.
+  Qed.
+
+(* Theorem partition_correct2 : forall {X: Type} (test : X -> bool) (l : list X), all_list test (fst (partition test l)) = true.
+Proof.
+ intros X test l. unfold all_list. rewrite fst_partition_is_filter. induction l as [|h l' IHL'].
+ - simpl. reflexivity.
+ - simpl. *)
+
+Theorem filter_first_elem_true : forall {X: Type} (test : X -> bool) (h : X) (t : list X),
+  test h = true -> filter test (h :: t) = h :: filter test t.
+Proof.
+  intros X test h t test_h_is_true.
+  unfold filter. simpl. rewrite test_h_is_true. simpl. reflexivity.
+  Qed.
+  
+Theorem filter_first_elem_false : forall {X: Type} (test : X -> bool) (h : X) (t : list X),
+  test h = false -> filter test (h :: t) = filter test t.
+Proof.
+  intros X test h t test_h_is_false.
+  unfold filter. simpl. rewrite test_h_is_false. simpl. reflexivity.
+  Qed.
+
+Theorem all_list_first_elem_true : forall {X: Type} (test : X -> bool) (h : X) (t : list X),
+  test h = true -> all_list test (h :: t) = all_list test t.
+Proof.
+  intros X test h t test_h_is_true.
+  unfold all_list. simpl. rewrite test_h_is_true. simpl. reflexivity.
+  Qed.
+
+Theorem partition_correct3 : forall {X: Type} (test : X -> bool) (l : list X), all_list test (fst (partition test l)) = true.
+Proof.
+  intros X test l. rewrite fst_partition_is_filter. induction l as [|h l' IHl'].
+  - simpl. reflexivity.
+  - destruct (test h) as [|] eqn:E.
+    * rewrite (filter_first_elem_true test h l' E).
+      rewrite (all_list_first_elem_true test h (filter test l') E).
+      assumption.
+    * rewrite (filter_first_elem_false test h l' E). assumption.
+  Qed.
+
+Theorem partition_correct : forall {X: Type} (test : X -> bool) (l : list X), all_list test (fst (partition test l)) = true.
+Proof.
+ intros X test l. rewrite fst_partition_is_filter. induction l as [|h l' IHl'].
+ - simpl. reflexivity.
+ - simpl. cut (test h = true \/ test h = false).
+   * intros test_h_is_true_or_false. destruct test_h_is_true_or_false as [test_h_is_true|test_h_is_false].
+     -- rewrite test_h_is_true. simpl. rewrite test_h_is_true. assumption.
+     -- rewrite test_h_is_false. assumption.
+   * destruct (test h).
+     -- left. reflexivity.
+     -- right. reflexivity. 
+  Qed.
+
 (** [] *)
 
 (* ================================================================= *)
