@@ -264,6 +264,16 @@ Proof.
   injection H as Hnm. apply Hnm.
 Qed.
 
+Inductive blah : Type :=
+  | blh: nat -> bool -> blah
+  | bleh: bool -> blah.
+
+Theorem SSS: forall (n m: nat) (b c: bool),
+  blh n b = blh m c ->
+  n = m.
+Proof.
+  intros n m b c H. injection H as H1 H2. assumption. Qed.
+
 (** Here's a more interesting example that shows how [injection] can
     derive multiple equations at once. *)
 
