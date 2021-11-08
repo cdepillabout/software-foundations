@@ -73,7 +73,7 @@ Theorem silly_ex : forall p,
   even p = true ->
   odd (S p) = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. apply H0. apply H. apply H1. Qed.
 (** [] *)
 
 (** To use the [apply] tactic, the (conclusion of the) fact
@@ -94,7 +94,7 @@ Proof.
   (** but we can use the [symmetry] tactic, which switches the left
      and right sides of an equality in the goal. *)
 
-  symmetry. apply H.  Qed.
+  symmetry in H. apply H.  Qed.
 
 (** **** Exercise: 3 stars, standard (apply_exercise1)
 
@@ -109,8 +109,12 @@ Theorem rev_exercise1 : forall (l l' : list nat),
   l = rev l' ->
   l' = rev l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. rewrite H. symmetry. apply rev_involutive. Qed.
 (** [] *)
+(* rev_involutive: forall (X : Type) (l : list X), rev (rev l) = l
+rev_app_distr: forall (X : Type) (l1 l2 : list X), rev (l1 ++ l2) = rev l2 ++ rev l1
+app_nil_r: forall (X : Type) (l : list X), l ++ [ ] = l
+app_assoc: forall (A : Type) (l m n : list A), l ++ m ++ n = (l ++ m) ++ n *)
 
 (** **** Exercise: 1 star, standard, optional (apply_rewrite)
 
@@ -192,7 +196,7 @@ Example trans_eq_exercise : forall (n m o p : nat),
      (n + p) = m ->
      (n + p) = (minustwo o).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. transitivity m. apply H0. apply H. Qed.
 (** [] *)
 
 (* ################################################################# *)
@@ -279,7 +283,7 @@ Example injection_ex3 : forall (X : Type) (x y z : X) (l j : list X),
   j = z :: l ->
   x = y.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. injection H as  H1. rewrite <- H in H0. injection H0 as H2. rewrite H1,H2. reflexivity. Qed. 
 (** [] *)
 
 (** So much for injectivity of constructors.  What about disjointness? *)
@@ -327,7 +331,7 @@ Example discriminate_ex3 :
     x :: y :: l = [] ->
     x = z.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. discriminate. Qed.
 (** [] *)
 
 (** For a slightly more involved example, we can use [discriminate] to
@@ -426,6 +430,14 @@ Proof.
   symmetry in H. apply EQ in H. symmetry in H.
   apply H.  Qed.
 
+Theorem silly4' : forall (n m p q : nat),
+  (n = m -> p = q) ->
+  m = n ->
+  q = p.
+Proof.
+  intros n m p q EQ H.
+  symmetry in H. symmetry. apply (EQ H). Qed.
+
 (** Forward reasoning starts from what is _given_ (premises,
     previously proven theorems) and iteratively draws conclusions from
     them until the goal is reached.  Backward reasoning starts from
@@ -468,10 +480,10 @@ Proof.
   intros n m. induction n as [| n' IHn'].
   - (* n = O *) simpl. intros eq. destruct m as [| m'] eqn:E.
     + (* m = O *) reflexivity.
-    + (* m = S m' *) discriminate eq.
+    + (* m = S m' *) simpl in eq. discriminate eq.
   - (* n = S n' *) intros eq. destruct m as [| m'] eqn:E.
-    + (* m = O *) discriminate eq.
-    + (* m = S m' *) apply f_equal.
+    + (* m = O *) simpl in eq. discriminate eq.
+    + (* m = S m' *) apply f_equal. simpl in eq. injection eq as fff.
 
 (** At this point, the induction hypothesis ([IHn']) does _not_ give us
     [n' = m'] -- there is an extra [S] in the way -- so the goal is
@@ -545,7 +557,7 @@ Proof.
   intros n. induction n as [| n' IHn'].
   - (* n = O *) simpl. intros m eq. destruct m as [| m'] eqn:E.
     + (* m = O *) reflexivity.
-    + (* m = S m' *) discriminate eq.
+    + (* m = S m' *) simpl in eq. discriminate eq.
 
   - (* n = S n' *)
 
@@ -568,7 +580,7 @@ Proof.
 
     discriminate eq.
     + (* m = S m' *)
-      apply f_equal.
+      f_equal.
 
 (** At this point, since we are in the second branch of the [destruct
     m], the [m'] mentioned in the context is the predecessor of the
@@ -593,7 +605,20 @@ Proof.
 Theorem eqb_true : forall n m,
   n =? m = true -> n = m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  (* intros. induction n as [|n' IHn'].
+  - destruct m.
+    * reflexivity.
+    * simpl in H. discriminate.
+  - destruct m as [|m'] eqn:E.
+    * simpl in H. discriminate.
+    * f_equal.  *)
+  intros n. induction n as [|n' IHn'].
+  - intros. destruct m.
+    * reflexivity.
+    * discriminate.
+  - intros. destruct m.
+    * simpl in H. discriminate.
+    * f_equal. apply IHn'. simpl in H. apply H. Qed. 
 (** [] *)
 
 (** **** Exercise: 2 stars, advanced (eqb_true_informal)
@@ -601,7 +626,7 @@ Proof.
     Give a careful informal proof of [eqb_true], being as explicit
     as possible about quantifiers. *)
 
-(* FILL IN HERE *)
+
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_informal_proof : option (nat*string) := None.
@@ -615,7 +640,21 @@ Theorem plus_n_n_injective : forall n m,
   n + n = m + m ->
   n = m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n. induction n as [|n' IHn'].
+  - intros m. destruct m as [|m'] eqn:E.
+    *  reflexivity.
+    * intros H. simpl in H. discriminate H.
+  - intros m. destruct m as [|m'] eqn:E.
+    * simpl. discriminate.
+    * simpl.
+      intros H.
+      f_equal.
+      apply IHn'.
+      injection H as H.
+      repeat rewrite <- plus_n_Sm in H.
+      injection H as H.
+      apply H.
+    Qed.
 (** [] *)
 
 (** The strategy of doing fewer [intros] before an [induction] to

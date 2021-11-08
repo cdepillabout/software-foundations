@@ -390,17 +390,26 @@ Definition list123''' := [1; 2; 3].
 Theorem app_nil_r : forall (X:Type), forall l:list X,
   l ++ [] = l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. induction l.
+  - reflexivity.
+  - simpl. rewrite IHl. reflexivity.
+  Qed.
 
 Theorem app_assoc : forall A (l m n:list A),
   l ++ m ++ n = (l ++ m) ++ n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. induction l.
+  - simpl. reflexivity.
+  - simpl. rewrite IHl. reflexivity.
+  Qed.
 
 Lemma app_length : forall (X:Type) (l1 l2 : list X),
   length (l1 ++ l2) = length l1 + length l2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. induction l1.
+  - reflexivity.
+  - simpl. rewrite IHl1. reflexivity.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (more_poly_exercises)
@@ -410,12 +419,18 @@ Proof.
 Theorem rev_app_distr: forall X (l1 l2 : list X),
   rev (l1 ++ l2) = rev l2 ++ rev l1.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. induction l1.
+  - simpl. rewrite app_nil_r. reflexivity.
+  - simpl. rewrite IHl1. rewrite app_assoc. reflexivity.
+  Qed.
 
 Theorem rev_involutive : forall X : Type, forall l : list X,
   rev (rev l) = l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. induction l.
+  - reflexivity.
+  - simpl. rewrite rev_app_distr. simpl. rewrite IHl. reflexivity.
+  Qed.
 (** [] *)
 
 (* ================================================================= *)
@@ -499,13 +514,18 @@ Fixpoint combine {X Y : Type} (lx : list X) (ly : list Y)
     Fill in the definition of [split] below.  Make sure it passes the
     given unit test. *)
 
-Fixpoint split {X Y : Type} (l : list (X*Y)) : (list X) * (list Y)
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint split {X Y : Type} (l : list (X*Y)) : (list X) * (list Y) :=
+  match l with
+  | [] => ([], [])
+  | (x,y) :: t => 
+    match split t with
+    | (xs, ys) => (x :: xs, y :: ys)
+    end
+  end.
 
 Example test_split:
   split [(1,false);(2,false)] = ([1;2],[false;false]).
-Proof.
-(* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 (** [] *)
 
 (* ================================================================= *)
@@ -554,8 +574,7 @@ Proof. reflexivity. Qed.
     [hd_error] function from the last chapter. Be sure that it
     passes the unit tests below. *)
 
-Definition hd_error {X : Type} (l : list X) : option X
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition hd_error {X : Type} (l : list X) : option X := nth_error l 0.
 
 (** Once again, to force the implicit arguments to be explicit,
     we can use [@] before the name of the function. *)
@@ -563,9 +582,9 @@ Definition hd_error {X : Type} (l : list X) : option X
 Check @hd_error : forall X : Type, list X -> option X.
 
 Example test_hd_error1 : hd_error [1;2] = Some 1.
- (* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 Example test_hd_error2 : hd_error  [[1];[2]]  = Some [1].
- (* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 (** [] *)
 
 (* ################################################################# *)
@@ -670,7 +689,7 @@ Proof. reflexivity. Qed.
     function. *)
 
 Example test_filter2':
-    filter (fun l => (length l) =? 1)
+    filter (fun l => length l =? 1)
            [ [1; 2]; [3]; [4]; [5;6;7]; []; [8] ]
   = [ [3]; [4]; [8] ].
 Proof. reflexivity. Qed.
@@ -682,16 +701,16 @@ Proof. reflexivity. Qed.
     and returns a list of just those that are even and greater than
     7. *)
 
-Definition filter_even_gt7 (l : list nat) : list nat
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition filter_even_gt7 : list nat -> list nat :=
+  filter (fun i => even i && (7 <? i)).
 
 Example test_filter_even_gt7_1 :
   filter_even_gt7 [1;2;6;9;10;3;12;8] = [10;12;8].
- (* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 
 Example test_filter_even_gt7_2 :
   filter_even_gt7 [5;2;6;19;129] = [].
- (* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (partition)
@@ -841,7 +860,17 @@ Proof. reflexivity. Qed.
 Theorem map_rev : forall (X Y : Type) (f : X -> Y) (l : list X),
   map f (rev l) = rev (map f l).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. induction l.
+  - reflexivity.
+  - simpl.
+    assert (H: forall (m n : list X), map f (m ++ n) = map f m ++ map f n).
+    { intros. induction m.
+      - reflexivity.
+      - simpl. rewrite IHm. reflexivity.
+    }
+    rewrite H,IHl.
+    reflexivity.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, especially useful (flat_map)
@@ -856,14 +885,20 @@ Proof.
       = [1; 2; 3; 5; 6; 7; 10; 11; 12].
 *)
 
-Fixpoint flat_map {X Y: Type} (f: X -> list Y) (l: list X)
-                   : list Y
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint flatten {X : Type } (l : list (list X)) : list X :=
+  match l with
+  | [] => []
+  | h :: t => h ++ flatten t
+  end.
+
+Definition flat_map {X Y: Type} (f: X -> list Y) (l: list X)
+                   : list Y := flatten (map f l).
+
 
 Example test_flat_map1:
   flat_map (fun n => [n;n;n]) [1;5;4]
   = [1; 1; 1; 5; 5; 5; 4; 4; 4].
- (* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 (** [] *)
 
 (** Lists are not the only inductive type for which [map] makes sense.
@@ -1018,7 +1053,10 @@ Proof. reflexivity. Qed.
 Theorem fold_length_correct : forall X (l : list X),
   fold_length l = length l.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros. induction l.
+  - reflexivity.
+  - simpl. rewrite <- IHl. reflexivity.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (fold_map)
@@ -1026,15 +1064,20 @@ Proof.
     We can also define [map] in terms of [fold].  Finish [fold_map]
     below. *)
 
-Definition fold_map {X Y: Type} (f: X -> Y) (l: list X) : list Y
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition fold_map {X Y: Type} (f: X -> Y) (l: list X) : list Y :=
+  fold (fun x acc => f x :: acc) l [].
 
 (** Write down a theorem [fold_map_correct] in Coq stating that
    [fold_map] is correct, and prove it.  (Hint: again, remember that
    [reflexivity] simplifies expressions a bit more aggressively than
    [simpl].) *)
 
-(* FILL IN HERE *)
+Theorem fold_map_correct: forall (X Y : Type) (f: X -> Y) (l : list X), fold_map f l = map f l.
+Proof.
+  intros. induction l.
+  - reflexivity.
+  - simpl. rewrite <- IHl. reflexivity.
+  Qed. 
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_fold_map : option (nat*string) := None.
@@ -1064,8 +1107,10 @@ Definition prod_curry {X Y Z : Type}
     the theorems below to show that the two are inverses. *)
 
 Definition prod_uncurry {X Y Z : Type}
-  (f : X -> Y -> Z) (p : X * Y) : Z
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+  (f : X -> Y -> Z) (p : X * Y) : Z := 
+  match p with
+  | (x, y) => f x y
+  end.
 
 (** As a (trivial) example of the usefulness of currying, we can use it
     to shorten one of the examples that we saw above: *)
@@ -1084,13 +1129,14 @@ Theorem uncurry_curry : forall (X Y Z : Type)
                         x y,
   prod_curry (prod_uncurry f) x y = f x y.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. simpl. reflexivity.
+  Qed.
 
 Theorem curry_uncurry : forall (X Y Z : Type)
                         (f : (X * Y) -> Z) (p : X * Y),
   prod_uncurry (prod_curry f) p = f p.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. destruct p. reflexivity. Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, advanced (nth_error_informal)
@@ -1107,6 +1153,111 @@ Proof.
 
    forall X l n, length l = n -> @nth_error X l n = None
 *)
+
+Theorem nth_error_pred :
+  forall (X : Type) (x : X) l n, nth_error (x :: l) (S n) = @nth_error X l n.
+Proof.
+  intros. simpl. reflexivity.
+  Qed.
+
+Theorem weird_succ : forall (P : Prop) n, S n = 0 -> P.
+Proof.
+  intros. discriminate.
+  Qed.
+
+Theorem weird_length : forall (P : Prop) (X: Type) (x : X) l, length (x :: l) = 0 -> P.
+Proof.
+  intros. simpl in H. discriminate.
+  Qed.
+
+(* Theorem remove_succ : forall m n, S m = S n -> m = n.
+Proof. intros. simpl in H. unfold S in H. reflexivity. Qed. *)
+
+Theorem length_zero_is_empty : forall (X: Type) (l : list X), length l = 0 -> l = [].
+Proof. intros. induction l as [|h l' IHl'].
+  - reflexivity.
+  - simpl. discriminate.
+  Qed.
+
+Theorem nth_error_next : forall (X : Type) (x : X) (xs : list X) n,
+  nth_error (x :: xs) (S n) = nth_error xs n.
+Proof.
+  intros. reflexivity. Qed.
+
+(* Theorem nth_error_one_more_is_still_none : forall (X : Type) (x : X) (l : list X) n, 
+  nth_error l n = None -> nth_error l (S n) = None.
+Proof.
+  intros. induction l as [|h l' IHl'] eqn:E.
+  - reflexivity.
+  - simpl. induction n as [|n' IHn'] eqn:F.
+    * discriminate.
+    *  *)
+    
+Fixpoint nth_error_2 {X : Type} (l : list X) (n : nat) : option X :=
+  match l,n with
+  | [],_ => None
+  | (h::t),O => Some h
+  | (h::t),(S n) => nth_error_2 t n
+  end.
+  
+Theorem nth_err_eq_nth_error_2 : forall (X : Type) (l : list X) n,
+  nth_error l n = nth_error_2 l n.
+Proof.
+  intros.  unfold nth_error. unfold nth_error_2. reflexivity.
+  Qed.    
+    
+Theorem nth_error_one_more_is_still_none : forall (X : Type) (l : list X) n, 
+  nth_error l n = None -> nth_error l (S n) = None.
+Proof.
+  intros X l. induction l.
+  - reflexivity.
+  - intros. destruct n.
+    * discriminate.
+    * rewrite nth_error_next in H.
+      rewrite nth_error_pred.
+      exact (IHl n H).
+  Qed.
+
+Theorem nth_error_still_none : forall (X : Type) (x : X) l n,
+  nth_error (x :: l) n = None -> nth_error l n = None.
+Proof.
+  intros X x l n. induction n as [|n' IHn'] eqn:F.
+  - discriminate.
+  - simpl. induction l as [|h l' IHl'] eqn:E.
+    * reflexivity.
+    * rewrite nth_error_next.
+  Admitted.
+
+Theorem nth_error_foobar : forall (X : Type) h l n,
+  @nth_error X (h :: l) n = None -> 
+  @nth_error X l (S n) = None ->
+  @nth_error X l n = None.
+Proof.
+  intros. destruct l,n.
+  - reflexivity.
+  - reflexivity.
+  - simpl. discriminate.
+  - rewrite nth_error_next in H. simpl in H.
+  Admitted.
+
+Theorem nth_error_too_big : forall (X:Type) l n, length l = n -> @nth_error X l n = None.
+Proof.
+  intros X l n. (* destruct l as [|h l'] eqn:E.
+  - reflexivity.
+  - induction n as [|n'].
+    * simpl. discriminate.
+    * simpl. rewrite H in IHn'. simpl in H. rewrite (eq_add_S (length l') n') in H. *)
+  induction n as [|n' IHn'] eqn:E.
+  - simpl. intros H. rewrite (length_zero_is_empty X l H). simpl. reflexivity.
+  - induction l as [|h l' IHl'].
+    * reflexivity.
+    * intros H. simpl. 
+  (* induction n as [|n' IHn'].
+  - reflexivity.
+  - simpl. intro H. discriminate.
+  - intro H. discriminate.
+  - simpl. *)
+  Admitted.
 (* FILL IN HERE *)
 
 (* Do not modify the following line: *)
