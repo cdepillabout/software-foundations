@@ -771,7 +771,15 @@ Theorem nth_error_after_last: forall (n : nat) (X : Type) (l : list X),
   length l = n ->
   nth_error l n = None.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n X l. generalize dependent n.
+  induction l as [|h l' IHl'].
+  * simpl. reflexivity.
+  * simpl. intros n H.
+    destruct n as [|n'] eqn:E.
+    - discriminate H.
+    - injection H as H1.
+      apply (IHl' n' H1).
+  Qed. 
 (** [] *)
 
 (* ################################################################# *)
@@ -956,7 +964,31 @@ Theorem combine_split : forall X Y (l : list (X * Y)) l1 l2,
   split l = (l1, l2) ->
   combine l1 l2 = l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X Y l.
+  induction l as [|lh l' IHl'].
+  -  simpl. intros. injection H as H1 H2. rewrite <- H1. rewrite <- H2. reflexivity.
+  - simpl. destruct lh. destruct (split l').  intros.
+    injection H as H1 H2.
+    rewrite <- H1. rewrite <- H2.
+    simpl.
+    f_equal.
+    apply IHl'.
+    reflexivity.
+  Qed.
+    
+Theorem combine_split2 : forall X Y (l : list (X * Y)) l1 l2,
+  split l = (l1, l2) ->
+  combine l1 l2 = l.
+Proof.
+  intros X Y l. induction l as [|[x y]].
+  - intros. inversion H.  reflexivity.
+  - intros. simpl in H. destruct (split l) eqn:E.
+    inversion H.
+    simpl.
+    f_equal.
+    apply IHl.
+    reflexivity.
+  Qed.
 (** [] *)
 
 (** The [eqn:] part of the [destruct] tactic is optional; although
