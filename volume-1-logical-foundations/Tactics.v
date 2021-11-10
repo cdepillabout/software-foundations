@@ -1157,7 +1157,14 @@ Proof.
 Theorem eqb_sym : forall (n m : nat),
   (n =? m) = (m =? n).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n. induction n as [|n' IHn].
+  - destruct m.
+    * reflexivity.
+    * reflexivity.
+  - destruct m.
+    * reflexivity.
+    * apply IHn.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced, optional (eqb_sym_informal)
@@ -1178,7 +1185,12 @@ Theorem eqb_trans : forall n m p,
   m =? p = true ->
   n =? p = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  apply eqb_true in H. 
+  apply eqb_true in H0. 
+  rewrite H. rewrite H0.
+  apply eqb_refl.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced (split_combine)
@@ -1195,14 +1207,48 @@ Proof.
     things than necessary.  Hint: what property do you need of [l1]
     and [l2] for [split (combine l1 l2) = (l1,l2)] to be true?) *)
 
-Definition split_combine_statement : Prop
-  (* ("[: Prop]" means that we are giving a name to a
-     logical proposition here.) *)
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition split_combine_statement : Prop :=
+  forall {X Y: Type} (l : list (X * Y)) (l1 : list X) (l2 : list Y),
+  length l1 = length l2 -> combine l1 l2 = l -> split l = (l1, l2).
+
+
+Theorem split_combine_same : 
+  forall {X Y: Type} (l1 : list X) (l2 : list Y),
+  length l1 = length l2 -> 
+  split (combine l1 l2) = (l1, l2).
+Proof.
+  intros X Y l1. induction l1 as [|h1 l1' IHl1].
+  * simpl. destruct l2.
+    - reflexivity.
+    - intros. discriminate.
+  * simpl. destruct l2 as [|h2 l2'].
+    - simpl. discriminate.
+    - intros.  simpl in H. injection H as H.
+      apply IHl1 in H. simpl. rewrite H. reflexivity. 
+  Qed.
 
 Theorem split_combine : split_combine_statement.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros X Y. induction l as [|(x,y) l' IHl].
+  - simpl. intros [|] [|] H1 H2. 
+    * reflexivity.
+    * simpl in H1. discriminate.
+    * simpl in H1. discriminate.
+    * simpl in H2. discriminate.
+  - simpl. intros [|h1 l1'] [|h2 l2'] H1 H2.
+    * simpl in H2. discriminate.
+    * simpl in H2. discriminate.
+    * simpl in H2. discriminate.
+    * simpl in H2. injection H2 as H3 H4.
+      simpl in H1. injection H1 as H1.
+      rewrite H3. rewrite H4.
+      destruct (split l').
+      set (HHH := IHl l1' l2' H1 H).
+      injection (IHl l1' l2' H1 H) as FFF GGG.
+      rewrite FFF. rewrite GGG.
+      reflexivity.
+  Qed.
+
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_split_combine : option (nat*string) := None.
@@ -1218,7 +1264,16 @@ Theorem filter_exercise : forall (X : Type) (test : X -> bool)
   filter test l = x :: lf ->
   test x = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X test x l. generalize dependent x.
+  induction l as [|h l' IHl].
+  - simpl. discriminate.
+  - simpl. intros x lf H.
+    destruct (test h) eqn:F.
+    * injection H as H1 H2.
+      rewrite H1 in F.
+      apply F.
+    * apply (IHl x lf).  apply H.
+  Qed. 
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced, especially useful (forall_exists_challenge)
