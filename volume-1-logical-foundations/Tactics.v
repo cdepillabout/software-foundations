@@ -122,7 +122,7 @@ app_assoc: forall (A : Type) (l m n : list A), l ++ m ++ n = (l ++ m) ++ n *)
     [rewrite].  What are the situations where both can usefully be
     applied? *)
 
-(* FILL IN HERE
+(*  IN HERE
 
     [] *)
 
@@ -1063,7 +1063,20 @@ Theorem bool_fn_applied_thrice :
   forall (f : bool -> bool) (b : bool),
   f (f (f b)) = f b.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros f [|].
+  - destruct (f true) eqn:E.
+    * rewrite E. apply E.
+    * destruct (f false) eqn:F.
+      + apply E.
+      + apply F.
+  - destruct (f false) eqn:E.
+    * destruct (f true) eqn:F.
+      + apply F.
+      + apply E.
+    * rewrite E. apply E.
+  Qed.
+  
+  
 (** [] *)
 
 (* ################################################################# *)
