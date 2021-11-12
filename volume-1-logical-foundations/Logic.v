@@ -58,7 +58,7 @@ Check plus_claim : Prop.
 
 Theorem plus_claim_is_true :
   plus_claim.
-Proof. reflexivity.  Qed.
+Proof. (*unfold plus_claim.*) reflexivity.  Qed.
 
 (** We can also write _parameterized_ propositions -- that is,
     functions that take arguments of some type and return a
@@ -95,6 +95,8 @@ Qed.
     polymorphic: *)
 
 Check @eq : forall A : Type, A -> A -> Prop.
+
+Check eq.
 
 (** (Notice that we wrote [@eq] instead of [eq]: The type
     argument [A] to [eq] is declared as implicit, and we need to turn
@@ -149,7 +151,15 @@ Qed.
 Example and_exercise :
   forall n m : nat, n + m = 0 -> n = 0 /\ m = 0.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m H.
+  split.
+  - destruct n.
+    * reflexivity.
+    * discriminate H.
+  -  destruct m.
+    * reflexivity.
+    * rewrite add_comm in H. discriminate.
+  Qed.
 (** [] *)
 
 (** So much for proving conjunctive statements.  To go in the other
@@ -227,7 +237,9 @@ Proof.
 Lemma proj2 : forall P Q : Prop,
   P /\ Q -> Q.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros ? ? [_ HQ].
+  apply HQ.
+  Qed.
 (** [] *)
 
 (** Finally, we sometimes need to rearrange the order of conjunctions
@@ -254,7 +266,12 @@ Theorem and_assoc : forall P Q R : Prop,
   P /\ (Q /\ R) -> (P /\ Q) /\ R.
 Proof.
   intros P Q R [HP [HQ HR]].
-  (* FILL IN HERE *) Admitted.
+  split.
+  - split.
+    * apply HP.
+    * apply HQ.
+  - apply HR.
+  Qed.
 (** [] *)
 
 (** By the way, the infix notation [/\] is actually just syntactic
@@ -318,14 +335,31 @@ Qed.
 Lemma mult_is_O :
   forall n m, n * m = 0 -> n = 0 \/ m = 0.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  destruct n.
+  - left. reflexivity.
+  - simpl in H.
+    apply and_exercise in H.
+    destruct H.
+    right. apply H. 
+  Qed.
+
+Lemma mult_is_O_2 :
+  forall n m, n * m = 0 -> n = 0 \/ m = 0.
+Proof.
+  apply Mult.mult_is_O.
+  Qed. 
+
 (** [] *)
 
 (** **** Exercise: 1 star, standard (or_commut) *)
 Theorem or_commut : forall P Q : Prop,
   P \/ Q  -> Q \/ P.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros ? ? [HP|HQ].
+  - right. assumption.
+  - left. assumption.
+Qed.
 (** [] *)
 
 (* ================================================================= *)
@@ -381,7 +415,10 @@ Proof.
 Fact not_implies_our_not : forall (P:Prop),
   ~ P -> (forall (Q:Prop), P -> Q).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  apply H in H0.
+  destruct H0.
+Qed.
 (** [] *)
 
 (** Inequality is a frequent enough example of negated statement
@@ -440,7 +477,7 @@ Proof.
 
    _Theorem_: [P] implies [~~P], for any proposition [P]. *)
 
-(* FILL IN HERE *)
+(* IN HERE *)
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_double_neg_inf : option (nat*string) := None.
@@ -450,14 +487,18 @@ Definition manual_grade_for_double_neg_inf : option (nat*string) := None.
 Theorem contrapositive : forall (P Q : Prop),
   (P -> Q) -> (~Q -> ~P).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold not.
+  intros. apply H in H1. apply H0 in H1. assumption.
+Qed. 
 (** [] *)
 
 (** **** Exercise: 1 star, standard (not_both_true_and_false) *)
 Theorem not_both_true_and_false : forall P : Prop,
   ~ (P /\ ~P).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold not.  intros.
+  destruct H. apply (H0 H).
+Qed.
 (** [] *)
 
 (** **** Exercise: 1 star, advanced (informal_not_PNP)
@@ -487,6 +528,7 @@ Proof.
   destruct b eqn:HE.
   - (* b = true *)
     unfold not in H.
+    (* destruct (H eq_refl). *)
     apply ex_falso_quodlibet.
     apply H. reflexivity.
   - (* b = false *)
@@ -1709,5 +1751,7 @@ Definition implies_to_or := forall P Q:Prop,
 (* FILL IN HERE
 
     [] *)
+    
+
 
 (* 2021-08-11 15:08 *)
