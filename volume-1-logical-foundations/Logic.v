@@ -506,7 +506,7 @@ Qed.
     Write an informal proof (in English) of the proposition [forall P
     : Prop, ~(P /\ ~P)]. *)
 
-(* FILL IN HERE *)
+(* IN HERE *)
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_informal_not_PNP : option (nat*string) := None.
@@ -639,19 +639,38 @@ Qed.
 Theorem iff_refl : forall P : Prop,
   P <-> P.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros P. split.
+  - intros H. apply H.
+  - intros H. apply H.
+  Qed.
 
 Theorem iff_trans : forall P Q R : Prop,
   (P <-> Q) -> (Q <-> R) -> (P <-> R).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros P Q R [HPQ HQP] [HQR HRQ]. split.
+  - intros p. apply HPQ,HQR in p. apply p.
+  - intros r. apply (HQP (HRQ r)).
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (or_distributes_over_and) *)
 Theorem or_distributes_over_and : forall P Q R : Prop,
   P \/ (Q /\ R) <-> (P \/ Q) /\ (P \/ R).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros P Q R. split.
+  - intros [HP | [HQ HR]].
+    * split.
+      + left. assumption.
+      + left. assumption.
+    * split.
+      + right. assumption.
+      + right. assumption.
+  - intros [[HP|HQ] [HP'|HR]].
+    * left. assumption.
+    * left. assumption.
+    * left. assumption.
+    * right. apply (conj HQ HR).
+  Qed.
 (** [] *)
 
 (* ================================================================= *)
@@ -759,6 +778,7 @@ Theorem exists_example_2 : forall n,
 Proof.
   (* WORKED IN CLASS *)
   intros n [m Hm]. (* note implicit [destruct] here *)
+  (* rewrite Hm. simpl. *) (* constructor 1 with (2 + m). simpl. reflexivity. *)
   exists (2 + m).
   apply Hm.  Qed.
 
@@ -771,7 +791,9 @@ Proof.
 Theorem dist_not_exists : forall (X:Type) (P : X -> Prop),
   (forall x, P x) -> ~ (exists x, ~ P x).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros ? ? HP [x NPx].
+  apply (NPx (HP x)).
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard (dist_exists_or)
@@ -782,9 +804,15 @@ Proof.
 Theorem dist_exists_or : forall (X:Type) (P Q : X -> Prop),
   (exists x, P x \/ Q x) <-> (exists x, P x) \/ (exists x, Q x).
 Proof.
-   (* FILL IN HERE *) Admitted.
-(** [] *)
-
+  intros X P Q. split.
+  - intros [x H].
+    destruct H as [HP|HQ].
+    * left. exists x. assumption.
+    * right. exists x. assumption.
+  - intros [[x HP] | [x HQ]].
+    * exists x. left. assumption.
+    * exists x. right. assumption.
+  Qed.
 (* ################################################################# *)
 (** * Programming with Propositions *)
 
@@ -867,7 +895,31 @@ Theorem In_map_iff :
          exists x, f x = y /\ In x l.
 Proof.
   intros A B f l y. split.
-  (* FILL IN HERE *) Admitted.
+  (* - induction l as [|h' l' IHl]. 
+    * simpl. intros [].
+    * simpl. intros H. exists h'.
+      destruct H.
+      + split.
+        -- assumption.
+        -- left. reflexivity.
+      + destruct (IHl H) as [x [HFXY HIN]].
+        -- destruct (IHl H) . *)
+  - intros HIN.
+    induction l as [|h' l' IHl].
+    * destruct HIN.
+    * simpl. simpl in HIN. destruct HIN as [HFH|HINY].
+      + exists h'. split.
+        -- assumption.
+        -- left. reflexivity.
+      +  (*destruct (IHl HINY) as [xx [PPP GGG]].
+        exists xx.
+        split. assumption. right. assumption.*)
+        apply IHl in HINY as [x [PGP HHH]].
+        exists x. split.
+        -- assumption.
+        --  right. assumption.
+  - intros [x [HFXY HIN]]. rewrite <- HFXY. apply In_map. assumption.
+  
 (** [] *)
 
 (** **** Exercise: 2 stars, standard (In_app_iff) *)
