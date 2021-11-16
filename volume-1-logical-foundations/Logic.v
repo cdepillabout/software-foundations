@@ -919,15 +919,29 @@ Proof.
         -- assumption.
         --  right. assumption.
   - intros [x [HFXY HIN]]. rewrite <- HFXY. apply In_map. assumption.
+  Qed.
   
 (** [] *)
 
 (** **** Exercise: 2 stars, standard (In_app_iff) *)
-Theorem In_app_iff : forall A l l' (a:A),
-  In a (l++l') <-> In a l \/ In a l'.
+Theorem In_app_iff : forall A l1 l2 (a:A),
+  In a (l1++l2) <-> In a l1 \/ In a l2.
 Proof.
-  intros A l. induction l as [|a' l' IH].
-  (* FILL IN HERE *) Admitted.
+  intros A l1. induction l1 as [|a' l1' IH].
+  - simpl. intros. split.
+    * intros. right. assumption.
+    * intros. destruct H. destruct H. assumption.
+  - simpl. intros. split.
+    * intros. destruct H.
+      + left. left. assumption.
+      + apply IH in H. destruct H.
+        -- left. right. assumption.
+        -- right. assumption.
+    * intros.  destruct H as [[H|H]|H].
+      + left. assumption.
+      + right. apply IH. left. assumption.
+      + right. apply IH. right. assumption.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard, especially useful (All)
@@ -942,15 +956,59 @@ Proof.
     lemma below.  (Of course, your definition should _not_ just
     restate the left-hand side of [All_In].) *)
 
-Fixpoint All {T : Type} (P : T -> Prop) (l : list T) : Prop
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint All {T : Type} (P : T -> Prop) (l : list T) : Prop :=
+  match l with
+  | h :: t => P h /\ All P t
+  | [] => True
+  end.
 
 Theorem All_In :
   forall T (P : T -> Prop) (l : list T),
     (forall x, In x l -> P x) <->
     All P l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros T P. induction l as [|h l' IHl].
+  - simpl. split.
+    * intros. apply I.
+    * intros. destruct H0.
+  - simpl. split.
+    * intros. split.
+      + apply H. left. reflexivity.
+      + apply IHl. intros. apply H. right. assumption.
+    * intros. destruct H. destruct H0.
+      + rewrite <- H0.  assumption.
+      + destruct IHl. apply H3.
+        -- assumption.
+        -- assumption.
+  Qed.
+
+Lemma implies_true_reverse : forall P, (P <-> True) -> P.
+Proof.
+  intros. destruct H. apply H0. apply I.
+  Qed.
+  
+Lemma implies_true : forall (P: Prop), P -> (P <-> True).
+Proof.
+  intros. split.
+  - intros. apply I.
+  - intros. assumption. 
+  Qed.
+
+Theorem All_In2 :
+  forall T (P : T -> Prop) (l : list T),
+    (forall x, In x l -> P x) <->
+    All P l.
+Proof.
+  intros T P. induction l as [|h l' IHl].
+  - simpl. apply implies_true. intros ? [].
+  - simpl. rewrite <- IHl. split.
+    * intros. split.
+      + apply H. left. reflexivity.
+      + intros. apply H. apply (or_intror H0).
+    * intros. destruct H. destruct H0.
+      + rewrite <- H0.  assumption.
+      + apply H1. assumption.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (combine_odd_even)
@@ -961,8 +1019,8 @@ Proof.
     equivalent to [Podd n] when [n] is odd and equivalent to [Peven n]
     otherwise. *)
 
-Definition combine_odd_even (Podd Peven : nat -> Prop) : nat -> Prop
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition combine_odd_even (Podd Peven : nat -> Prop) : nat -> Prop :=
+  fun n => if odd n then Podd n else Peven n.
 
 (** To test your definition, prove the following facts: *)
 
@@ -972,7 +1030,10 @@ Theorem combine_odd_even_intro :
     (odd n = false -> Peven n) ->
     combine_odd_even Podd Peven n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. unfold combine_odd_even. destruct (odd n) eqn:E.
+  - apply (H eq_refl).
+  - apply (H0 eq_refl).
+  Qed.
 
 Theorem combine_odd_even_elim_odd :
   forall (Podd Peven : nat -> Prop) (n : nat),
@@ -980,7 +1041,8 @@ Theorem combine_odd_even_elim_odd :
     odd n = true ->
     Podd n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. unfold combine_odd_even in H. rewrite H0 in H. assumption.
+  Qed.
 
 Theorem combine_odd_even_elim_even :
   forall (Podd Peven : nat -> Prop) (n : nat),
@@ -988,7 +1050,8 @@ Theorem combine_odd_even_elim_even :
     odd n = false ->
     Peven n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. unfold combine_odd_even in H. rewrite H0 in H. assumption.
+  Qed.
 
 (** [] *)
 
