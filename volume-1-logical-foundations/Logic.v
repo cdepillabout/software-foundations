@@ -1736,7 +1736,7 @@ Proof.
   unfold strong_induction_principle.
   intros P IHstrong n. 
   apply IHstrong. 
-  assert (forall k, k <= n -> P k).
+  assert (H: forall k, k <= n -> P k).
   { induction n as [|n' IHn'].
     - intros k H. apply Le.le_n_0_eq in H. rewrite <- H. apply IHstrong.
       intros m G. apply PeanoNat.Nat.nlt_0_r in G. destruct G.
@@ -1765,9 +1765,9 @@ Proof.
       }
       apply (HHH _ _ _ H MLTK).
   }
-  intros.
+  intros m HmLTn.
   apply H.
-  apply (PeanoNat.Nat.lt_le_incl _ _ H0).
+  apply (PeanoNat.Nat.lt_le_incl _ _ HmLTn).
   Qed.
   
 Theorem nat_ind_2'' :
