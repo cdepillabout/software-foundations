@@ -1352,6 +1352,13 @@ Fixpoint rev_append {X} (l1 l2 : list X) : list X :=
   | x :: l1' => rev_append l1' (x :: l2)
   end.
 
+Theorem rev_append_after : forall X (l : list X) (b c : list X), rev_append l b ++ c = rev_append l (b ++ c).
+Proof.
+  intros X l. induction l.
+  - simpl. reflexivity.
+  - simpl. intros. apply (IHl (x :: b) c).
+  Qed.
+
 Definition tr_rev {X} (l : list X) : list X :=
   rev_append l [].
 
@@ -1365,7 +1372,12 @@ Definition tr_rev {X} (l : list X) : list X :=
 
 Theorem tr_rev_correct : forall X, @tr_rev X = @rev X.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros.
+  apply functional_extensionality.
+  intros. unfold tr_rev. induction x.
+  - auto.
+  - simpl. rewrite <- IHx. rewrite rev_append_after. reflexivity.
+  Qed.
 (** [] *)
 
 (* ================================================================= *)
@@ -2021,12 +2033,17 @@ Qed.
 Theorem andb_true_iff : forall b1 b2:bool,
   b1 && b2 = true <-> b1 = true /\ b2 = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. split.
+  - intro. destruct b1,b2; auto.
+  - intro. destruct H. rewrite H,H0. reflexivity.
+  Qed.
 
 Theorem orb_true_iff : forall b1 b2,
   b1 || b2 = true <-> b1 = true \/ b2 = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. destruct b1,b2; split; auto.
+  - intro H. destruct H; discriminate.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 1 star, standard (eqb_neq)
@@ -2038,7 +2055,13 @@ Proof.
 Theorem eqb_neq : forall x y : nat,
   x =? y = false <-> x <> y.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros x y. split.
+  - intros H H1. rewrite H1 in H. rewrite eqb_refl in H. discriminate H.
+  - intros H. unfold not in H. destruct (x =? y) eqn:E.
+    * rewrite eqb_eq in E. destruct (H E).
+    * auto.
+  Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (eqb_list)
@@ -2050,15 +2073,43 @@ Proof.
     definition is correct, prove the lemma [eqb_list_true_iff]. *)
 
 Fixpoint eqb_list {A : Type} (eqb : A -> A -> bool)
-                  (l1 l2 : list A) : bool
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+                  (l1 l2 : list A) : bool :=
+  match l1,l2 with
+  | [],[] => true
+  | [],_ => false
+  | _,[] => false
+  | (h1 :: t1), (h2 :: t2) => eqb h1 h2 && eqb_list eqb t1 t2
+  end.
+  
+
+Theorem eqb_and_eq_true : forall x y, x && y = true -> x = true /\ y = true.
+Proof.
+  intros [|] [|]; simpl; auto.
+Qed.
+
+Theorem both_true : forall b c, b = true -> c = true -> b && c = true.
+Proof. intros [|] [|]; auto. Qed.
+
+Theorem both_true_rev : forall b c, b && c = true -> b = true /\ c = true.
+Proof. intros [|] [|]; auto. Qed.
 
 Theorem eqb_list_true_iff :
   forall A (eqb : A -> A -> bool),
     (forall a1 a2, eqb a1 a2 = true <-> a1 = a2) ->
     forall l1 l2, eqb_list eqb l1 l2 = true <-> l1 = l2.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros A eqb F.
+  induction l1 as [|l1']; split; simpl; auto; destruct l2; auto; intro; try discriminate.
+  - apply eqb_and_eq_true in H. destruct H.
+    set (G := F l1' x). rewrite G in H. rewrite H. f_equal.
+    rewrite IHl1 in H0. assumption.
+  - injection H as H1 H2. rewrite <- H1. rewrite <- H2.
+    assert (G : forall b c, b = true -> c = true -> b && c = true).
+    { intros [|] [|]; auto. }
+    apply G.
+    * rewrite F. reflexivity.
+    * rewrite IHl1. reflexivity.
+  Qed.
 
 (** [] *)
 
@@ -2079,13 +2130,20 @@ Fixpoint forallb {X : Type} (test : X -> bool) (l : list X) : bool :=
 Theorem forallb_true_iff : forall X test (l : list X),
   forallb test l = true <-> All (fun x => test x = true) l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X test. induction l as [|h l' IHl]; split; simpl ; intro H; auto.
+  - split; apply both_true_rev in H; destruct H.
+    * assumption.
+    * rewrite <- IHl. assumption.
+  - destruct H. apply both_true.
+    * apply H.
+    * rewrite <- IHl in H0. apply H0.
+  Qed.
 
 (** (Ungraded thought question) Are there any important properties of
     the function [forallb] which are not captured by this
     specification? *)
 
-(* FILL IN HERE
+(* IN HERE
 
     [] *)
 
