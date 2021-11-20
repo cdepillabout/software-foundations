@@ -1438,12 +1438,412 @@ Proof.
   - simpl. apply IHk'.
 Qed.
 
+Lemma even_S_2 : forall n, even (S n) = negb (even n).
+Proof.
+  intros n. induction n as [|n' IHn].
+  - simpl. reflexivity.
+  - rewrite IHn. rewrite negb_involutive. simpl. reflexivity.
+  Qed.
+  
+Definition nat_ind_2 :
+  forall (P : nat -> Prop),
+  P 0 ->
+  P 1 ->
+  (forall m, P m -> P (S m) /\ P (S (S m))) ->
+  forall n, P n.
+Proof.
+  intros P P0 P1 H n.
+  induction n as [ | n' IHN].
+  - assumption.
+  - destruct (H n' IHN) as [? _]. assumption.
+  Qed.
+  
+(* Definition nat_ind_2' :
+  forall (P : nat -> Prop),
+  P 0 ->
+  P 1 ->
+  (forall m, P m -> P (S m) -> P (S (S m))) ->
+  forall n, P n.
+Proof.
+  intros P P0 P1 H n. generalize dependent P.
+  induction n as [ | [|n''] IHN].
+  - auto.
+  - auto.
+  - intros P P0 P1 H. 
+    set (G := IHN P P0 P1 H).
+    apply H.
+    * 
+  Qed. *)
+  
+  
+Inductive nat_one : Type :=
+  | NO0
+  | NO1
+  | NOS (n : nat_one).
+  
+Check nat_one_rect.
+Check nat_one_ind.
+Check nat_one_rec.
+Check nat_one_sind.
+
+Fixpoint nat_to_nat_one (n : nat) : nat_one :=
+  match n with
+  | O => NO0
+  | (S n') => NOS (nat_to_nat_one n')
+  end.
+  
+Fixpoint nat_one_to_nat (n : nat_one) : nat :=
+  match n with
+  | NO0 => O
+  | NO1 => S O
+  | NOS n' => S (nat_one_to_nat n')
+  end.
+  
+Theorem nat_one_roundtrip : forall (n : nat), nat_one_to_nat (nat_to_nat_one n) = n.
+Proof.
+  induction n as [|n' IHn].
+  - auto.
+  - simpl. f_equal. assumption.
+Qed.
+
+Fixpoint canonicalize_nat_one (n : nat_one) : nat_one :=
+  match n with
+  | NO0 => NO0
+  | NO1 => NO1
+  | NOS NO0 => NO1
+  | NOS n' => NOS (canonicalize_nat_one n')
+  end.
+  
+Fixpoint nat_ones_mostly_equal (n : nat_one) (m : nat_one) : Prop :=
+  match n, m with
+  | NO0, NO0 => True
+  | NO1, NO1 => True
+  | NOS NO0, NO1 => True
+  | NO1, NOS NO0 => True
+  | NOS n', NOS m' => nat_ones_mostly_equal n' m'
+  | _, _ => False
+  end. 
+  
+Theorem nat_ones_mostly_equal_no1_nos: forall n, nat_ones_mostly_equal NO1 (NOS n) -> n = NO0.
+Proof.
+  induction n as [| | n' IHn].
+  - auto.
+  - simpl. intuition.
+  - simpl. intuition.
+  Qed. 
+  
+Theorem nat_ones_mostly_equal_inj:
+  forall n m, nat_ones_mostly_equal (NOS n) (NOS m) -> nat_ones_mostly_equal n m.
+Proof.
+  destruct n,m.
+  - reflexivity.
+  - intuition.
+  - simpl. intuition.
+  - simpl. intuition.
+  - simpl. intuition.
+  - simpl. intuition.
+  - simpl. intuition.
+  - simpl. intuition.
+  - simpl. intros H. apply H.
+  Qed. 
+
+Theorem nat_ones_all_matches: forall P n, (match n with | NO0 | _ => P end) -> P.
+Proof.
+  destruct n. intuition. intuition. intuition.
+  Qed.
+
+Theorem nat_ones_mostly_equal_refl: forall n m, nat_ones_mostly_equal n m -> nat_ones_mostly_equal m n.
+Proof.
+  induction n as [| | n' IHn].
+  - destruct m.
+    * intuition.
+    * simpl. intuition.
+    * simpl. intuition.
+  - destruct m.
+    * simpl. intuition.
+    * intuition.
+    * simpl. intuition.
+  - destruct m.
+    * simpl. destruct n'.
+      + intuition.
+      + intuition.
+      + intuition.
+    * simpl. intuition.
+    * simpl. destruct n',m.
+      + intuition.
+      + intuition.
+      + intuition.
+      + intuition.
+      + intuition.
+      + intuition.
+      + intros H. apply IHn in H. assumption.
+      + intros H. apply IHn in H. assumption.
+      + intros H. apply IHn in H. assumption.
+  Qed.
+  
+Definition nat_ones_for_all (p : Prop) n : Prop :=
+  match n with
+  | NO0 => p
+  | NO1 => p
+  | NOS _ => p
+  end.
+  
+Theorem nat_ones_for_all_implies_p : forall P n, nat_ones_for_all P n = P.
+Proof.
+  intros P [ | | n' ] ; reflexivity.
+  Qed.
+  
+Theorem nat_ones_mostly_equal_refl_2: forall n m, nat_ones_mostly_equal n m -> nat_ones_mostly_equal m n.
+Proof.
+  induction n as [| | n' IHn'].
+  + destruct m; simpl; intuition.
+  + destruct m; simpl; intuition.
+  + intros [| | m'] H; simpl in H; simpl.
+    - destruct n'; apply H.
+    - apply H.
+    - destruct n'; apply IHn' in H; destruct m'; apply H.
+  Qed. 
+  
+Theorem noncanonical_equal :
+  forall n m, nat_ones_mostly_equal n m -> canonicalize_nat_one n = canonicalize_nat_one m.
+Proof.
+  induction n as [| | n' IHn].
+  - simpl. destruct m; intuition.
+  - destruct m as [ | | m']; intuition.
+    * destruct H.
+    * simpl. simpl in H. destruct m'.
+      + reflexivity.
+      + destruct H.
+      + destruct H.
+  - intros [| | m'] H;
+    simpl in H;
+    simpl;
+    destruct n';
+    try (destruct H);
+    try reflexivity.
+    * destruct m'; try (destruct H); try reflexivity.
+    * destruct m'; try (destruct H); try f_equal; try (apply (IHn _ H)).
+    * destruct m'; f_equal; try (apply (IHn _ H)).
+      + simpl in H. destruct n'; destruct H.
+  Qed.
+
+Theorem nat_roundtrip :
+  forall (n : nat_one),
+  canonicalize_nat_one (nat_to_nat_one (nat_one_to_nat n)) = canonicalize_nat_one n.
+Proof.
+  induction n as [ | |n' IHn].
+  - auto.
+  - auto.
+  - simpl. simpl in IHn. rewrite IHn. destruct n'; simpl; try reflexivity.
+Qed.
+  
+(* Definition nat_ind_2' :
+  forall (P : nat -> Prop),
+  P 0 ->
+  P 1 ->
+  (forall m, P m -> P (S m) -> P (S (S m))) ->
+  forall n, P n.
+Proof.
+  intros P P0 P1 H n.
+  apply nat_ind.
+  - auto.
+  - induction n as [|n' IHn].
+    * intros m. induction m as [|m' IHm].
+      + auto.
+      + intros PSm.
+    * 
+  induction n as [ | [|n''] IHN].
+  - auto.
+  - auto.
+  - set (G := IHN P P0 P1 H).
+    apply H.
+    *  
+  Qed. *)
+  
+Inductive nateo : Type :=
+  | NEO0
+  | NEO1
+  | NEOP2 (n : nateo).
+  
+Fixpoint nat_to_nateo (n : nat) : nateo :=
+  match n with
+  | O => NEO0
+  | (S O) => NEO1
+  | (S (S n')) => NEOP2 (nat_to_nateo n')
+  end.
+  
+Fixpoint nateo_to_nat (n : nateo) : nat :=
+  match n with
+  | NEO0 => O
+  | NEO1 => S O
+  | NEOP2 n' => S (S (nateo_to_nat n'))
+  end.
+  
+Theorem nateo_roundtrip_rev : forall (n : nateo), nat_to_nateo (nateo_to_nat n) = n.  
+Proof.
+  induction n as [| | n' IHn].
+  - auto.
+  - auto.
+  - simpl. f_equal. apply IHn.
+  Qed.
+  
+Definition nateo_ind_2 :
+  forall (P : nateo -> Prop),
+  P NEO0 ->
+  P NEO1 ->
+  (forall m, P m -> P (NEOP2 m)) ->
+  forall n, P n.
+Proof.
+  intros. induction n as [ | | n' IHn].
+  - assumption.
+  - auto.
+  - apply (H1 _ IHn).
+Qed.
+
+Theorem blahblah : forall b, b = true \/ negb b = true.
+Proof.
+  destruct b; simpl; auto.
+Qed.
+  
+
+Theorem nat_even_or_odd : forall (n : nat), (even n = true) \/ (odd n = true).
+Proof.
+  induction n as [ | n' IHn ].
+  - simpl. left. reflexivity.
+  - simpl. unfold odd. simpl. apply blahblah.
+  Qed.
+
+Fixpoint nat_ind_2'
+         (P : nat -> Prop)
+         (PO : P 0)
+         (P1 : P 1)
+         (evPS : forall m : nat, P m -> P (S (S m)))
+         (n : nat) : P n :=
+  match n with
+  | 0 => PO
+  | 1 => P1
+  | (S (S k)) => evPS k (nat_ind_2' P PO P1 evPS k)
+  end.
+
+Definition strong_induction_principle : Prop :=
+  forall P : nat -> Prop,
+    (forall n : nat, (forall m : nat, m < n -> P m) -> P n) ->
+    forall n : nat, P n.
+    
+Lemma strong_induction :
+  strong_induction_principle.
+Proof.
+  unfold strong_induction_principle.
+  intros P IHstrong n. 
+  apply IHstrong. 
+  assert (forall k, k <= n -> P k).
+  { induction n as [|n' IHn'].
+    - intros k H. apply Le.le_n_0_eq in H. rewrite <- H. apply IHstrong.
+      intros m G. apply PeanoNat.Nat.nlt_0_r in G. destruct G.
+    - intros k H. apply IHstrong. intros m MLTK. apply IHn'.
+      assert (HHH: forall a b c, b <= S a -> c < b -> c <= a).
+      { intros. 
+        assert (MMM: forall d e, d <= e -> d = e \/ d < e).
+        { induction d.
+          - intros [|e'].
+            * intros NNN. left. reflexivity.
+            * intros. right. apply PeanoNat.Nat.lt_0_succ.
+          - intros [|e'].
+            * intros. apply PeanoNat.Nat.nle_succ_0 in H2. destruct H2.
+            * intros. apply Le.le_S_n in H2.
+              set (PKG := IHd _ H2).
+              destruct PKG.
+              + left. f_equal. apply H3.
+              + right. apply Lt.lt_n_S. assumption.
+        }
+        set (PPP := MMM _ _ H0).
+        destruct PPP.
+        - rewrite H2 in H1. apply Lt.lt_n_Sm_le. apply H1.
+        - apply (Lt.lt_n_Sm_le b a) in H2.
+          set (PEA := PeanoNat.Nat.lt_le_trans _ _ _ H1 H2).
+          apply (PeanoNat.Nat.lt_le_incl _ _ PEA).
+      }
+      apply (HHH _ _ _ H MLTK).
+  }
+  intros.
+  apply H.
+  apply (PeanoNat.Nat.lt_le_incl _ _ H0).
+  Qed.
+  
+Theorem nat_ind_2'' :
+  forall (P : nat -> Prop),
+  P 0 ->
+  P 1 ->
+  (forall m : nat, P m -> P (S (S m))) ->
+  forall (n : nat), P n.
+Proof.
+  intros P P0 P1 HPmImpliesPSS. apply strong_induction.
+  intros n HmLtnImpliesPm.
+  destruct n  as [ | [ | n' ] ] eqn:E.
+  - apply P0.
+  - apply P1.
+  - apply HPmImpliesPSS. apply HmLtnImpliesPm.
+    cut (forall x, x < S (S x)).
+    * auto.
+    * induction x as [| x'].
+      + apply PeanoNat.Nat.lt_0_2.
+      + apply Lt.lt_n_S. apply IHx'.
+  Qed.
+
+Theorem nateo_roundtrip : forall (n : nat), nateo_to_nat (nat_to_nateo n) = n.
+Proof.
+  induction n as [| | n' ] using nat_ind_2'; auto.
+  - simpl. f_equal. f_equal. apply IHn'.
+Qed. 
+  
+  
+Lemma even_S_false : forall n, even n = true -> even (S n) = false.
+Proof.
+  induction n using nat_ind_2''.
+  - intros. auto.
+  - auto.
+  - intros. simpl in H. apply IHn in H. simpl in H. simpl. auto. 
+  Qed.
+
 (** **** Exercise: 3 stars, standard (even_double_conv) *)
 Lemma even_double_conv : forall n, exists k,
   n = if even n then double k else S (double k).
 Proof.
-  (* Hint: Use the [even_S] lemma from [Induction.v]. *)
-  (* FILL IN HERE *) Admitted.
+  (* even_S : forall n : nat, even (S n) = negb (even n) *)
+  induction n using nat_ind_2''.
+  - exists 0. auto.
+  - exists 0. auto.
+  - destruct IHn. exists (S x). simpl. destruct (even n) eqn:E; rewrite H; reflexivity.
+  Qed.
+    
+Fixpoint Even_SS n : Prop :=
+  match n with
+  | O => True
+  | 1 => False
+  | S (S n') => Even_SS n'
+  end.
+  
+Theorem even_implies_even_ss : forall n, Even n -> Even_SS n.
+Proof.
+  unfold Even. 
+  induction n using nat_ind_2''; intros H; destruct H.
+  - simpl. auto.
+  - simpl. destruct x; discriminate.
+  - simpl. apply IHn. destruct x.
+    * discriminate.
+    * simpl in H. injection H as H. exists x. auto.
+  Qed.
+    
+Theorem even_ss_implies_even : forall n, Even_SS n -> Even n.
+Proof.
+  unfold Even. 
+  induction n using nat_ind_2''; intros H.
+  - simpl. exists 0. reflexivity.
+  - simpl in H. destruct H.
+  - simpl in H. apply IHn in H. destruct H.
+    rewrite H. exists (S x). simpl. reflexivity.
+  Qed.
+      
 (** [] *)
 
 (** Now the main theorem: *)
@@ -1455,6 +1855,20 @@ Proof.
     rewrite Hk. rewrite H. exists k. reflexivity.
   - intros [k Hk]. rewrite Hk. apply even_double.
 Qed.
+(* 
+Theorem even_bool_prop_2 : forall n,
+  even n = true <-> Even n.
+Proof.
+  intros n. split.
+  - intros. unfold Even. unfold double. induction n as [|n' IHn] eqn:E.
+    * exists 0. reflexivity.
+    * induction n' as [|n'' IHn'] eqn:F.
+      + simpl in H. discriminate.
+      + simpl in H.  
+(*   - intros H. destruct (even_double_conv n) as [k Hk].
+    rewrite Hk. rewrite H. exists k. reflexivity.
+  - intros [k Hk]. rewrite Hk. apply even_double. *)
+Qed. *)
 
 (** In view of this theorem, we say that the boolean computation
     [even n] is _reflected_ in the truth of the proposition
