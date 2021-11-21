@@ -2260,6 +2260,13 @@ Qed.
     this line of reasoning cannot be encoded in Coq without assuming
     additional axioms. *)
 
+Theorem exists_forall_stuff :
+  forall {X} (P : X -> Prop),
+  not (exists x, P x) -> forall x, not (P x).
+Proof.
+  intros. unfold not in H. unfold not. intros. apply H. exists x. apply H0.
+Qed.
+
 (** **** Exercise: 3 stars, standard (excluded_middle_irrefutable)
 
     Proving the consistency of Coq with the general excluded middle
@@ -2283,7 +2290,12 @@ Theorem excluded_middle_irrefutable: forall (P:Prop),
   ~ ~ (P \/ ~ P).
 Proof.
   unfold not. intros P H.
-  (* FILL IN HERE *) Admitted.
+  assert (G: P -> False).
+  { intros. apply (H (or_introl H0)). } 
+  apply (H (or_intror G)).
+Qed.
+  
+
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced (not_exists_dist)
@@ -2304,9 +2316,18 @@ Theorem not_exists_dist :
   forall (X:Type) (P : X -> Prop),
     ~ (exists x, ~ P x) -> (forall x, P x).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. unfold not in H0. unfold excluded_middle in H. destruct (H (P x)).
+  - auto.
+  - unfold not in H1. set (G := H0 (ex_intro _ x H1)). destruct G.
+  Qed.
 (** [] *)
 
+(* Inductive ex (A : Type) (P : A -> Prop) : Prop :=
+     ex_intro : forall x : A, P x -> exists y, P y
+     
+   "'exists' x .. y , p" := 
+     ex (fun x => .. (ex (fun y => p)) ..) : type_scope (default interpretation)
+ *)
 (** **** Exercise: 5 stars, standard, optional (classical_axioms)
 
     For those who like a challenge, here is an exercise taken from the
@@ -2329,13 +2350,50 @@ Definition peirce := forall P Q: Prop,
 Definition double_negation_elimination := forall P:Prop,
   ~~P -> P.
 
+Theorem peirce_implies_dne : peirce -> double_negation_elimination.
+Proof.
+  unfold peirce. unfold double_negation_elimination.
+  unfold not. intros. apply H with (Q := False). intros. destruct (H0 H1).
+  Qed.
+
 Definition de_morgan_not_and_not := forall P Q:Prop,
   ~(~P /\ ~Q) -> P \/ Q.
+
+Theorem dne_implies_demorgan : double_negation_elimination -> de_morgan_not_and_not.
+Proof.
+  unfold double_negation_elimination. unfold de_morgan_not_and_not. intros.
+  unfold not in H0. apply H. unfold not. intros. apply H0. split.
+  - intros. apply (H1 (or_introl H2)).
+  - intros. apply (H1 (or_intror H2)).
+  Qed.
 
 Definition implies_to_or := forall P Q:Prop,
   (P -> Q) -> (~P \/ Q).
 
-(* FILL IN HERE
+Theorem de_morgan_implies_to_or : de_morgan_not_and_not -> implies_to_or.
+Proof.
+  unfold de_morgan_not_and_not. unfold implies_to_or.
+  intros. unfold not. apply H. unfold not. intros. destruct H1.
+  apply H1. intros H3. apply H0 in H3. apply (H2 H3).
+  Qed.
+
+Theorem implies_exclu : implies_to_or -> excluded_middle.
+Proof.
+  unfold implies_to_or,excluded_middle.
+  intros. apply or_commut. apply H. auto.
+  Qed.
+  
+Theorem exlu_peirce : excluded_middle -> peirce.
+Proof.
+  unfold excluded_middle, peirce.
+  intros. destruct (H P).
+  - auto.
+  - apply H0.
+    intros.
+    unfold not in H1. destruct (H1 H2).
+Qed.
+
+(* IN HERE
 
     [] *)
     
