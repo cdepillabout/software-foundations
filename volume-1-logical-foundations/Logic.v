@@ -153,7 +153,7 @@ Example and_exercise :
 Proof.
   intros n m H.
   split.
-  - destruct n.
+  - destruct n. (* inversion n as [|n']. *)
     * reflexivity.
     * discriminate H.
   -  destruct m.
