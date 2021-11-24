@@ -1286,7 +1286,7 @@ Qed.
     expression that matches exactly the list that it receives as an
     argument: *)
 
-Fixpoint reg_exp_of_list {T} (l : list T) :=
+Fixpoint reg_exp_of_list {T} (l : list T): reg_exp T :=
   match l with
   | [] => EmptyStr
   | x :: l' => App (Char x) (reg_exp_of_list l')
@@ -1331,13 +1331,26 @@ Qed.
 Lemma empty_is_empty : forall T (s : list T),
   ~ (s =~ EmptySet).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros ? ? H. inversion H.
+  Qed.
 
 Lemma MUnion' : forall T (s : list T) (re1 re2 : reg_exp T),
   s =~ re1 \/ s =~ re2 ->
   s =~ Union re1 re2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros T s re1 re2 [H|H].
+  - apply MUnionL. auto.
+  - apply MUnionR. auto.
+  Qed.
+  
+Lemma MUnion'' : forall T (s : list T) (re1 re2 : reg_exp T),
+  s =~ Union re1 re2 ->
+  s =~ re1 \/ s =~ re2.
+Proof.
+  intros T s re1 re2 H. inversion H.
+  - left. auto.
+  - right. auto.
+  Qed.
 
 (** The next lemma is stated in terms of the [fold] function from the
     [Poly] chapter: If [ss : list (list T)] represents a sequence of
@@ -1348,7 +1361,15 @@ Lemma MStar' : forall T (ss : list (list T)) (re : reg_exp T),
   (forall s, In s ss -> s =~ re) ->
   fold app ss [] =~ Star re.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros T. induction ss.
+  - simpl. intros. apply MStar0.
+  - simpl. intros.
+    apply MStarApp.
+    * apply H. left. reflexivity.
+    * apply IHss. intros.
+      apply H. right. auto.
+  Qed.
+     
 (** [] *)
 
 (** **** Exercise: 4 stars, standard, optional (reg_exp_of_list_spec)
@@ -1356,10 +1377,21 @@ Proof.
     Prove that [reg_exp_of_list] satisfies the following
     specification: *)
 
+(* Lemma append_is_cons : l1 ++ l2 = x :: s2 *)
+
 Lemma reg_exp_of_list_spec : forall T (s1 s2 : list T),
   s1 =~ reg_exp_of_list s2 <-> s1 = s2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros T s1 s2. generalize dependent s1. induction s2; split; simpl; intros.
+  - inversion H. reflexivity.
+  - rewrite H. constructor.
+  - inversion H.
+    specialize (IHs2 s3). destruct IHs2. specialize (H5 H4). rewrite H5.
+    inversion H3. simpl. reflexivity.
+  - rewrite H. apply (MApp [x]).
+    * constructor.
+    * specialize (IHs2 s2). destruct IHs2. apply (H1 eq_refl).
+  Qed.
 (** [] *)
 
 (** Since the definition of [exp_match] has a recursive
@@ -1448,13 +1480,67 @@ Qed.
     regular expression matches some string. Prove that your function
     is correct. *)
 
-Fixpoint re_not_empty {T : Type} (re : reg_exp T) : bool
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint re_not_empty {T : Type} (re : reg_exp T) : bool :=
+  match re with
+  | EmptySet => false
+  | EmptyStr => true
+  | Char x => true
+  | App re1 re2 => re_not_empty re1 && re_not_empty re2
+  | Union re1 re2 => re_not_empty re1 || re_not_empty re2
+  | Star re => true
+  end.
+  
+Example re_not_empty_example1 : [] =~ @Star nat EmptySet.
+Proof.
+  constructor.
+  Qed.
+  
+
+Lemma a_and_b_eq_true : forall a b, a = true -> b = true -> a && b = true.
+Proof.
+  intros. rewrite H. rewrite H0. reflexivity.
+  Qed.
+  
+Lemma a_or_b_eq_true : forall a b, a = true \/ b = true -> a || b = true.
+Proof.
+  intros [|] [|] H; destruct H; try reflexivity; try discriminate.
+  Qed.
+  
+Lemma a_and_b_eq_true_rev : forall a b, a && b = true -> a = true /\ b = true.
+Proof.
+  intros [|] [|] H; auto.
+  Qed.
+  
+Lemma a_or_b_eq_true_rev : forall a b, a || b = true -> a = true \/ b = true.
+Proof.
+  intros [|] [|] H; auto.
+  Qed.
 
 Lemma re_not_empty_correct : forall T (re : reg_exp T),
   (exists s, s =~ re) <-> re_not_empty re = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros T. induction re; split; simpl; intros; try discriminate; try reflexivity.
+  - inversion H. inversion H0.
+  - exists []. constructor.
+  - exists [t]. constructor.
+  - destruct H. apply a_and_b_eq_true.
+    * destruct IHre1. apply H0.
+      inversion H. exists s1. auto.
+    * destruct IHre2. apply H0.
+      inversion H. exists s2. auto.
+  - apply a_and_b_eq_true_rev in H. destruct H.
+    destruct IHre1,IHre2. specialize (H2 H). specialize (H4 H0).
+    destruct H2,H4. exists (x ++ x0). constructor; auto.
+  - apply a_or_b_eq_true. destruct H. apply MUnion'' in H. destruct H.
+    * left. destruct IHre1. apply H0. exists x. auto.
+    * right. destruct IHre2. apply H0. exists x. auto.
+  - apply a_or_b_eq_true_rev in H. destruct H.
+    * destruct IHre1. apply H1 in H. destruct H. exists x.
+      apply MUnionL. auto.
+    * destruct IHre2. apply H1 in H. destruct H. exists x.
+      apply MUnionR. auto.
+  - exists []. constructor.
+  Qed.
 (** [] *)
 
 (* ================================================================= *)
@@ -1472,6 +1558,9 @@ Lemma star_app: forall T (s1 s2 : list T) (re : reg_exp T),
   s1 ++ s2 =~ Star re.
 Proof.
   intros T s1 s2 re H1.
+  (* inversion H1.
+  - simpl. intros. auto.
+  - intros. *)
 
 (** Now, just doing an [inversion] on [H1] won't get us very far in
     the recursive cases. (Try it!). So we need induction (on
