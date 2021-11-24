@@ -1054,25 +1054,42 @@ End R.
       Hint: choose your induction carefully! *)
 
 Inductive subseq : list nat -> list nat -> Prop :=
-(* FILL IN HERE *)
-.
+  | sseq_empty (l2 : list nat) : subseq [] l2
+  | sseq_both (l1 l2 : list nat) (n : nat) (H: subseq l1 l2) : subseq (n::l1) (n::l2)
+  | sseq_second (l1 l2 : list nat) (n : nat) (H: subseq l1 l2) : subseq l1 (n::l2).
 
 Theorem subseq_refl : forall (l : list nat), subseq l l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction l; constructor; auto.
+  Qed.
 
 Theorem subseq_app : forall (l1 l2 l3 : list nat),
   subseq l1 l2 ->
   subseq l1 (l2 ++ l3).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros l1 l2 l3 H. generalize dependent l3. induction H; intros.
+  - constructor.
+  - simpl. constructor. auto.
+  - simpl. constructor. auto.
+  Qed. 
 
 Theorem subseq_trans : forall (l1 l2 l3 : list nat),
   subseq l1 l2 ->
   subseq l2 l3 ->
   subseq l1 l3.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros l1 l2 l3 H. generalize dependent l3. induction H; intros l3 H0; induction l3.
+  - constructor.
+  - constructor.
+  - inversion H0.
+  - inversion H0.
+    + constructor. apply IHsubseq. auto.
+    + constructor. apply (IHl3 H3).
+  - inversion H0.
+  - inversion H0. 
+    + rewrite <- H4. apply IHsubseq. constructor. auto.
+    + specialize (IHl3 H3). constructor. auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (R_provability2)
