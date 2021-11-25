@@ -596,7 +596,7 @@ Proof.
 Theorem ev_plus_plus : forall n m p,
   ev (n+m) -> ev (n+p) -> ev (m+p).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  (* IN HERE *) Admitted.
 (** [] *)
 
 (* ################################################################# *)
@@ -994,7 +994,7 @@ Inductive R : nat -> nat -> nat -> Prop :=
       would the set of provable propositions change?  Briefly (1
       sentence) explain your answer. *)
 
-(* FILL IN HERE *)
+(*  IN HERE *)
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_R_provability : option (nat*string) := None.
@@ -1011,7 +1011,7 @@ Definition fR : nat -> nat -> nat
 
 Theorem R_equiv_fR : forall m n o, R m n o <-> fR m n = o.
 Proof.
-(* FILL IN HERE *) Admitted.
+(*  IN HERE *) Admitted.
 (** [] *)
 
 End R.
@@ -1107,7 +1107,7 @@ Proof.
     - [R 1 [1;2;1;0]]
     - [R 6 [3;2;1;0]]  *)
 
-(* FILL IN HERE
+(*  IN HERE
 
     [] *)
 
@@ -1673,6 +1673,39 @@ Proof.
       * apply H1.
 Qed.
 
+(*
+Lemma star_app': forall T (s1 s2 : list T) (re : reg_exp T),
+  s1 =~ Star re ->
+  s2 =~ Star re ->
+  s1 ++ s2 =~ Star re.
+Proof.
+  intros T s1 s2 re H1.
+  (*
+  remember (Star re) as re'.
+  generalize dependent s2.
+  induction H1
+    as [|x'|s1 re1 s2' re2 Hmatch1 IH1 Hmatch2 IH2
+        |s1 re1 re2 Hmatch IH|re1 s2' re2 Hmatch IH
+        |re''|s1 s2' re'' Hmatch1 IH1 Hmatch2 IH2].
+  - (* MEmpty *)  discriminate.
+  - (* MChar *)   discriminate.
+  - (* MApp *)    discriminate.
+  - (* MUnionL *) discriminate.
+  - (* MUnionR *) discriminate.
+  - (* MStar0 *)
+    injection Heqre' as Heqre''. intros s H. apply H.
+  - (* MStarApp *)
+    injection Heqre' as Heqre''.
+    intros s2 H1. rewrite <- app_assoc.
+    apply MStarApp.
+    + apply Hmatch1.
+    + apply IH2.
+      * rewrite Heqre''. reflexivity.
+      * apply H1.
+  *)
+Qed.
+*)
+
 (** **** Exercise: 4 stars, standard, optional (exp_match_ex2) *)
 
 (** The [MStar''] lemma below (combined with its converse, the
@@ -1685,7 +1718,50 @@ Lemma MStar'' : forall T (s : list T) (re : reg_exp T),
     s = fold app ss []
     /\ forall s', In s' ss -> s' =~ re.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros T s re H.
+  remember (Star re) as re'.
+  induction H  
+    as [|x'|s1 re1 s2' re2 Hmatch1 IH1 Hmatch2 IH2
+        |s1 re1 re2 Hmatch IH|re1 s2' re2 Hmatch IH
+        |re''|s1 s2 re'' Hmatch1 _ Hmatch2 IH2]; try discriminate.
+  - exists []. simpl. split. auto. intros. destruct H.
+  (* MStarApp :
+       forall (s1 s2 : list T) (re : reg_exp T),
+       s1 =~ re ->
+       s2 =~ Star re ->
+       s1 ++ s2 =~ Star re *)
+  - specialize (IH2 Heqre'). destruct IH2 as [ss2 [Hss2a Hss2b]].
+    injection Heqre' as Heqre'. exists (s1 :: ss2).
+    simpl. split.
+    * f_equal. auto.
+    * intros. destruct H.
+      + rewrite <- H. rewrite <- Heqre'. auto.
+      + apply (Hss2b _ H).
+  Qed. 
+    
+Lemma MStar''' : forall T (s : list T) (re : reg_exp T),
+  s =~ Star re ->
+  exists ss : list (list T),
+    s = fold app ss []
+    /\ forall s', In s' ss -> s' =~ re.
+Proof.
+  intros T s re H.
+  remember (Star re) as re'.
+  induction H  
+    as [|x'|s1 re1 s2' re2 Hmatch1 IH1 Hmatch2 IH2
+        |s1 re1 re2 Hmatch IH|re1 s2' re2 Hmatch IH
+        |re''|s1 s2 re'' Hmatch1 _ Hmatch2 IH2]; try discriminate.
+  - exists []. simpl. split. auto. intros. destruct H.
+  - injection Heqre' as Heqre'.
+    destruct IH2 as [ss2 [Hss2a Hss2b]].
+    { rewrite Heqre'. reflexivity. }
+    exists (s1 :: ss2). split.
+    + simpl. f_equal. auto.
+    + intros. destruct H.
+      * rewrite <- H. rewrite <- Heqre'. auto.
+      * apply Hss2b. auto.
+  Qed.  
+    
 (** [] *)
 
 (** **** Exercise: 5 stars, advanced (weak_pumping)
