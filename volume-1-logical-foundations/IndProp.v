@@ -1913,20 +1913,20 @@ Proof.
 Compute pumping_constant (App EmptyStr (Star (Char 0))) = 3.
 Compute length ([] ++ [0;0;0;0;0]) = 5.
 
-(* TODO: I think I can finish this now that I changed it to \/.
-   Although I can probably generalize it to n + m <= length (s1 ++ s2) -> n <= length s1 \/ ... *)
-
-(*
-Lemma pumping_app : forall {T: Type} (s1 : list T) re1 s2 re2,
-  s1 =~ re1 ->
-  s2 =~ re2 ->
-  pumping_constant (App re1 re2) <= length (s1 ++ s2) ->
-  pumping_constant re1 <= length s1 \/ pumping_constant re2 <= length s2.
+Lemma zero_le_length_any_list : forall {T: Type} (l : list T), 0 <= length l.
 Proof.
-  simpl.
-  induction s1.
-  - simpl. intros. 
-*)
+  intros T. induction l.
+  - constructor.
+  - simpl. constructor. auto.
+Qed.
+
+Lemma len_list_app_less_or : forall {T: Type} n m (s1 : list T) s2,
+  n + m <= length (s1 ++ s2) ->
+  n <= length s1 \/ m <= length s2.
+Proof.
+  intros T n m s1 s2.
+  rewrite app_length. apply add_le_cases.
+  Qed.
 
 (** The (weak) pumping lemma itself says that, if [s =~ re] and if the
     length of [s] is at least the pumping constant of [re], then [s]
@@ -1936,6 +1936,49 @@ Proof.
     also guaranteed not to be the empty string, this gives us
     a (constructive!) way to generate strings matching [re] that are
     as long as we like. *)
+
+Lemma pumping_const_eq_star : 
+  forall T (re : reg_exp T), pumping_constant re = pumping_constant (Star re).
+Proof.
+  intros. simpl. auto.
+Qed.
+
+Lemma napp_empty_is_empty : forall T n, napp n (@nil T) = [].
+Proof.
+  intros T. induction n.
+  - auto.
+  - auto.
+Qed.
+
+Lemma a_and_b_match_star : forall T  (a : list T) b re,
+  a =~ Star re -> b =~ Star re -> a ++ b =~ Star re.
+Proof.
+  intros T a b re H1. generalize dependent b.
+  remember (Star re) as HStarRe.
+  induction H1; try discriminate.
+  - simpl. auto.
+  - intros.
+    specialize (IHexp_match2 HeqHStarRe).
+    rewrite <- app_assoc.
+    specialize (IHexp_match2 b H).
+    apply MStarApp.
+    apply H1_.
+    apply IHexp_match2.
+  Qed.
+  
+
+Lemma napp_matches_star: forall T m (s : list T) re, s =~ Star re -> napp m s =~ Star re.
+Proof.
+  (* intros.
+  remember (Star re) as HStarRe.
+  induction H; try discriminate.
+  - simpl. rewrite napp_empty_is_empty. apply MStar0.
+  - *)
+  intros T. induction m.
+  - simpl. intros. apply MStar0.
+  - simpl. intros. specialize (IHm _ _ H).
+    apply a_and_b_match_star. apply H. apply IHm.
+  Qed.
 
 Lemma weak_pumping : forall T (re : reg_exp T) s,
   s =~ re ->
@@ -1960,15 +2003,64 @@ Proof.
     simpl. intros contra. inversion contra. inversion H0.
   - (* MApp *)
     simpl. intros H.
-    inversion H.
-    
-    
-    
-  - (* MUnionL *) discriminate.
-  - (* MUnionR *) discriminate.
-  - (* MStar0 *)
-    injection Heqre' as Heqre''. intros s H. apply H.
-  - (* MStarApp *)
+    apply len_list_app_less_or in H.
+    destruct H.
+    + specialize (IH1 H) as [sa [sb [sc [Happ [HNotNil HNappIsApp]]]]].
+      exists sa,sb,(sc ++ s2).
+      rewrite Happ. rewrite <- app_assoc. rewrite <- app_assoc.
+      apply (conj eq_refl). apply (conj HNotNil).
+      intros m.
+      assert (G: sa ++ napp m sb ++ sc ++ s2 = (sa ++ napp m sb ++ sc) ++ s2).
+      { repeat (rewrite app_assoc). reflexivity. }
+      rewrite G. apply (MApp _ _ _ _ (HNappIsApp m) Hmatch2).
+    + specialize (IH2 H) as [sa [sb [sc [Happ [HNotNil HNappIsApp]]]]].
+      exists (s1 ++ sa),sb,sc.
+      rewrite <- app_assoc. rewrite <- Happ. apply (conj eq_refl). apply (conj HNotNil).
+      intros m. rewrite <- app_assoc.
+      apply (MApp _ _ _ _ Hmatch1 (HNappIsApp m)).
+   - (* MUnionL *)
+     simpl. intros H.
+     apply plus_le in H. destruct H as [H _].
+     specialize (IH H) as [sa [sb [sc [Happ [HNotNil HNappIsApp]]]]].
+     exists sa,sb,sc.
+     apply (conj Happ). apply (conj HNotNil).
+     intro m. apply MUnionL. apply (HNappIsApp m).
+   - (* MUnionR *)
+     simpl. intros H.
+     apply plus_le in H. destruct H as [H1 H2].
+     specialize (IH H2) as [sa [sb [sc [Happ [HNotNil HNappIsApp]]]]].
+     exists sa,sb,sc.
+     apply (conj Happ). apply (conj HNotNil).
+     intro m. apply MUnionR. apply (HNappIsApp m).
+   - (* MStar0 *)
+     simpl. intro H.
+     inversion H. destruct (pumping_constant_0_false _ _ H1).
+   - (* MStarApp *)
+     simpl.
+     intro H.
+     cut (1 <= length s1 \/ 1 <= length s2).
+     * intro G. destruct G.
+       + exists [],s1,s2.
+         apply (conj eq_refl).
+         split.
+         -- intro contra. rewrite contra in H0. inversion H0.
+         -- simpl. intro m.
+            apply (napp_star _ _ _ _ _ Hmatch1 Hmatch2).
+       + exists s1,s2,[].
+         split.
+         -- auto. admit.
+         -- split.
+            ** intro contra. rewrite contra in H0. inversion H0.
+            ** intro m.
+               cut (s1 ++ napp m s2 ++ [ ] = s1 ++ napp m s2).
+               ++ intro WHAT. rewrite WHAT.
+                  apply MStarApp. apply Hmatch1.
+                  apply napp_matches_star.
+                  apply Hmatch2.
+               ++ admit. 
+     * admit.
+  Qed.
+
 (** [] *)
 
 (** **** Exercise: 5 stars, advanced, optional (pumping)
@@ -1985,6 +2077,7 @@ Lemma pumping : forall T (re : reg_exp T) s,
     s2 <> [] /\
     length s1 + length s2 <= pumping_constant re /\
     forall m, s1 ++ napp m s2 ++ s3 =~ re.
+    
 
 (** You may want to copy your proof of weak_pumping below. *)
 Proof.
