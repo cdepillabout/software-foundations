@@ -1765,7 +1765,7 @@ Proof.
 (** [] *)
 
 (** **** Exercise: 5 stars, advanced (weak_pumping)
-
+`
     One of the first really interesting theorems in the theory of
     regular expressions is the so-called _pumping lemma_, which
     states, informally, that any sufficiently long string [s] matching
@@ -1810,6 +1810,7 @@ Proof.
     apply le_S. apply le_n.
   - (* App *)
     simpl.
+    unfold ge.
     apply le_trans with (n:=pumping_constant re1).
     apply IHre1. apply le_plus_l.
   - (* Union *)
@@ -1827,9 +1828,33 @@ Proof.
   intros T re H.
   assert (Hp1 : pumping_constant re >= 1).
   { apply pumping_constant_ge_1. }
+  unfold ge in Hp1.
   inversion Hp1 as [Hp1'| p Hp1' Hp1''].
   - rewrite H in Hp1'. discriminate Hp1'.
   - rewrite H in Hp1''. discriminate Hp1''.
+Qed.
+
+Lemma pumping_constant_0_false' :
+  forall T (re : reg_exp T),
+    pumping_constant re = 0 -> False.
+Proof.
+  intros T re H.
+  assert (Hp1 : pumping_constant re >= 1).
+  { apply pumping_constant_ge_1. }
+  unfold ge in Hp1.
+  induction Hp1 as [| p Hp1' Hp1''].
+  - discriminate H.
+  - discriminate H.
+Qed.
+
+Lemma pumping_constant_0_false'' :
+  forall T (re : reg_exp T),
+    pumping_constant re = 0 -> False.
+Proof.
+  intros T re H.
+  destruct (pumping_constant_ge_1 _ re).
+  - discriminate H.
+  - discriminate H.
 Qed.
 
 (** Next, it is useful to define an auxiliary function that repeats a
@@ -1867,6 +1892,42 @@ Proof.
     + apply IHm.
 Qed.
 
+Compute [] =~ EmptyStr.
+Compute pumping_constant EmptyStr = 1.
+Compute length [] = 0.
+
+Compute [0; 0; 0; 0; 0] =~ Star (Char 0).
+Compute pumping_constant (Star (Char 0)) = 2.
+Compute length [0;0;0;0;0] = 5.
+
+Example app_empty_str_test : [0; 0; 0; 0; 0] =~ (App EmptyStr (Star (Char 0))).
+Proof.
+  assert ([0; 0; 0; 0; 0] = [] ++ [0;0;0;0;0]).
+  { reflexivity. }
+  rewrite H.
+  constructor.
+  - constructor.
+  - repeat (apply (MStarApp [0] _ _ (MChar 0))).
+    apply (MStar0).
+  Qed.
+Compute pumping_constant (App EmptyStr (Star (Char 0))) = 3.
+Compute length ([] ++ [0;0;0;0;0]) = 5.
+
+(* TODO: I think I can finish this now that I changed it to \/.
+   Although I can probably generalize it to n + m <= length (s1 ++ s2) -> n <= length s1 \/ ... *)
+
+(*
+Lemma pumping_app : forall {T: Type} (s1 : list T) re1 s2 re2,
+  s1 =~ re1 ->
+  s2 =~ re2 ->
+  pumping_constant (App re1 re2) <= length (s1 ++ s2) ->
+  pumping_constant re1 <= length s1 \/ pumping_constant re2 <= length s2.
+Proof.
+  simpl.
+  induction s1.
+  - simpl. intros. 
+*)
+
 (** The (weak) pumping lemma itself says that, if [s =~ re] and if the
     length of [s] is at least the pumping constant of [re], then [s]
     can be split into three substrings [s1 ++ s2 ++ s3] in such a way
@@ -1895,7 +1956,19 @@ Proof.
        | re | s1 s2 re Hmatch1 IH1 Hmatch2 IH2 ].
   - (* MEmpty *)
     simpl. intros contra. inversion contra.
-  (* FILL IN HERE *) Admitted.
+  - (* MChar *)
+    simpl. intros contra. inversion contra. inversion H0.
+  - (* MApp *)
+    simpl. intros H.
+    inversion H.
+    
+    
+    
+  - (* MUnionL *) discriminate.
+  - (* MUnionR *) discriminate.
+  - (* MStar0 *)
+    injection Heqre' as Heqre''. intros s H. apply H.
+  - (* MStarApp *)
 (** [] *)
 
 (** **** Exercise: 5 stars, advanced, optional (pumping)
