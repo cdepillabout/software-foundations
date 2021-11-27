@@ -84,7 +84,7 @@ Proof.
   intros s. unfold eqb_string.
   destruct (string_dec s s) as [Hs_eq | Hs_not_eq].
   - reflexivity.
-  - destruct Hs_not_eq. reflexivity.
+  - unfold not in Hs_not_eq. destruct Hs_not_eq. reflexivity.
 Qed.
 
 (** Two strings are equal according to [eqb_string] iff they
@@ -100,7 +100,9 @@ Proof.
   - rewrite Hs_eq. split. reflexivity. reflexivity.
   - split.
     + intros contra. discriminate contra.
-    + intros H. exfalso. apply Hs_not_eq. apply H.
+    (* + intros H. exfalso. apply Hs_not_eq. apply H. *)
+    (* + intros H. destruct Hs_not_eq. assumption.*)
+    + intros H. destruct (Hs_not_eq H).
 Qed.
 
 (** Similarly: *)
