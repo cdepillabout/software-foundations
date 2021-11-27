@@ -2099,7 +2099,75 @@ Proof.
        | re | s1 s2 re Hmatch1 IH1 Hmatch2 IH2 ].
   - (* MEmpty *)
     simpl. intros contra. inversion contra.
-  (* FILL IN HERE *) Admitted.
+  - (* MChar *)
+    simpl. intros contra. inversion contra. inversion H0.
+  - (* MApp *)
+    simpl. intros H.
+    assert (G: pumping_constant re1 + pumping_constant re2 <= length (s1 ++ s2) ->
+               ( pumping_constant re1 <= length s1 \/
+                 ( pumping_constant re2 <= length s2 /\
+                   pumping_constant re1 <= (length s1 + length s2)
+                 )
+               )
+           ).
+    { admit. }
+    apply G in H.
+    clear G.
+    destruct H as [H|[H HS]].
+    + specialize (IH1 H) as [sa [sb [sc [Happ [HNotNil [HLenPlusLe HNappIsApp]]]]]].
+      exists sa,sb,(sc ++ s2).
+      rewrite Happ. rewrite <- app_assoc. rewrite <- app_assoc.
+      apply (conj eq_refl). apply (conj HNotNil).
+      apply (conj (le_plus_trans _ _ _ HLenPlusLe)).
+      intros m.
+      rewrite app_assoc_3. apply (MApp _ _ _ _ (HNappIsApp m) Hmatch2).
+    + specialize (IH2 H) as [sa [sb [sc [Happ [HNotNil [HLenPlusLe HNappIsApp]]]]]].
+      exists (s1 ++ sa),sb,sc.
+      rewrite <- app_assoc. rewrite <- Happ. apply (conj eq_refl). apply (conj HNotNil).
+      split.
+      * Admitted.
+  (*    
+      
+      intros m. rewrite <- app_assoc.
+      apply (MApp _ _ _ _ Hmatch1 (HNappIsApp m)).
+  - (* MUnionL *)
+    simpl. intros H.
+    apply plus_le in H as [H _].
+    specialize (IH H) as [sa [sb [sc [Happ [HNotNil HNappIsApp]]]]].
+    exists sa,sb,sc.
+    apply (conj Happ). apply (conj HNotNil).
+    intro m. apply (MUnionL _ _ _ (HNappIsApp m)).
+  - (* MUnionR *)
+    simpl. intros H.
+    apply plus_le in H as [_ H].
+    specialize (IH H) as [sa [sb [sc [Happ [HNotNil HNappIsApp]]]]].
+    exists sa,sb,sc.
+    apply (conj Happ). apply (conj HNotNil).
+    intro m. apply (MUnionR _ _ _ (HNappIsApp m)).
+  - (* MStar0 *)
+    simpl. intro H.
+    inversion H. destruct (pumping_constant_0_false _ _ H1).
+  - (* MStarApp *)
+    simpl.
+    intro H.
+    apply (le_trans _ _ _ (one_le_pumping_constant _ _)) in H.
+    rewrite app_length in H.
+    apply one_le_add_implies_at_least_one in H as [H|H].
+    + exists [],s1,s2.
+      apply (conj eq_refl).
+      split.
+      * intro contra. rewrite contra in H. inversion H.
+      * simpl. intro m.
+        apply (napp_star _ _ _ _ _ Hmatch1 Hmatch2).
+    + exists s1,s2,[].
+      split.
+      * rewrite app_assoc. rewrite app_nil_r. auto.
+      * split.
+        -- intro contra. rewrite contra in H. inversion H.
+        -- intro m.
+           rewrite app_assoc. rewrite app_nil_r.
+           apply (MStarApp _ _ _ Hmatch1 (napp_matches_star _ _ _ _ Hmatch2)).
+  *)
 
 End Pumping.
 (** [] *)
@@ -2179,7 +2247,10 @@ Qed.
 (** **** Exercise: 2 stars, standard, especially useful (reflect_iff) *)
 Theorem reflect_iff : forall P b, reflect P b -> (P <-> b = true).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros P b r. inversion r; split; auto.
+  - intro. destruct (H H1).
+  - discriminate.
+  Qed.
 (** [] *)
 
 (** The advantage of [reflect] over the normal "if and only if"
@@ -2230,7 +2301,11 @@ Fixpoint count n l :=
 Theorem eqbP_practice : forall n l,
   count n l = 0 -> ~(In n l).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n l. induction l as [|h l' IHl]; simpl; intro; auto.
+  intros [|]; destruct (eqbP n h) as [HEqb | HEqb]; try discriminate.
+  * symmetry in H0. apply (HEqb H0).
+  * simpl in H. specialize (IHl H). apply (IHl H0).
+  Qed.
 (** [] *)
 
 (** This small example shows reflection giving us a small gain in
@@ -2263,8 +2338,10 @@ Proof.
     [nostutter]. *)
 
 Inductive nostutter {X:Type} : list X -> Prop :=
- (* FILL IN HERE *)
-.
+  | nostutterEmpty : nostutter []
+  | nostutterSingle x : nostutter [] -> nostutter [x]
+  | nostutterApp y x l : nostutter (x :: l) -> x <> y -> nostutter (y :: x :: l)
+  .
 (** Make sure each of these tests succeeds, but feel free to change
     the suggested proof (in comments) if the given one doesn't work
     for you.  Your definition might be different from ours and still
@@ -2276,34 +2353,24 @@ Inductive nostutter {X:Type} : list X -> Prop :=
     example with more basic tactics.)  *)
 
 Example test_nostutter_1: nostutter [3;1;4;1;5;6].
-(* FILL IN HERE *) Admitted.
-(* 
-  Proof. repeat constructor; apply eqb_neq; auto.
-  Qed.
-*)
+Proof. repeat constructor; apply eqb_neq; auto.
+Qed.
 
 Example test_nostutter_2:  nostutter (@nil nat).
-(* FILL IN HERE *) Admitted.
-(* 
-  Proof. repeat constructor; apply eqb_neq; auto.
-  Qed.
-*)
+Proof. repeat constructor; apply eqb_neq; auto.
+Qed.
 
 Example test_nostutter_3:  nostutter [5].
-(* FILL IN HERE *) Admitted.
-(* 
-  Proof. repeat constructor; auto. Qed.
-*)
+Proof. repeat constructor; auto. Qed.
 
-Example test_nostutter_4:      not (nostutter [3;1;1;4]).
-(* FILL IN HERE *) Admitted.
-(* 
-  Proof. intro.
+
+Example test_nostutter_4: not (nostutter [3;1;1;4]).
+Proof. intro.
   repeat match goal with
     h: nostutter _ |- _ => inversion h; clear h; subst
   end.
   contradiction; auto. Qed.
-*)
+
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_nostutter : option (nat*string) := None.
@@ -2340,7 +2407,75 @@ Definition manual_grade_for_nostutter : option (nat*string) := None.
     to be a merge of two others.  Do this with an inductive relation,
     not a [Fixpoint].)  *)
 
-(* FILL IN HERE *)
+Inductive merge_list {X:Type} : list X -> list X -> list X -> Prop :=
+| merge_list_empty : merge_list [] [] []
+| merge_list_left x l1 l2 lmerge : merge_list l1 l2 lmerge -> merge_list (x :: l1) l2 (x :: lmerge)
+| merge_list_right x l1 l2 lmerge : merge_list l1 l2 lmerge -> merge_list l1 (x :: l2) (x :: lmerge)
+.
+
+Example merge_list_example1 : merge_list [1;6;2] [4;3] [1;4;6;2;3].
+Proof.
+  repeat constructor.
+Qed.
+
+Example merge_list_example2 : not (merge_list [1;7;2] [4;3] [1;4;6;2;3]).
+Proof.
+  intros H. inversion H. inversion H3. inversion H7.
+Qed.
+
+Example merge_list_example3 : not (merge_list [1] [1] [1]).
+Proof.
+  intros H. inversion H. inversion H3. inversion H2.
+Qed.
+
+Example merge_list_example4 : merge_list [1] [1] [1;1].
+Proof.
+  repeat constructor.
+Qed.
+
+Example merge_list_example5 : merge_list [] [1] [1].
+Proof.
+  repeat constructor.
+Qed.
+
+Example merge_list_example6 : merge_list [1] [] [1].
+Proof.
+  repeat constructor.
+Qed.
+
+Lemma pa_or_pb_to_just_pa : forall PA PB PC, (PA \/ PB -> PC) -> PA -> PC.
+Proof.
+  intros. apply X. left. auto.
+Qed.
+
+Lemma pa_or_pb_to_just_pb : forall PA PB PC, (PA \/ PB -> PC) -> PB -> PC.
+Proof.
+  intros. apply X. right. auto.
+Qed.
+
+Theorem merge_filter : forall {X:Type} (test : X -> bool) l1 l2 lmerge,
+  merge_list l1 l2 lmerge ->
+  (forall x, In x l1 -> test x = true) ->
+  (forall x, In x l2 -> test x = false) ->
+  filter test lmerge = l1.
+Proof.
+  intros X test l1 l2 lmerge H. induction H; auto.
+  - simpl.
+    intros.
+    specialize (IHmerge_list (fun x => fun inxl1 => H0 x (or_intror inxl1)) H1).
+    rewrite IHmerge_list.
+    specialize (H0 x (or_introl eq_refl)). rewrite H0. reflexivity.
+  - simpl.
+    intros.
+    assert (filter test lmerge = l1).
+    { apply IHmerge_list.
+      * apply H0.
+      * intros. apply H1. right. apply H2.
+    }
+    rewrite H2.
+    specialize (H1 x (or_introl eq_refl)).
+    rewrite H1. auto.
+  Qed.
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_filter_challenge : option (nat*string) := None.
