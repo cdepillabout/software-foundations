@@ -1821,6 +1821,11 @@ Proof.
     simpl. apply IHre.
 Qed.
 
+Lemma one_le_pumping_constant : forall T (re : reg_exp T), 1 <= pumping_constant re.
+Proof.
+  intros. apply pumping_constant_ge_1.
+Qed.
+
 Lemma pumping_constant_0_false :
   forall T (re : reg_exp T),
     pumping_constant re = 0 -> False.
@@ -1928,15 +1933,6 @@ Proof.
   rewrite app_length. apply add_le_cases.
   Qed.
 
-(** The (weak) pumping lemma itself says that, if [s =~ re] and if the
-    length of [s] is at least the pumping constant of [re], then [s]
-    can be split into three substrings [s1 ++ s2 ++ s3] in such a way
-    that [s2] can be repeated any number of times and the result, when
-    combined with [s1] and [s3] will still match [re].  Since [s2] is
-    also guaranteed not to be the empty string, this gives us
-    a (constructive!) way to generate strings matching [re] that are
-    as long as we like. *)
-
 Lemma pumping_const_eq_star : 
   forall T (re : reg_exp T), pumping_constant re = pumping_constant (Star re).
 Proof.
@@ -1980,6 +1976,27 @@ Proof.
     apply a_and_b_match_star. apply H. apply IHm.
   Qed.
 
+Lemma app_assoc_3: forall T (a : list T) b c d, a ++ b ++ c ++ d = (a ++ b ++ c) ++ d.
+Proof.
+  intros. repeat (rewrite <- app_assoc). auto.
+Qed.
+
+Lemma one_le_add_implies_at_least_one : forall n m, 1 <= n + m -> 1 <= n \/ 1 <= m.
+Proof.
+  destruct n,m; simpl; intros; auto.
+  - left. rewrite add_0_r in H. auto.
+  - right. apply n_le_m__Sn_le_Sm. apply le_0_n.
+Qed.
+
+(** The (weak) pumping lemma itself says that, if [s =~ re] and if the
+    length of [s] is at least the pumping constant of [re], then [s]
+    can be split into three substrings [s1 ++ s2 ++ s3] in such a way
+    that [s2] can be repeated any number of times and the result, when
+    combined with [s1] and [s3] will still match [re].  Since [s2] is
+    also guaranteed not to be the empty string, this gives us
+    a (constructive!) way to generate strings matching [re] that are
+    as long as we like. *)
+
 Lemma weak_pumping : forall T (re : reg_exp T) s,
   s =~ re ->
   pumping_constant re <= length s ->
@@ -2010,55 +2027,49 @@ Proof.
       rewrite Happ. rewrite <- app_assoc. rewrite <- app_assoc.
       apply (conj eq_refl). apply (conj HNotNil).
       intros m.
-      assert (G: sa ++ napp m sb ++ sc ++ s2 = (sa ++ napp m sb ++ sc) ++ s2).
-      { repeat (rewrite app_assoc). reflexivity. }
-      rewrite G. apply (MApp _ _ _ _ (HNappIsApp m) Hmatch2).
+      rewrite app_assoc_3. apply (MApp _ _ _ _ (HNappIsApp m) Hmatch2).
     + specialize (IH2 H) as [sa [sb [sc [Happ [HNotNil HNappIsApp]]]]].
       exists (s1 ++ sa),sb,sc.
       rewrite <- app_assoc. rewrite <- Happ. apply (conj eq_refl). apply (conj HNotNil).
       intros m. rewrite <- app_assoc.
       apply (MApp _ _ _ _ Hmatch1 (HNappIsApp m)).
-   - (* MUnionL *)
-     simpl. intros H.
-     apply plus_le in H. destruct H as [H _].
-     specialize (IH H) as [sa [sb [sc [Happ [HNotNil HNappIsApp]]]]].
-     exists sa,sb,sc.
-     apply (conj Happ). apply (conj HNotNil).
-     intro m. apply MUnionL. apply (HNappIsApp m).
-   - (* MUnionR *)
-     simpl. intros H.
-     apply plus_le in H. destruct H as [H1 H2].
-     specialize (IH H2) as [sa [sb [sc [Happ [HNotNil HNappIsApp]]]]].
-     exists sa,sb,sc.
-     apply (conj Happ). apply (conj HNotNil).
-     intro m. apply MUnionR. apply (HNappIsApp m).
-   - (* MStar0 *)
-     simpl. intro H.
-     inversion H. destruct (pumping_constant_0_false _ _ H1).
-   - (* MStarApp *)
-     simpl.
-     intro H.
-     cut (1 <= length s1 \/ 1 <= length s2).
-     * intro G. destruct G.
-       + exists [],s1,s2.
-         apply (conj eq_refl).
-         split.
-         -- intro contra. rewrite contra in H0. inversion H0.
-         -- simpl. intro m.
-            apply (napp_star _ _ _ _ _ Hmatch1 Hmatch2).
-       + exists s1,s2,[].
-         split.
-         -- auto. admit.
-         -- split.
-            ** intro contra. rewrite contra in H0. inversion H0.
-            ** intro m.
-               cut (s1 ++ napp m s2 ++ [ ] = s1 ++ napp m s2).
-               ++ intro WHAT. rewrite WHAT.
-                  apply MStarApp. apply Hmatch1.
-                  apply napp_matches_star.
-                  apply Hmatch2.
-               ++ admit. 
-     * admit.
+  - (* MUnionL *)
+    simpl. intros H.
+    apply plus_le in H as [H _].
+    specialize (IH H) as [sa [sb [sc [Happ [HNotNil HNappIsApp]]]]].
+    exists sa,sb,sc.
+    apply (conj Happ). apply (conj HNotNil).
+    intro m. apply (MUnionL _ _ _ (HNappIsApp m)).
+  - (* MUnionR *)
+    simpl. intros H.
+    apply plus_le in H as [_ H].
+    specialize (IH H) as [sa [sb [sc [Happ [HNotNil HNappIsApp]]]]].
+    exists sa,sb,sc.
+    apply (conj Happ). apply (conj HNotNil).
+    intro m. apply (MUnionR _ _ _ (HNappIsApp m)).
+  - (* MStar0 *)
+    simpl. intro H.
+    inversion H. destruct (pumping_constant_0_false _ _ H1).
+  - (* MStarApp *)
+    simpl.
+    intro H.
+    apply (le_trans _ _ _ (one_le_pumping_constant _ _)) in H.
+    rewrite app_length in H.
+    apply one_le_add_implies_at_least_one in H as [H|H].
+    + exists [],s1,s2.
+      apply (conj eq_refl).
+      split.
+      * intro contra. rewrite contra in H. inversion H.
+      * simpl. intro m.
+        apply (napp_star _ _ _ _ _ Hmatch1 Hmatch2).
+    + exists s1,s2,[].
+      split.
+      * rewrite app_assoc. rewrite app_nil_r. auto.
+      * split.
+        -- intro contra. rewrite contra in H. inversion H.
+        -- intro m.
+           rewrite app_assoc. rewrite app_nil_r.
+           apply (MStarApp _ _ _ Hmatch1 (napp_matches_star _ _ _ _ Hmatch2)).
   Qed.
 
 (** [] *)
