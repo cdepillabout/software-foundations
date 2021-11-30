@@ -489,9 +489,11 @@ End Ex.
 
 Check ex (fun n => ev n) : Prop.
 
+Check ex_intro ev 2 (ev_SS O ev_0) : ex ev : Prop.
+
 (** Here's how to define an explicit proof object involving [ex]: *)
 
-Definition some_nat_is_even : exists n, ev n :=
+Definition some_nat_is_even : exists n, ev n : Prop :=
   ex_intro ev 4 (ev_SS 2 (ev_SS 0 ev_0)).
 
 (** **** Exercise: 2 stars, standard (ex_ev_Sn)
