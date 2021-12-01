@@ -178,10 +178,12 @@ Print ev_4'''.
 
 Theorem ev_8 : ev 8.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  repeat constructor.
+  Show Proof.
+  
+Qed.
 
-Definition ev_8' : ev 8
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition ev_8' : ev 8 := ev_SS _ (ev_SS _ (ev_SS _ (ev_SS _ ev_0))).
 (** [] *)
 
 (* ################################################################# *)
@@ -201,11 +203,18 @@ Definition ev_8' : ev 8
 
 Theorem ev_plus4 : forall n, ev n -> ev (4 + n).
 Proof.
-  intros n H. simpl.
+  intros n H.
+  Show Proof.
+  simpl.
+  Show Proof.
   apply ev_SS.
   apply ev_SS.
+  Show Proof.
   apply H.
+  Show Proof.
 Qed.
+
+Print ev_plus4.
 
 (** What is the proof object corresponding to [ev_plus4]?
 
@@ -358,7 +367,7 @@ Print prod.
 Theorem proj1' : forall P Q,
   P /\ Q -> P.
 Proof.
-  intros P Q HPQ. destruct HPQ as [HP HQ]. apply HP.
+  intros P Q HPQ. destruct HPQ as [HP HQ]. Show Proof. apply HP.
   Show Proof.
 Qed.
 
@@ -368,13 +377,14 @@ Qed.
 
 Lemma and_comm : forall P Q : Prop, P /\ Q <-> Q /\ P.
 Proof.
-  intros P Q. split.
+  intros P Q. split. Show Proof.
   - intros [HP HQ]. split.
     + apply HQ.
     + apply HP.
-  - intros [HQ HP]. split.
+  - Show Proof. intros [HQ HP]. split.
     + apply HP.
     + apply HQ.
+  Show Proof.
 Qed.
 
 End And.
@@ -395,8 +405,40 @@ Definition and_comm' P Q : P /\ Q <-> Q /\ P :=
 
     Construct a proof object for the following proposition. *)
 
-Definition conj_fact : forall P Q R, P /\ Q -> Q /\ R -> P /\ R
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition conj_fact : forall P Q R, P /\ Q -> Q /\ R -> P /\ R :=
+  fun P Q R H0 H1 =>
+    match H0,H1 with
+    | (conj HP _), (conj _ HR) => conj HP HR
+    end.
+    
+Definition conj_fact' : forall P Q R, P /\ Q -> Q /\ R -> P /\ R.
+  intros ? ? ? [HP _] [_ HR]. split.
+  - apply HP.
+  - apply HR.
+  Show Proof.
+  Defined.
+  
+Definition conj_fact'' : forall P Q R, P /\ Q -> Q /\ R -> P /\ R.
+Proof.
+  intros ? ? ? [HP _] [_ HR]. split.
+  - apply HP.
+  - apply HR.
+  Show Proof.
+Qed.
+
+Theorem conj_fact''' : forall P Q R, P /\ Q -> Q /\ R -> P /\ R.
+Proof.
+  intros ? ? ? [HP _] [_ HR]. split.
+  - apply HP.
+  - apply HR.
+  Show Proof.
+Qed.
+
+Print conj_fact.
+Print conj_fact'.
+Print conj_fact''.
+Print conj_fact'''.
+
 (** [] *)
 
 (* ================================================================= *)
