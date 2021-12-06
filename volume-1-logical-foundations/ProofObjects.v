@@ -3,6 +3,15 @@
 Set Warnings "-notation-overridden,-parsing,-deprecated-hint-without-locality".
 From LF Require Export IndProp.
 
+Theorem blahblah (P: Prop) (H1: (~ P) -> P) (H2: P -> ~ P): False.
+Proof.
+  unfold not in H1,H2. apply H2.
+  - apply H1. intros. apply (H2 H H).
+  - apply H1. intros. apply (H2 H H).
+  Qed.
+  
+Print blahblah.
+
 (** "Algorithms are the computational content of proofs."
     (Robert Harper) *)
 
@@ -488,14 +497,29 @@ Proof.
   - apply HQR. apply HQ.
 Qed.
 
+Print or_elim'.
+
+Print All.
+
 End Or.
 
+Print All.
 (** **** Exercise: 2 stars, standard (or_commut')
 
     Construct a proof object for the following proposition. *)
 
-Definition or_commut' : forall P Q, P \/ Q -> Q \/ P
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition or_commut' : forall P Q, P \/ Q -> Q \/ P :=
+  fun P Q H => 
+    match H with
+    | or_introl p => or_intror p
+    | or_intror q => or_introl q
+    end.
+    
+Definition or_commut'' : forall P Q, P \/ Q -> Q \/ P :=
+  fun P Q H => or_ind (@or_intror Q P) (@or_introl Q P) H.
+    
+Print or_commut'.
+    
 (** [] *)
 
 (* ================================================================= *)
@@ -542,8 +566,11 @@ Definition some_nat_is_even : exists n, ev n : Prop :=
 
     Construct a proof object for the following proposition. *)
 
-Definition ex_ev_Sn : ex (fun n => ev (S n))
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Check ex_intro (fun n => ev (S n)) (S O) _.
+
+Definition ex_ev_Sn : ex (fun n => ev (S n)) :=
+  ex_intro (fun n => ev (S n)) (S O) (ev_SS 0 ev_0).
+
 (** [] *)
 
 (* ================================================================= *)
