@@ -753,6 +753,14 @@ End MyEquality.
     place any restrictions on the form of [P] or [Q], so we don't get
     any extra equalities in the context of the subgoal. *)
 
+Theorem woah_woah_what : forall P Q, P \/ Q -> (Q -> False) -> P.
+Proof.
+  intros.
+  inversion H.
+  - auto.
+  - exfalso. apply H0. apply H1.
+  Qed.
+
 (** _Example_: If we invert a hypothesis built with [and], there is
     only one constructor, so only one subgoal gets generated.  Again,
     the conclusion (result type) of the constructor ([P /\ Q]) doesn't
@@ -761,12 +769,36 @@ End MyEquality.
     constructor does have two arguments, though, and these can be seen
     in the context in the subgoal. *)
 
+Theorem woah_woah_what_2 : forall P Q, P /\ Q -> P.
+Proof.
+  intros. inversion H. auto.
+  Qed. 
+
 (** _Example_: If we invert a hypothesis built with [eq], there is
     again only one constructor, so only one subgoal gets generated.
     Now, though, the form of the [eq_refl] constructor does give us
     some extra information: it tells us that the two arguments to [eq]
     must be the same!  The [inversion] tactic adds this fact to the
     context. *)
+
+Check pred.
+
+Theorem woah_woah_what_3 : forall (m n : nat), S m = n -> m = pred n.
+Proof.
+  intros.
+  inversion H.
+  apply eq_refl.
+  Qed.
+  
+Theorem woah_woah_what_4 : forall m n, m <= n -> S m <= S n.
+Proof.
+  intros.
+  inversion H.
+  - auto.
+  - inversion H0.
+    * constructor. constructor.
+  Admitted.
+  
 
 (* ################################################################# *)
 (** * The Coq Trusted Computing Base *)
