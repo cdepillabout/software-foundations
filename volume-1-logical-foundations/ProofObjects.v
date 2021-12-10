@@ -666,6 +666,28 @@ Notation "x == y" := (eq x y)
     evaluation of function application, inlining of definitions, and
     simplification of [match]es.  *)
 
+
+Fixpoint nat_double_ind
+    (P : nat -> Type) (p0 : P 0) (p1 : P 1) (f : forall n, P n -> P (S (S n))) (n : nat): P n :=
+  match n with
+  | O => p0
+  | S O => p1
+  | S (S n') => f n' (nat_double_ind P p0 p1 f n')
+  end.
+  
+(* Theorem nat_double_ind': forall P, P 0 -> P 1 -> (forall n, P n -> P (S (S n))) -> forall n, P n.
+Proof.
+  intros P p0 p1 f n.
+  induction n as [|[|n'] IHn].
+  - auto.
+  - auto.
+  - 
+  - destruct n.
+    * auto.
+    * apply f.
+*)
+
+
 Lemma four: 2 + 2 == 1 + 3.
 Proof.
   apply eq_refl.
@@ -697,7 +719,11 @@ Definition singleton : forall (X:Type) (x:X), []++[x] == x::[]  :=
 Lemma equality__leibniz_equality : forall (X : Type) (x y: X),
   x == y -> forall P:X->Prop, P x -> P y.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros.
+  inversion H.
+  rewrite <- H2.
+  auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard, optional (leibniz_equality__equality)
@@ -710,7 +736,8 @@ Proof.
 Lemma leibniz_equality__equality : forall (X : Type) (x y: X),
   (forall P:X->Prop, P x -> P y) -> x == y.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros. apply H. apply eq_refl.
+  Qed.
 
 (** [] *)
 
