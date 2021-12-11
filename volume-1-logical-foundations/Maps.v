@@ -336,6 +336,7 @@ Proof.
   unfold t_update.
   destruct (eqb_stringP x1 xxx),(eqb_stringP x2 xxx); auto.
   destruct H. rewrite e. rewrite e0. auto.
+  Qed.
 (** [] *)
 
 (* ################################################################# *)

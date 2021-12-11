@@ -882,13 +882,14 @@ Proof.
   - simpl. rewrite app_assoc. rewrite app_assoc. reflexivity.
   Qed.
 
-Theorem app_assoc5 : forall l1 l2 l3 l4 : natlist,
+(* Theorem app_assoc5 : forall l1 l2 l3 l4 : natlist,
   l1 ++ (l2 ++ (l3 ++ l4)) = ((l1 ++ l2) ++ l3) ++ l4.
 Proof.
   intros l1 l2 l3 l4.
   rewrite app_assoc.  rewrite app_assoc. rewrite app_assoc.
   reflexivity.
   Qed.
+*)
 
 (** An exercise about your implementation of [nonzeros]: *)
 
