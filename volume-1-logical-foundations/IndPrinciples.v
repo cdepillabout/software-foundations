@@ -306,9 +306,15 @@ Check tree_ind.
 (** [] *)
 
 Definition tree_ind_mine : forall (X : Type) (P : tree X -> Prop),
-  (forall (x : X), P (leaf x)) ->
-  (forall (t1 : tree X) (Ht1 : P t1) (t2 : tree X) (Ht2 : P t2), P (node t1 t2)) ->
-  forall (t : tree X), P t.
+  (forall (x : X), P (leaf X x)) ->
+  (forall (t1 : tree X) (Ht1 : P t1) (t2 : tree X) (Ht2 : P t2), P (node X t1 t2)) ->
+  forall (t : tree X), P t :=
+  fun X P Hleaf Hnode =>
+    fix F t :=
+      match t with
+      | leaf _ x => Hleaf x
+      | node _ t1 t2 => Hnode t1 (F t1) t2 (F t2)
+      end.
 
 (** **** Exercise: 1 star, standard, optional (mytype)
 
