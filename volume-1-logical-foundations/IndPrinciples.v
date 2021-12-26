@@ -72,7 +72,10 @@ Proof.
 Theorem plus_one_r' : forall n:nat,
   n + 1 = S n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  apply nat_ind.
+  - reflexivity.
+  - simpl. intros. rewrite H. reflexivity.
+  Qed.
 (** [] *)
 
 (** Coq generates induction principles for every datatype
@@ -121,6 +124,19 @@ Inductive rgb : Type :=
   | blue.
 Check rgb_ind.
 (** [] *)
+
+Definition rgb_ind_mine : 
+  forall P : rgb -> Prop,
+  P red -> P green -> P blue ->
+  forall r: rgb, P r :=
+  fun P pred pgreen pblue r =>
+    match r with
+    | red => pred
+    | green => pgreen
+    | blue => pblue
+    end.
+    
+Check rgb_ind.
 
 (** Here's another example, this time with one of the constructors
     taking some arguments. *)
@@ -181,8 +197,44 @@ Inductive booltree : Type :=
   | bt_leaf (b : bool)
   | bt_branch (b : bool) (t1 t2 : booltree).
 
-(* FILL IN HERE:
+Print booltree_ind.
+
+(* IN HERE:
    ... *)
+   
+Definition booltree_ind_mine : forall P : booltree -> Prop,
+  P bt_empty ->
+  (forall b : bool, P (bt_leaf b)) ->
+  (forall (b : bool) (t1 : booltree), P t1 -> forall (t2 : booltree), P t2 -> P (bt_branch b t1 t2)) ->
+  forall (b : booltree), P b :=
+(*
+Proof.
+  intros P Hempty Hleaf Hbranch x.
+  destruct x.
+  - auto.
+  - auto.
+  - apply Hbranch.
+*)
+(*
+  fix F P Hempty Hleaf Hbranch x :=
+    match x with
+    | bt_empty => Hempty
+    | bt_leaf b => Hleaf b
+    | bt_branch b t1 t2 =>
+        Hbranch b t1 (F P Hempty Hleaf Hbranch t1) t2 (F P Hempty Hleaf Hbranch t2)
+    end.
+*)
+  fun P Hempty Hleaf Hbranch =>
+  fix F x :=
+    match x with
+    | bt_empty => Hempty
+    | bt_leaf b => Hleaf b
+    | bt_branch b t1 t2 => Hbranch b t1 (F t1) t2 (F t2)
+    end.
+    
+Check booltree_ind.
+  
+Check booltree_ind_mine.
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_booltree_ind : option (nat*string) := None.
@@ -201,8 +253,11 @@ Definition manual_grade_for_booltree_ind : option (nat*string) := None.
     principle Coq generates is that given above: *)
 
 Inductive Toy : Type :=
-  (* FILL IN HERE *)
+| con1 (b : bool)
+| con2 (nat : nat) (t : Toy)
 .
+
+Check Toy_ind.
 (* Do not modify the following line: *)
 Definition manual_grade_for_toy_ind : option (nat*string) := None.
 (** [] *)
@@ -249,6 +304,11 @@ Inductive tree (X:Type) : Type :=
   | node (t1 t2 : tree X).
 Check tree_ind.
 (** [] *)
+
+Definition tree_ind_mine : forall (X : Type) (P : tree X -> Prop),
+  (forall (x : X), P (leaf x)) ->
+  (forall (t1 : tree X) (Ht1 : P t1) (t2 : tree X) (Ht2 : P t2), P (node t1 t2)) ->
+  forall (t : tree X), P t.
 
 (** **** Exercise: 1 star, standard, optional (mytype)
 
