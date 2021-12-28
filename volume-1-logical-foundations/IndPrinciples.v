@@ -325,11 +325,17 @@ Definition tree_ind_mine : forall (X : Type) (P : tree X -> Prop),
         forall (X : Type) (P : mytype X -> Prop),
             (forall x : X, P (constr1 X x)) ->
             (forall n : nat, P (constr2 X n)) ->
-            (forall m : mytype X, P m ->
-               forall n : nat, P (constr3 X m n)) ->
+            (forall m : mytype X, P m -> forall n : nat, P (constr3 X m n)) ->
             forall m : mytype X, P m
 *) 
 (** [] *)
+
+Inductive mytype (X : Type) : Type :=
+  | constr1 (x : X)
+  | constr2 (n : nat)
+  | constr3 (m : mytype X) (n : nat).
+  
+Check mytype_ind.
 
 (** **** Exercise: 1 star, standard, optional (foo)
 
@@ -340,11 +346,18 @@ Definition tree_ind_mine : forall (X : Type) (P : tree X -> Prop),
         forall (X Y : Type) (P : foo X Y -> Prop),
              (forall x : X, P (bar X Y x)) ->
              (forall y : Y, P (baz X Y y)) ->
-             (forall f1 : nat -> foo X Y,
-               (forall n : nat, P (f1 n)) -> P (quux X Y f1)) ->
+             (forall f1 : nat -> foo X Y, (forall n : nat, P (f1 n)) -> P (quux X Y f1)) ->
              forall f2 : foo X Y, P f2
 *) 
 (** [] *)
+
+Inductive foo (X Y : Type) : Type :=
+  | bar (x : X) : foo X Y
+  | baz (y : Y) : foo X Y
+  | quux (f1 : nat -> foo X Y) : foo X Y
+  .
+  
+Check foo_ind.
 
 (** **** Exercise: 1 star, standard, optional (foo')
 
@@ -409,8 +422,9 @@ Proof.
   - (* n = O *) reflexivity.
   - (* n = S n' *)
     (* Note the proof state at this point! *)
+    unfold P_m0r. simpl.
     intros n IHn.
-    unfold P_m0r in IHn. unfold P_m0r. simpl. apply IHn. Qed.
+    apply IHn. Qed.
 
 (** This extra naming step isn't something that we do in
     normal proofs, but it is useful to do it explicitly for an example
@@ -502,7 +516,7 @@ Proof.
     induction, and state the theorem and proof in terms of this
     defined proposition.  *)
 
-(* FILL IN HERE
+(* IN HERE
 
     [] *)
 
@@ -651,6 +665,38 @@ Check le2_ind :
 
     That is why Coq actually generates the induction principle
     [ev_ind] that we saw before. *)
+    
+Print ev.
+
+Inductive my_type_ev : nat -> Type :=
+  | my_type_ev_0 : my_type_ev 0
+  | my_type_ev_SS : forall n : nat, my_type_ev n -> my_type_ev (S (S n)).
+  
+Print my_type_ev_ind.
+    
+(*
+my_type_ev_ind
+     : forall P : (forall n : nat, my_type_ev n -> Prop),
+       P 0 my_type_ev_0 ->
+       (forall (n : nat) (m : my_type_ev n), P n m -> P (S (S n)) (my_type_ev_SS n m)) ->
+       forall (n : nat) (m : my_type_ev n), P n m *)
+    
+Check ev_ind.
+
+Check nat_ind.
+
+(*
+ev_ind
+     : forall P : nat -> Prop,
+       P 0 ->
+       (forall n : nat, ev n -> P n -> P (S (S n))) ->
+       forall n : nat, ev n -> P n
+
+nat_ind
+     : forall P : nat -> Prop,
+       P 0 -> 
+       (forall n : nat, P n -> P (S n)) ->
+       forall n : nat, P n *)
 
 (* ################################################################# *)
 (** * Formal vs. Informal Proofs by Induction *)
