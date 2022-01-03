@@ -89,6 +89,9 @@ Proof.
     [0 = 1].  This is nonsense, so our assumption was
     contradictory.) *)
 
+Print le.
+
+
 Theorem le_not_a_partial_function :
   ~ (partial_function le).
 Proof.
@@ -98,6 +101,22 @@ Proof.
     - apply le_n.
     - apply le_S. apply le_n. }
   discriminate Nonsense.   Qed.
+  
+Theorem le_not_a_partial_function2 :
+  ~ (partial_function le).
+Proof.
+  unfold not. unfold partial_function. intros Hc.
+  specialize (Hc 0 0 1 (le_n _) (le_S _ _ (le_n _))).
+  discriminate Hc. Qed.
+
+Theorem le_not_a_partial_function3 :
+  ~ (partial_function le).
+Proof.
+  unfold not. unfold partial_function. intros Hc.
+  assert (0 = 1).
+  { apply (Hc 0); repeat constructor. }
+  discriminate H.
+  Qed.
 
 (** **** Exercise: 2 stars, standard, optional (total_relation_not_partial)
 
