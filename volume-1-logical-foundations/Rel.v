@@ -189,7 +189,9 @@ Proof.
   unfold lt. unfold transitive.
   intros n m o Hnm Hmo.
   induction Hmo as [| m' Hm'o].
-    (* FILL IN HERE *) Admitted.
+  - constructor. auto.
+  - apply le_S in IHHm'o. auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (lt_trans'')
@@ -214,6 +216,74 @@ Proof.
   intros n m H. apply le_trans with (S n).
   - apply le_S. apply le_n.
   - apply H.
+Qed.
+
+Print Sn_le_Sm__n_le_m.
+
+Theorem le_S_S2 : forall n m, S n <= S m -> n <= m.
+Proof.
+  (*
+  induction n.
+  - intros. inversion H.
+    * constructor.
+    * apply PeanoNat.Nat.le_0_l.
+  - intros. inversion H.
+    * constructor.
+    * induction m.
+      + inversion H1.
+      +  
+    * inversion H.
+      + constructor.
+      + 
+  *) 
+  (*
+  intros n m H. inversion H.
+  - constructor.
+  - 
+  *)
+  intros n m. generalize dependent n.
+  induction m.
+  - intros. inversion H.
+    + constructor.
+    + inversion H1.
+  - intros.
+    inversion H.
+    + constructor.
+    + apply IHm in H1.
+      constructor.
+      assumption.
+  (*
+  intros. inversion H as [|m' Hm' a].
+  + auto.
+  + inversion Hm' as [b|m''].
+    - auto.
+    - generalize dependent n.
+      induction m.
+      * intros. inversion Hm'.
+      * intros.
+  *)
+  (*
+  intros n m H. inversion H; auto.
+  - destruct n,m; auto.
+    + induction m; auto. admit.
+    + inversion H1.
+  *)
+  Qed.
+
+Theorem le_Sn_le2 : forall n m, S n <= m -> n <= m.
+Proof.
+  (*
+  intros n m H. induction H.
+  - constructor. constructor.
+  - auto.
+  *)
+  intros n m. generalize dependent n.
+  induction m.
+  - intros. inversion H.
+  - intros.
+    inversion H.
+    + auto.
+    + constructor. apply IHm. apply H1.
 Qed.
 
 (** **** Exercise: 1 star, standard, optional (le_S_n) *)
