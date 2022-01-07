@@ -290,7 +290,36 @@ Qed.
 Theorem le_S_n : forall n m,
   (S n <= S m) -> (n <= m).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  (*
+  intros. apply le_trans with (b := S n).
+  - constructor. constructor.
+  - inversion H.
+    +  
+  *)
+  (*
+  intros n m H. inversion H.
+  - constructor.
+  - (* apply (le_Sn_le2 _ _ H1). *)
+  *)
+  (*
+  intros n. induction n.
+  - intros. induction m. 
+    + constructor.
+    + 
+    +  constructor.
+    +  
+  *)
+  intros n m. generalize dependent n.
+  induction m.
+  - intros. inversion H.
+    + constructor.
+    + inversion H1.
+  - intros. 
+    inversion H.
+    + constructor.
+    + specialize (IHm _ H1).
+      constructor. auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (le_Sn_n_inf)
@@ -311,7 +340,42 @@ Proof.
 Theorem le_Sn_n : forall n,
   ~ (S n <= n).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  (*
+  set (G := PeanoNat.Nat.neq_succ_diag_l).
+  unfold PeanoNat.Nat.neq_succ_diag_l in G.
+  *)
+  (*
+  intros n H. inversion H.
+  - induction n.
+    + inversion H0.
+    + 
+  - 
+  *)
+  (*
+  unfold not.
+  induction n.
+  - intros. inversion H.
+  - intros. inversion H.
+    + set (G := le_n n).
+      rewrite <- H1 in G at 1.
+      apply (IHn G).
+    + apply le_Sn_le2 in H1.
+      apply (IHn H1).
+  *)
+  (*
+  unfold not.
+  intros n H.
+  induction H as [|].
+  - admit.
+  - auto.  
+  *)
+  unfold not.
+  induction n.
+  - intros. inversion H.
+  - intros. apply IHn.
+    apply le_S_S2. auto.
+  Qed.
+  
 (** [] *)
 
 (** Reflexivity and transitivity are the main concepts we'll need for
@@ -353,7 +417,89 @@ Theorem le_step : forall n m p,
   m <= S p ->
   n <= p.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold lt.
+  intros n m p H1 H2.
+  apply le_S_n. 
+  apply PeanoNat.Nat.le_trans with (m := m); auto.
+Qed.
+
+Theorem le_step_2 : forall n m p,
+  n < m ->
+  m <= S p ->
+  n <= p.
+Proof.
+  (*
+  unfold lt.
+  intros n m. generalize dependent n.
+  induction m as [|m' IHm].
+  - intros. inversion H.
+  - intros n p H1 H2.
+    induction p as [|p' IHp].
+    * inversion H2.
+      + rewrite H0 in H2,H1.
+        inversion H1.
+        -- constructor.
+        -- inversion H3.
+      + inversion H0.
+    * inversion H2.
+      + rewrite H0 in IHp,H2,H1,IHm.
+        clear H2. clear IHp. clear H0.
+  *)
+  (*
+  unfold lt.
+  intros n m p. generalize dependent n. generalize dependent m.
+  induction p as [|p' IHp].
+  - intros n m. generalize dependent n.
+    induction m as [|p' IHp].
+    + auto.
+    + intros.
+      destruct n.
+      * inversion H.
+      * inversion H0.
+        -- rewrite H2 in H.
+           inversion H.
+           inversion H3.
+        -- inversion H2.
+  - induction m as [|m' IHm].
+    + intros ? H. inversion H.
+    + intros n H1 H2.
+      inversion H2.
+      * rewrite H0 in H2,H1,IHm.
+        clear H0 H2.
+        inversion H1.
+        -- auto.
+        -- clear H m.
+           apply IHm; auto.
+      * clear H m.
+        inversion H1.
+        -- rewrite <- H3 in H1. clear H3 H1.
+  *)
+  (*
+  unfold lt.
+  intros n m p. generalize dependent n. generalize dependent m.
+  induction p as [|p' IHp].
+  - intros n m. generalize dependent n.
+    induction m as [|p' IHp].
+    + auto.
+    + intros.
+      destruct n.
+      * inversion H.
+      * inversion H0.
+        -- rewrite H2 in H.
+           inversion H.
+           inversion H3.
+        -- inversion H2.
+  - intros m n H1 H2.
+    induction H1.
+    *)
+  (*  
+  unfold lt.
+  intros n m p H1 H2. inversion H2.
+  * admit.
+  * clear m0 H.
+  *)
+  Admitted.
+
 (** [] *)
 
 (* ----------------------------------------------------------------- *)
