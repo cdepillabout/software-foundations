@@ -631,3 +631,98 @@ Proof.
 (** [] *)
 
 (* 2021-08-11 15:08 *)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Lemma rsc_R_2 : forall (X : Type) (R : relation X) (x y : X),
+  R x y -> clos_refl_trans_1n R x y.
+Proof.
+  intros. apply (rt1n_trans R x y y).
+  - auto.
+  - apply (rt1n_refl R y).
+  Qed.
+  
+Theorem next_nat_closure_is_le_2 : forall n m,
+  (n <= m) <-> clos_refl_trans next_nat n m.
+Proof.
+  split.
+  - intros H.
+    induction H.
+    + apply rt_refl.
+    + apply rt_trans with (y := m).
+      -- auto.
+      -- apply rt_step. apply nn.
+  - intros H.
+    induction H.
+    + inversion H. constructor. constructor.
+    + constructor.
+    + apply (le_trans x y z); auto.
+  Qed.
+
+Theorem next_nat_closure_is_le_3 : forall n m,
+  (n <= m) <-> clos_refl_trans next_nat n m.
+Proof.
+  intros n m. generalize dependent n.
+  induction m as [|m' IHm].
+  - split. 
+    + intros. inversion H. apply rt_refl.
+    + intros. induction H. 
+      * inversion H. constructor. constructor.
+      * constructor.
+      * apply (le_trans x y z); auto.
+  - split.
+    + intros H.
+      inversion H.
+      * apply rt_refl.
+      * clear H0 m H.
+        apply IHm in H1.
+        apply rt_trans with (y := m').
+        -- auto.
+        -- apply rt_step. apply nn.
+    + intros H.
+      induction H.
+      * destruct H. constructor. constructor.
+      * constructor.
+      * apply (le_trans x y z); auto.
+  Qed.
