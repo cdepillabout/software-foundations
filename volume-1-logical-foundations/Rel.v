@@ -726,3 +726,82 @@ Proof.
       * constructor.
       * apply (le_trans x y z); auto.
   Qed.
+
+Lemma clos_refl_trans_is_trans :
+  forall A f (n y m : A),
+  clos_refl_trans f n y -> clos_refl_trans f y m -> clos_refl_trans f n m.
+Proof.
+  intros A f n y m Hny Hym.
+  induction Hym.
+  - apply rt_step in H.
+    apply rt_trans with x; assumption.
+  - assumption.
+  - apply IHHym2.
+    apply IHHym1.
+    apply Hny.
+  Qed.
+
+Theorem eq_closure_is_eq : forall A (n m : A),
+  (n = m) <-> clos_refl_trans eq n m.
+Proof.
+  split.
+  - intros. inversion H. constructor. reflexivity.
+  - intros. induction H.
+    + assumption.
+    + reflexivity.
+    + rewrite IHclos_refl_trans1. auto.
+  Qed.
+  
+Theorem f_closure_is_f : forall A f (n m : A), reflexive f -> transitive f ->
+  (f n m) <-> clos_refl_trans f n m.
+Proof.
+  unfold reflexive. unfold transitive.
+  intros A f n m reflF transF.
+  split.
+  - intros. apply rt_step. assumption.
+  - intros. induction H.
+    + assumption.
+    + apply reflF.
+    + apply transF with y; assumption.
+  Qed.
+  
+Inductive city :=
+  | Bal
+  | Chicago
+  | LA
+  | Houston
+  .
+  
+Inductive flight : city -> city -> Prop :=
+  | BalChi : flight Bal Chicago
+  | ChiLA : flight Chicago LA
+  | LAHou : flight LA Houston
+  | HouBal : flight Houston Bal
+  .
+  
+Inductive reachable : city -> city -> Prop :=
+  | inCity : forall c, reachable c c
+  | directFlight : forall b c d, reachable b c -> flight c d -> reachable b d
+  .
+
+Theorem flight_closure_is_reachable : forall n m, reachable n m <-> clos_refl_trans flight n m.
+Proof.
+  split.
+  - intros Hreachable. induction Hreachable as [ c | b c d HReachable HClos HFlight ].
+    + apply rt_refl.
+    + apply rt_step in HFlight.
+      apply rt_trans with c; assumption.
+  - intros HClos. induction HClos.
+    + apply directFlight with x.
+      * apply inCity.
+      * assumption.
+    + apply inCity.
+    + cut (forall a b c, reachable a b -> reachable b c -> reachable a c).
+      * intros. apply H with y; auto.
+      * clear.
+        intros a b c rab rbc.
+        induction rbc.
+        -- auto.
+        -- apply IHrbc in rab.
+           apply directFlight with c; auto.
+  Qed.
