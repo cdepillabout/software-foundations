@@ -127,6 +127,11 @@ Proof.
 
 Print total_relation.
 
+Theorem total_relation_not_a_partial_function : ~ (partial_function total_relation).
+Proof.
+  intros Hc.
+  discriminate (Hc 0 0 1 (total_rel _ _) (total_rel _ _)).
+Qed.
 
 
 (** **** Exercise: 2 stars, standard, optional (empty_relation_partial)
@@ -134,9 +139,12 @@ Print total_relation.
     Show that the [empty_relation] defined in (an exercise in)
     [IndProp] is a partial function. *)
 
-(* FILL IN HERE
+Inductive empty_relation (n m : nat) : Prop :=.
 
-    [] *)
+Theorem empty_relation_is_partial_function : partial_function empty_relation.
+Proof.
+  intros ? ? ? H1. destruct H1.
+Qed.
 
 (* ----------------------------------------------------------------- *)
 (** *** Reflexive Relations *)
@@ -205,9 +213,44 @@ Theorem lt_trans'' :
 Proof.
   unfold lt. unfold transitive.
   intros n m o Hnm Hmo.
-  induction o as [| o'].
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  induction o as [| o' IHo].
+  - inversion Hmo.
+  - apply le_S_n in Hmo. apply le_n_S.
+    fold (lt n m) in Hnm.
+    fold (lt m o') in IHo.
+    fold (lt n o') in IHo.
+    destruct m,n.
+    + assumption.
+    + inversion Hnm.
+    + apply le_0_n.
+    + fold (lt m o') in Hmo.
+      fold (lt n o').
+      apply Lt.lt_S_n in Hnm.
+      inversion Hmo.
+      * apply PeanoNat.Nat.lt_lt_succ_r. assumption.
+      * rewrite <- H0 in IHo,Hmo.
+        clear H0 o'.
+        fold (lt m m0) in H.
+        apply Lt.lt_n_S in H.
+        apply IHo in H.
+        apply Lt.lt_S_n in H.
+        apply PeanoNat.Nat.lt_lt_succ_r.
+        assumption.
+Qed.
+
+(*
+Theorem lt_trans''' :
+  transitive lt.
+Proof.
+  unfold lt. unfold transitive.
+  intros n m o Hnm Hmo.
+  induction o as [| o' IHo].
+  - induction m as [| m' IHm].
+    + induction n as [| n' IHn].
+      * 
+  - 
+Qed.
+*)
 
 (** The transitivity of [le], in turn, can be used to prove some facts
     that will be useful later (e.g., for the proof of antisymmetry
@@ -396,7 +439,11 @@ Definition symmetric {X: Type} (R: relation X) :=
 Theorem le_not_symmetric :
   ~ (symmetric le).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold not. unfold symmetric.
+  intro H.
+  specialize (H 0 1 (le_S _ _ (le_n 0))).
+  inversion H.
+Qed.
 (** [] *)
 
 (** A relation [R] is _antisymmetric_ if [R a b] and [R b a] together
@@ -410,7 +457,33 @@ Definition antisymmetric {X: Type} (R: relation X) :=
 Theorem le_antisymmetric :
   antisymmetric le.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold antisymmetric.
+  intros a b Haleb Hblea.
+  induction Haleb as [| b _ ].
+  - reflexivity.
+  - specialize (IHHaleb (le_Sn_le _ _ Hblea)).
+    rewrite <- IHHaleb in Hblea.
+    rewrite IHHaleb.
+    clear IHHaleb.
+    fold (lt a a) in Hblea.
+    induction a.
+    * inversion Hblea.
+    * apply IHa.
+      apply Lt.lt_S_n.
+      assumption.
+Qed.
+    
+    
+Theorem le_antisymmetric' :
+  antisymmetric le.
+Proof.
+  unfold antisymmetric.
+  induction a as [|a' IHa].
+  - intros. inversion H0. reflexivity.
+  - intros b Ha'leb Hblea'.
+    fold (lt a' b) in Ha'leb.x
+     TODO
+Qed.       
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (le_step) *)
