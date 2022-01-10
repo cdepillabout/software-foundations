@@ -685,6 +685,9 @@ Inductive next_ev : nat -> nat -> Prop :=
 
     Define an inductive binary relation [total_relation] that holds
     between every pair of natural numbers. *)
+    
+Inductive total_relation (n m : nat) : Prop :=
+  | total_rel : total_relation n m.
 
 Inductive comparable : nat -> nat -> Prop :=
   | comp_lt n m (H: n < m) : comparable n m

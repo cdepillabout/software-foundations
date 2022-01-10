@@ -102,6 +102,8 @@ Proof.
     - apply le_S. apply le_n. }
   discriminate Nonsense.   Qed.
   
+  
+  
 Theorem le_not_a_partial_function2 :
   ~ (partial_function le).
 Proof.
@@ -123,9 +125,9 @@ Proof.
     Show that the [total_relation] defined in (an exercise in)
     [IndProp] is not a partial function. *)
 
-(* FILL IN HERE
+Print total_relation.
 
-    [] *)
+
 
 (** **** Exercise: 2 stars, standard, optional (empty_relation_partial)
 
