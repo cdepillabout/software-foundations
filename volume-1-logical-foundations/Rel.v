@@ -481,8 +481,14 @@ Proof.
   induction a as [|a' IHa].
   - intros. inversion H0. reflexivity.
   - intros b Ha'leb Hblea'.
-    fold (lt a' b) in Ha'leb.x
-     TODO
+    fold (lt a' b) in Ha'leb.
+    destruct b.
+    * inversion Ha'leb.
+    * unfold lt in Ha'leb.
+      apply Le.le_S_n in Ha'leb.
+      apply Le.le_S_n in Hblea'.
+      f_equal.
+      apply IHa; assumption.
 Qed.       
 (** [] *)
 
@@ -690,8 +696,42 @@ Lemma rsc_trans :
       clos_refl_trans_1n R y z ->
       clos_refl_trans_1n R x z.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  intros ? ? x y z HCxy HCyz.
+  induction HCxy.
+  - assumption.
+  - specialize (IHHCxy HCyz).
+    apply rt1n_trans with y; assumption.
+  Qed. 
+
+(*
+Lemma rsc_trans' :
+  forall (X:Type) (R: relation X) (x y z : X),
+      clos_refl_trans_1n R x y  ->
+      clos_refl_trans_1n R y z ->
+      clos_refl_trans_1n R x z.
+Proof.
+  intros ? ? x y z HCxy HCyz.
+  inversion HCyz as [Hxx|y' z' HR Hrest ffff].
+  - rewrite <- Hxx. assumption.
+  - clear ffff z'.
+    inversion HCxy as [Hxx|x' y'' HRx Hrestxy gggg].
+    + assumption.
+    + clear gggg y''.
+      cut (clos_refl_trans_1n R x' z).
+      { intros. apply rt1n_trans with x'; assumption. }
+      
+  Qed.
+*)
+
+
+(*
+Inductive clos_refl_trans_1n {A : Type}
+                             (R : relation A) (x : A)
+                             : A -> Prop :=
+  | rt1n_refl : clos_refl_trans_1n R x x
+  | rt1n_trans (y z : A)
+      (Hxy : R x y) (Hrest : clos_refl_trans_1n R y z) :
+      clos_refl_trans_1n R x z. *)
 
 (** Then we use these facts to prove that the two definitions of
     reflexive, transitive closure do indeed define the same
@@ -702,7 +742,35 @@ Theorem rtc_rsc_coincide :
   forall (X:Type) (R: relation X) (x y : X),
     clos_refl_trans R x y <-> clos_refl_trans_1n R x y.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X R x y. split.
+  - intros H. induction H.
+    + apply rt1n_trans with y; auto. apply rt1n_refl.
+    + apply rt1n_refl.
+    + apply rsc_trans with y; assumption.
+  - intros H. induction H.
+    + apply rt_refl.
+    + apply rt_trans with y.
+      * apply rt_step. assumption.
+      * assumption.
+  Qed.
+  
+(*
+Theorem rtc_rsc_coincide' :
+  forall (X:Type) (R: relation X) (x y : X),
+    clos_refl_trans R x y <-> clos_refl_trans_1n R x y.
+Proof.
+  intros X R x y. split.
+  - intros H. inversion H.
+    + apply rt1n_trans with y; auto. apply rt1n_refl.
+    + apply rt1n_refl.
+    + apply rsc_trans with y0. assumption.
+  - intros H. induction H.
+    + apply rt_refl.
+    + apply rt_trans with y.
+      * apply rt_step. assumption.
+      * assumption.
+  Qed. 
+*)
 (** [] *)
 
 (* 2021-08-11 15:08 *)
