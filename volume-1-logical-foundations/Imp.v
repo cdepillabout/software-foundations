@@ -870,6 +870,18 @@ where "a '==>' n" := (aevalR a n) : type_scope.
 (** Notice that the evaluation relation has now become _partial_:
     There are some inputs for which it simply does not specify an
     output. *)
+    
+Theorem not_all_expr_are_valid: forall n, exists aexp, ~ aevalR aexp n.
+Proof.
+  unfold not.
+  intros.
+  exists (ADiv (ANum 1) (ANum 0)).
+  intros.
+  inversion H.
+  subst.
+  unfold gt in H4. unfold Peano.lt in H4.
+  inversion H3. subst. inversion H4.
+  Qed.
 
 End aevalR_division.
 
@@ -908,6 +920,34 @@ Inductive aevalR : aexp -> nat -> Prop :=
       (a1 ==> n1) -> (a2 ==> n2) -> (AMult a1 a2) ==> (n1 * n2)
 
 where "a '==>' n" := (aevalR a n) : type_scope.
+
+Theorem all_aevalR_is_almost_function : forall aexp, exists n, aevalR aexp n.
+Proof.
+  intros a.
+  induction a.
+  - exists 0. constructor.
+  - exists n. constructor.
+  - destruct IHa1,IHa2. exists (x + x0). constructor; assumption.
+  - destruct IHa1,IHa2. exists (x - x0). constructor; assumption.
+  - destruct IHa1,IHa2. exists (x * x0). constructor; assumption.
+  Qed.
+  
+Definition relation_better (X Y: Type) := X -> Y -> Prop.  
+
+Definition partial_function_better {X Y: Type} (R: relation_better X Y) :=
+  forall (x : X) (y1 y2 : Y), R x y1 -> R x y2 -> y1 = y2.
+  
+Theorem all_aevalR_is_not_partial_function : ~ partial_function_better aevalR.
+Proof.
+  unfold not.
+  unfold partial_function_better.
+  intros.
+  assert (H0: 1 = 0).
+  { apply H with AAny.
+    constructor. constructor.
+  }
+  discriminate H0.
+Qed.
 
 End aevalR_extended.
 
