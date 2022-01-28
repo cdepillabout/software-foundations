@@ -477,7 +477,7 @@ Proof.
     optimization and its correctness proof -- and build up to
     something more interesting incrementally.)  *)
 
-(* FILL IN HERE
+(* IN HERE
 
     [] *)
 
@@ -754,7 +754,7 @@ Inductive aevalR : aexp -> nat -> Prop :=
 
     Write out a corresponding definition of boolean evaluation as a
     relation (in inference rule notation). *)
-(* FILL IN HERE *)
+(* IN HERE *)
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_beval_rules : option (nat*string) := None.
@@ -1695,7 +1695,16 @@ Proof.
 
     State and prove a specification of [XtimesYinZ]. *)
 
-(* FILL IN HERE *)
+Print XtimesYinZ.
+Print plus2.
+
+Theorem XtimesYinZ_spec : forall st st', st =[ XtimesYinZ ]=> st' -> st' Z = st X * st Y.
+Proof.
+  intros st st' Heval.
+  inversion Heval. subst. simpl. now unfold t_update.
+  Qed.
+
+(* IN HERE *)
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_XtimesYinZ_spec : option (nat*string) := None.
@@ -1713,8 +1722,10 @@ Proof.
       [loopdef] terminates.  Most of the cases are immediately
       contradictory (and so can be solved in one step with
       [discriminate]). *)
-
-  (* FILL IN HERE *) Admitted.
+  induction contra; try discriminate.
+  - inversion Heqloopdef. subst. simpl in H. discriminate.
+  - inversion Heqloopdef. subst. now apply IHcontra2.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (no_whiles_eqv)
@@ -1740,14 +1751,47 @@ Fixpoint no_whiles (c : com) : bool :=
     [no_whilesR c] is provable exactly when [c] is a program with no
     while loops.  Then prove its equivalence with [no_whiles]. *)
 
+Print com.
+
 Inductive no_whilesR: com -> Prop :=
- (* FILL IN HERE *)
-.
+  | NoWhilesSkip : no_whilesR <{ skip }>
+  | NoWhilesAss : forall s ae, no_whilesR <{ s := ae }>
+  | NoWhilesSeq : forall com1 com2, no_whilesR com1 -> no_whilesR com2 -> no_whilesR <{ com1 ; com2 }>
+  | NoWhilesIf : forall b com1 com2, no_whilesR com1 -> no_whilesR com2 -> no_whilesR <{ if b then com1 else com2 end }>
+  .
+  (*
+  match com with
+  | <{ skip }> =>
+      True
+  | <{ _ := _ }> =>
+      True
+  | <{ c1 ; c2 }> =>
+       (no_whilesR c1) /\ (no_whilesR c2)
+  | <{ if _ then ct else cf end }> =>
+      (no_whilesR ct) /\ (no_whilesR cf)
+  | <{ while _ do _ end }>  =>
+      False
+  *)
 
 Theorem no_whiles_eqv:
   forall c, no_whiles c = true <-> no_whilesR c.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  split.
+  - induction c; simpl.
+    + intro. constructor.
+    + intro. constructor.
+    + intro. apply andb_prop in H as [H1 H2].
+      apply IHc1 in H1. apply IHc2 in H2.
+      constructor; assumption.
+    + intro. apply andb_prop in H as [H1 H2].
+      apply IHc1 in H1. apply IHc2 in H2.
+      constructor; assumption.
+    + intro. discriminate.
+  - intro H. induction H; try reflexivity.
+    + simpl. apply andb_true_intro. split; assumption.
+    + simpl. apply andb_true_intro. auto.
+  Qed.
+      
 (** [] *)
 
 (** **** Exercise: 4 stars, standard (no_whiles_terminating)
@@ -1757,7 +1801,27 @@ Proof.
 
     Use either [no_whiles] or [no_whilesR], as you prefer. *)
 
-(* FILL IN HERE *)
+Theorem no_whiles_terminating : forall st com, no_whilesR com -> exists st', st =[ com ]=> st'.
+Proof.
+  intros st com H.
+  generalize dependent st.
+  induction H.
+  - intro st. exists st. constructor.
+  - intro st. exists (s !-> aeval st ae; st). now constructor.
+  - intro st.
+    specialize (IHno_whilesR1 st). destruct IHno_whilesR1.
+    specialize (IHno_whilesR2 x). destruct IHno_whilesR2.
+    exists x0. apply E_Seq with x; assumption.
+  - intro st.
+    specialize (IHno_whilesR1 st).
+    specialize (IHno_whilesR2 st).
+    destruct IHno_whilesR1.
+    destruct IHno_whilesR2.
+    destruct (beval st b) eqn:E.
+    + exists x. apply E_IfTrue; assumption.
+    + exists x0. apply E_IfFalse; assumption.
+  Qed.
+    
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_no_whiles_terminating : option (nat*string) := None.
