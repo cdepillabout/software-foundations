@@ -207,16 +207,20 @@ Proof. reflexivity. Qed.
    [X] (inclusive: [1 + 2 + ... + X]) in the variable [Y].  Make sure
    your solution satisfies the test that follows. *)
 
-Definition pup_to_n : com
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition pup_to_n : com :=
+  <{
+    Y := 0 ;
+    while (1 <= X) do
+      Y := Y + X;
+      X := X - 1
+    end
+  }>.
 
 Example pup_to_n_1 :
   test_ceval (X !-> 5) pup_to_n
   = Some (0, 15, 0).
-(* FILL IN HERE *) Admitted.
-(* 
 Proof. reflexivity. Qed.
-*)
+
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (peven)
@@ -225,9 +229,57 @@ Proof. reflexivity. Qed.
     sets [Z] to [1] otherwise.  Use [test_ceval] to test your
     program. *)
 
-(* FILL IN HERE
+Definition peven : com :=
+  <{
+    Z := X;
+    while (2 <= Z) do
+      Z := Z - 2
+    end
+  }>.
 
-    [] *)
+Print even.
+
+From Coq Require Import Arith.Wf_nat.
+
+From LF Require IndProp.
+
+Theorem peven_is_even : forall n, even n = true -> (X !-> n) =[ peven ]=> (Z !-> 0; X !-> n).
+Proof.
+  intro n. induction n using (well_founded_induction lt_wf).
+  destruct n.
+  - intro. unfold peven.
+    apply E_Seq with (Z !-> 0; X !-> 0; empty_st).
+    + now constructor.
+    + now apply E_WhileFalse.
+  - destruct n.
+    + intro. unfold peven.  
+      apply E_Seq with (Z !-> 1; X !-> 1; empty_st).
+      * apply E_Asgn. reflexivity.
+      * simpl in H0. discriminate.
+    + simpl. intro H0.
+      assert (n < S (S n)).
+      { lia. }
+      specialize (H n H1 H0).
+      inversion H.
+      subst.
+      unfold peven.
+      apply E_Seq with (Z !-> S (S n) ; X !-> S (S n)).
+      * apply E_Asgn. reflexivity.
+      * inversion H7. subst.
+        -- simpl in H8. clear H1. Admitted.
+
+Theorem peven_is_even2 : forall n end_st, IndProp.ev n -> (X !-> n) =[ peven ]=> end_st /\ end_st Z = 0.
+Proof.
+  intros n end_st H. generalize dependent end_st. induction H.
+  - subst. admit.
+  (* - inversion IHev. subst.
+    apply E_Seq with (Z !-> S (S n) ; X !-> S (S n)).
+    + apply E_Asgn. reflexivity.
+    + apply E_WhileTrue with (Z !-> n ; X !-> S (S n)).
+      * reflexivity.
+      * apply E_Asgn. 
+  *)
+  Admitted.
 
 (* ################################################################# *)
 (** * Relational vs. Step-Indexed Evaluation *)
