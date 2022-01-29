@@ -1892,29 +1892,69 @@ Inductive sinstr : Type :=
 
 Fixpoint s_execute (st : state) (stack : list nat)
                    (prog : list sinstr)
-                 : list nat
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+                 : list nat :=
+  match prog with
+  | [] => stack
+  | p :: prog' => 
+      match p with
+      | SPush n => s_execute st (n :: stack) prog'
+      | SLoad x => s_execute st (st x :: stack) prog'
+      | SPlus =>
+        match stack with
+        | a :: b :: stack' => s_execute st ((a + b) :: stack') prog'
+        | _ => s_execute st stack prog'
+        end
+      | SMinus =>
+        match stack with
+        | a :: b :: stack' => s_execute st ((b - a) :: stack') prog'
+        | _ => s_execute st stack prog'
+        end
+      | SMult =>
+        match stack with
+        | a :: b :: stack' => s_execute st ((a * b) :: stack') prog'
+        | _ => s_execute st stack prog'
+        end
+      end
+  end.
 
-Check s_execute.
+Check s_execute.  
 
 Example s_execute1 :
      s_execute empty_st []
        [SPush 5; SPush 3; SPush 1; SMinus]
    = [2; 5].
-(* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 
 Example s_execute2 :
      s_execute (X !-> 3) [3;4]
        [SPush 4; SLoad X; SMult; SPlus]
    = [15; 4].
-(* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 
 (** Next, write a function that compiles an [aexp] into a stack
     machine program. The effect of running the program should be the
     same as pushing the value of the expression on the stack. *)
 
-Fixpoint s_compile (e : aexp) : list sinstr
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Print aexp.
+
+Fixpoint s_compile (e : aexp) : list sinstr :=
+  match e with
+  | ANum n => [ SPush n ]
+  | AId s => [ SLoad s ]
+  | APlus a1 a2 =>
+    let x := s_compile a1 in
+    let y := s_compile a2 in
+    x ++ y ++ [ SPlus ]
+  | AMinus a1 a2 =>
+    let x := s_compile a1 in
+    let y := s_compile a2 in
+    x ++ y ++ [ SMinus ]
+  | AMult a1 a2 =>
+    let x := s_compile a1 in
+    let y := s_compile a2 in
+    x ++ y ++ [ SMult ]
+  end
+  .
 
 (** After you've defined [s_compile], prove the following to test
     that it works. *)
@@ -1922,7 +1962,7 @@ Fixpoint s_compile (e : aexp) : list sinstr
 Example s_compile1 :
   s_compile <{ X - (2 * Y) }>
   = [SLoad X; SPush 2; SLoad Y; SMult; SMinus].
-(* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (execute_app) *)
@@ -1935,8 +1975,32 @@ Example s_compile1 :
 Theorem execute_app : forall st p1 p2 stack,
   s_execute st stack (p1 ++ p2) = s_execute st (s_execute st stack p1) p2.
 Proof.
-  (* FILL IN HERE *) Admitted.
-
+  intros st p1. generalize dependent st. induction p1.
+  - reflexivity.
+  - simpl app.
+    destruct a.
+    + simpl. intros st p2 stack. apply (IHp1 st p2 (n :: stack)).
+    + simpl. intros st p2 stack. apply (IHp1 st p2 (st x :: stack)).
+    + intros st p2 stack. generalize dependent st. generalize dependent p2.
+      destruct stack as [ | n stack' ].
+      * intros. apply IHp1.
+      * destruct stack' as [ | m stack' ].
+        -- simpl. intros. apply IHp1.
+        -- simpl. intros. apply IHp1.
+    + intros st p2 stack. generalize dependent st. generalize dependent p2.
+      destruct stack as [ | n stack' ].
+      * intros. apply IHp1.
+      * destruct stack' as [ | m stack' ].
+        -- simpl. intros. apply IHp1.
+        -- simpl. intros. apply IHp1.
+    + intros st p2 stack. generalize dependent st. generalize dependent p2.
+      destruct stack as [ | n stack' ].
+      * intros. apply IHp1.
+      * destruct stack' as [ | m stack' ].
+        -- simpl. intros. apply IHp1.
+        -- simpl. intros. apply IHp1.
+  Qed.
+      
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (stack_compiler_correct) *)
@@ -1949,14 +2013,22 @@ Proof.
 Lemma s_compile_correct_aux : forall st e stack,
   s_execute st stack (s_compile e) = aeval st e :: stack.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros st e. generalize dependent st. induction e; try reflexivity.
+  - simpl. intros. repeat rewrite execute_app.
+    rewrite IHe1. rewrite IHe2. simpl. now rewrite plus_comm.
+  - simpl. intros. repeat rewrite execute_app.
+    rewrite IHe1. now rewrite IHe2. 
+  - simpl. intros. repeat rewrite execute_app.
+    rewrite IHe1. rewrite IHe2. simpl. now rewrite mul_comm.
+  Qed.
 
 (** The main theorem should be a very easy corollary of that lemma. *)
 
 Theorem s_compile_correct : forall (st : state) (e : aexp),
   s_execute st [] (s_compile e) = [ aeval st e ].
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. now rewrite s_compile_correct_aux.
+  Qed.
 
 (** [] *)
 
