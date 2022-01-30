@@ -268,18 +268,130 @@ Proof.
       * inversion H7. subst.
         -- simpl in H8. clear H1. Admitted.
 
-Theorem peven_is_even2 : forall n end_st, IndProp.ev n -> (X !-> n) =[ peven ]=> end_st /\ end_st Z = 0.
+Check nat_ind.
+
+Theorem nat2_ind : forall (P : nat -> Prop), P 0 -> P 1 -> (forall n : nat, P n -> P (S (S n))) ->
+  forall n : nat, P n.
 Proof.
-  intros n end_st H. generalize dependent end_st. induction H.
-  - subst. admit.
-  (* - inversion IHev. subst.
-    apply E_Seq with (Z !-> S (S n) ; X !-> S (S n)).
-    + apply E_Asgn. reflexivity.
-    + apply E_WhileTrue with (Z !-> n ; X !-> S (S n)).
-      * reflexivity.
-      * apply E_Asgn. 
-  *)
-  Admitted.
+  intros P P0 P1 Pn n. generalize dependent P. induction n using (well_founded_induction lt_wf).
+  destruct n.
+  - intros. assumption.
+  - intros.
+    assert (n < S n). { auto. }
+    set (G := H n H0 P P0 P1 Pn).
+    destruct n.
+    * assumption.
+    * assert (n < S (S n)). { auto. }
+      set (F := H n H1 _ P0 P1 Pn).
+      apply Pn. assumption.
+  Qed.
+
+Theorem whatwhat : forall n some_state end_st,
+  (Z !-> n; some_state) =[ while 2 <= Z do Z := Z - 2 end ]=> end_st ->
+  end_st Z <= n.
+Proof.
+  induction n using nat2_ind.
+  - intros. inversion H.
+    * unfold t_update. simpl. auto.
+    * subst. clear H. simpl in H2. discriminate.
+  - intros. inversion H.
+    * unfold t_update. simpl. auto.
+    * subst. clear H. simpl in H2. discriminate.
+  - intros. inversion H.
+    * subst. unfold t_update. simpl. auto.
+    * subst. clear H. simpl in H2. clear H2.
+      inversion H3. subst.
+      unfold aeval in H6.
+      assert (forall (n : nat) something something_else, t_update something Z n Z = t_update something_else Z n Z).
+      { unfold t_update. simpl. reflexivity. }
+      assert (
+        forall n end_st end_st2 something something_else,
+          (Z !-> n; something) =[ while 2 <= Z do Z := Z - 2 end ]=> end_st ->
+          (Z !-> n; something_else) =[ while 2 <= Z do Z := Z - 2 end ]=> end_st2 ->
+          end_st Z = end_st2 Z).
+      { clear n IHn end_st H6 H3.
+        (* intros n end_st end_st2 something something_else H1.
+        inversion H1.
+        - subst. destruct (<{ 2 <= Z }>).
+          * simpl in H5. discriminate.
+          * destruct (2 <= Z).
+          unfold t_update in H5.   
+        *)
+        intros n. 
+        induction n using nat2_ind; intros end_st end_st2 something something_else H1 H2; inversion H1; inversion H2; subst.
+        - unfold t_update. reflexivity.
+        - simpl in H9. discriminate.
+        - simpl in H4. discriminate.
+        -  simpl in H4. discriminate.
+        - unfold t_update. simpl. reflexivity.
+        - unfold t_update in H6. unfold beval in H6. simpl in H6.
+          unfold t_update in H9. unfold beval in H9. simpl in H9.
+          rewrite H9 in H6. discriminate.
+        - unfold t_update in H13. unfold beval in H13. simpl in H13.
+          unfold t_update in H4. unfold beval in H4. simpl in H4.
+          rewrite H4 in H13. discriminate.
+        - unfold t_update in H4. unfold beval in H4. simpl in H4.
+          unfold t_update in H11. unfold beval in H11. simpl in H11.
+          discriminate H11.
+        - unfold t_update in H6. unfold beval in H6. simpl in H6. discriminate H6.
+        - unfold t_update in H6. unfold beval in H6. simpl in H6. discriminate H6.
+        - unfold t_update in H4. unfold beval in H4. simpl in H4.
+          unfold t_update in H13. unfold beval in H13. simpl in H13.
+          discriminate H13.
+        - unfold t_update in H11. unfold beval in H11. simpl in H11. clear H11.
+          unfold t_update in H4. unfold beval in H4. simpl in H4. clear H4.
+          clear H1 H2. inversion H5. subst. simpl in H8. simpl in H5.
+          clear H5. inversion H12. subst. simpl in H15. simpl in H12.
+          clear H12.
+          rewrite sub_0_r in H8,H15.
+          specialize (IHn end_st end_st2 (Z !-> S (S n); something) (Z !-> S (S n); something_else)).
+          apply IHn; assumption.
+        }
+        simpl in H3.
+        inversion H3. subst. simpl in H7.
+        clear H7.
+        assert ((Z !-> S (S n) ; some_state) Z = S (S n)).
+        { unfold t_update. reflexivity. }
+        rewrite H1 in H6. clear H1. simpl in H6.
+        rewrite sub_0_r in H6,H3.
+        specialize (IHn _ _ H6).
+        constructor. constructor. assumption.
+  Qed.
+
+Theorem whatwhat2 : forall n some_state some_state2 end_st end_st2,
+  (Z !-> n; some_state) =[ while 2 <= Z do Z := Z - 2 end ]=> end_st ->
+  end_st Z = 0 ->
+  (Z !-> S (S n); some_state2) =[ while 2 <= Z do Z := Z - 2 end ]=> end_st2 ->
+  end_st2 Z = 0.
+Proof.
+  intros n. induction n using nat2_ind; intros some_state some_state2 end_st end_st2 Hn Heq HSSn;
+  inversion Hn; inversion HSSn; subst; simpl in *; try discriminate.
+  - clear H3 H6. inversion H7. subst. unfold aeval in H10,H7. simpl in *.
+    clear H7. clear Hn Heq. clear HSSn. inversion H10. subst.
+    + reflexivity.
+    + subst. simpl in H1. discriminate.
+  - clear H1 H8.
+    inversion H2; inversion H9; subst. simpl in *. rewrite sub_0_r in *.
+    clear H9 H2.
+    specialize (IHn _ _ _ _ H5 Heq H12). assumption.
+  Qed.
+
+Theorem peven_is_even22 :
+  forall n some_state end_st,
+  IndProp.ev n -> (Z !-> n; some_state) =[ while 2 <= Z do Z := Z - 2 end ]=> end_st ->
+  end_st Z = 0.
+Proof.
+  intros n some_state end_st HEv. generalize dependent some_state. generalize dependent end_st.
+  induction HEv.
+  - intros. inversion H; subst.
+    + reflexivity.
+    + simpl in H2. discriminate.
+  - intros. inversion H; subst.
+    + simpl in H4. discriminate.
+    +  simpl in H2. clear H2. inversion H3; subst. simpl in H6,H3.
+      rewrite sub_0_r in H6,H3.
+      specialize (IHHEv _ _ H6). assumption.
+  Qed.
 
 (* ################################################################# *)
 (** * Relational vs. Step-Indexed Evaluation *)
