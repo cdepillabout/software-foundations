@@ -152,7 +152,10 @@ Theorem skip_right : forall c,
     <{ c ; skip }>
     c.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros c st st'. split; intros H.
+  - inversion H. subst. inversion H5. subst. auto.
+  - eapply E_Seq. eassumption. constructor.
+  Qed.
 (** [] *)
 
 (** Similarly, here is a simple transformation that optimizes [if]
@@ -240,7 +243,12 @@ Theorem if_false : forall b c1 c2,
     <{ if b then c1 else c2 end }>
     c2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold bequiv. simpl. intros b c1 c2 Hbeq. split; intro H.
+  - inversion H; subst.
+    + rewrite Hbeq in H5. discriminate.
+    + assumption.
+  - apply E_IfFalse; try assumption. apply Hbeq.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (swap_if_branches)
