@@ -725,6 +725,26 @@ Example auto_example_7' : forall x,
   (x <= 42 /\ 42 <= x) -> is_fortytwo x.
 Proof. info_auto. Qed.
 
+Theorem len_dist : forall {T} (s1 s2 : list T), length (s1 ++ s2) = length s1 + length s2.
+Proof.
+  intros T s1. induction s1; simpl; auto.
+  Qed.
+
+(*
+n + m <= o + p -> n <= o /\ m <= ppumping_constant re1 + pumping_constant re2 <= length s1 + length s2
+
+3 4    5 6  -- both less than
+5 6    
+
+
+Induction LT_Rel
+  | N
+*)
+
+Theorem either_lessthan : forall n m o p, n + m <= o + p -> n <= o \/ m <= p.
+Proof.
+  lia.
+Qed.
 
 (** **** Exercise: 3 stars, advanced (pumping_redux)
 
@@ -740,7 +760,28 @@ Lemma weak_pumping : forall T (re : reg_exp T) s,
     s2 <> [] /\
     forall m, s1 ++ napp m s2 ++ s3 =~ re.
 Proof.
-(* FILL IN HERE *) Admitted.
+  (*
+  intros ? re s Hsmatch. induction Hsmatch.
+  - simpl. intros. inversion H.
+  - simpl. intros. inversion H. inversion H1.
+  - simpl. intros. inversion H.
+    + admit.
+    + 
+  *)
+  intros ? re. induction re; intros s Hmatch; inversion Hmatch; simpl in *; subst; intros Hlen; try discriminate.
+  - inversion Hlen.
+  - inversion Hlen. inversion H0.
+  - eexists. eexists. eexists.
+    specialize (IHre1 _ H0).
+    specialize (IHre2 _ H3).
+    rewrite len_dist in Hlen.
+    apply either_lessthan in Hlen. destruct Hlen.
+    + apply IHre1 in H. clear IHre1. destruct H. destruct H. destruct H. destruct H. destruct H1.
+      subst. split. 
+      * admit.
+      * split.
+        -- admit.
+    
 (* Do not modify the following line: *)
 Definition manual_grade_for_pumping_redux : option (nat*string) := None.
 (** [] *)
