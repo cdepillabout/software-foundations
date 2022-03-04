@@ -118,6 +118,21 @@ Definition cequiv (c1 c2 : com) : Prop :=
   forall (st st' : state),
     (st =[ c1 ]=> st') <-> (st =[ c2 ]=> st').
 
+Theorem cequiv_implies_both_diverge :
+    forall c1 c2 st, cequiv c1 c2 ->
+    (~ (exists st', st =[ c1 ]=> st')) -> 
+    ~ (exists st'', st =[ c2 ]=> st'').
+Proof.
+  unfold cequiv.
+  intros c1 c2 st Hceq.
+  unfold not. intros Hnostc1 Hstc2.
+  destruct Hstc2.
+  apply Hnostc1.
+  eexists.
+  rewrite Hceq.
+  eassumption.
+  Qed.
+
 (* ================================================================= *)
 (** ** Simple Examples *)
 
