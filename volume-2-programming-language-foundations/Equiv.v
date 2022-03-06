@@ -99,7 +99,7 @@ Qed.
 
 Theorem bequiv_example: bequiv <{ X - X = 0 }> <{ true }>.
 Proof.
-  intros st. unfold beval.
+  intros st. Print beval. unfold beval.
   rewrite aequiv_example. reflexivity.
 Qed.
 
@@ -186,7 +186,7 @@ Proof.
   - (* -> *)
     inversion H; subst. assumption. discriminate.
   - (* <- *)
-    apply E_IfTrue. reflexivity. assumption.  Qed.
+    apply E_IfTrue; auto. (* reflexivity. assumption. *)  Qed.
 
 (** Of course, no (human) programmer would write a conditional whose
     guard is literally [true].  But they might write one whose guard
@@ -276,7 +276,12 @@ Theorem swap_if_branches : forall b c1 c2,
     <{ if b then c1 else c2 end }>
     <{ if ~ b then c2 else c1 end }>.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros b c1 c2 st st'. split; intros H; inversion H; subst; simpl in H5.
+  - apply E_IfFalse; auto. simpl. rewrite H5. auto.
+  - apply E_IfTrue; auto. simpl. rewrite H5. auto.
+  - apply E_IfFalse. now apply negb_true_iff in H5. auto.
+  - apply E_IfTrue; auto. now rewrite negb_false_iff in H5.
+  Qed.
 (** [] *)
 
 (** For [while] loops, we can give a similar pair of theorems.  A loop
@@ -307,7 +312,7 @@ Proof.
 
     Write an informal proof of [while_false].
 
-(* FILL IN HERE *)
+(* IN HERE *)
 *)
 (** [] *)
 
@@ -358,6 +363,18 @@ Proof.
     rewrite Hb in H. discriminate.
   - (* E_WhileTrue *) (* immediate from the IH *)
     apply IHceval2. reflexivity.  Qed.
+    
+Lemma while_true_nonterm2 : forall b c st st',
+  bequiv b <{true}> ->
+  ~( st =[ while b do c end ]=> st' ).
+Proof.
+  intros b c st st' Hb.
+  intros H.
+  remember <{ while b do c end}> eqn:Heqcw.
+  induction H; try discriminate.
+  - unfold bequiv in Hb. simpl in Hb. inversion Heqcw. subst. rewrite Hb in H. discriminate.
+  - now apply IHceval2.
+  Qed. 
 
 (** **** Exercise: 2 stars, standard, optional (while_true_nonterm_informal)
 
@@ -378,7 +395,12 @@ Theorem while_true : forall b c,
     <{ while b do c end }>
     <{ while true do skip end }>.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros b c Hb st st'.
+  unfold bequiv in Hb. simpl in Hb.
+  split; intros H; exfalso.
+  - apply (while_true_nonterm b c st st' Hb H).
+  - apply (while_true_nonterm <{ true }> <{skip}> st st' (fun _ => (@Logic.eq_refl bool true)) H).
+  Qed.
 (** [] *)
 
 (** A more interesting fact about [while] commands is that any number
