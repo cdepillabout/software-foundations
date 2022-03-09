@@ -87,6 +87,8 @@ Proof.
   - destruct Hs_not_eq. reflexivity.
 Qed.
 
+
+
 (** Two strings are equal according to [eqb_string] iff they
     are equal according to [=].  So [=] is reflected in [eqb_string],
     in the sense of "reflection" as discussed in [IndProp]. *)

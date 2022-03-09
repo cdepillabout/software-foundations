@@ -775,6 +775,8 @@ Qed.
 
 Print ceval.
 
+(* This doesn't actually make any sense *)
+
 Inductive ccongru : com -> com -> Prop :=
   | Congru_Skip : ccongru <{ skip }> <{ skip }>
   | Congru_Asgn : forall a a' x, aequiv a a' -> ccongru <{x := a }> <{x := a'}>
@@ -859,20 +861,30 @@ Proof.
 
 From Coq Require Import FunctionalExtensionality.
 
-(*
-Theorem blahblah : forall x (n : nat), (forall x0 : string, (x !-> n; t_empty 0) x0 = t_empty 0 x0) -> False.
+Theorem eqb_string_sym: forall x y, eqb_string x y = eqb_string y x.
 Proof.
-  intros x.
-  destruct x.
-  - intros n H.
-    
-    
-  destruct x.
-*)
+  Check string_dec.
+  intros x y.
+  (* destruct (Coq.Strings.String.eqb_spec x y).
+  - rewrite e. reflexivity.
+  - *)
+  destruct (string_dec x y).
+  - rewrite e. reflexivity.
+  - assert (eqb_string x y = false).
+    { destruct (eqb_string_false_iff x y).
+      apply H0 in n. assumption.
+    }
+    assert (eqb_string y x = false).
+    { destruct (eqb_string_false_iff y x).
+      apply H1. unfold not in *. intro. apply n. symmetry. assumption.
+    }
+    rewrite H,H0. reflexivity.
+  Qed.
 
+(*
 Theorem all_from_skip: forall x a, (forall st st' : state, st =[ skip ]=> st' -> st =[ x := a ]=> st') -> False.
 Proof.
-  intros x a H.
+  (* intros x a H.
   set (my_state := t_empty 0).
   assert (my_state =[ x := a ]=> my_state).
   { apply H. apply E_Skip. }
@@ -881,10 +893,63 @@ Proof.
   Print Coq.Logic.FunctionalExtensionality.
   set (blah := equal_f H5).
   apply equal_f in H5.
+  *)
   (* TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   Try destructing or inverting on aeval a, and based on whether that is 0 or greater
   than zero, I pick a starting state that will make the function passed in fail!
   *)
+  intros x a.
+  (* destruct (aeval a) eqn:E.*)
+  induction a.
+  - destruct n.
+    + intro H. set (my_state := t_empty 1).
+      assert (my_state =[ x := 0 ]=> my_state).
+      { apply H. constructor. }
+      inversion H0; subst.
+      simpl in H4. subst.
+      set (blah := equal_f H5).
+      specialize (blah x).
+      unfold t_update in blah.
+      unfold my_state in blah. unfold t_empty in blah.
+      Search (eqb_string _ _).
+      rewrite <- eqb_string_refl in blah.
+      discriminate.
+    + intro H. set (my_state := t_empty 0).
+      assert (my_state =[ x := (S n) ]=> my_state).
+      { apply H. constructor. }
+      inversion H0; subst.
+      simpl in H4. subst.
+      set (blah := equal_f H5).
+      specialize (blah x).
+      unfold t_update in blah.
+      unfold my_state in blah. unfold t_empty in blah.
+      rewrite <- eqb_string_refl in blah.
+      discriminate.
+  - intro H.
+    About t_update.
+    Print PLF.Maps.
+    set (my_state := (x0 !-> 1; _ !-> 0)).
+    assert (my_state =[ x := x0 ]=> my_state).
+    { apply H. constructor. }
+    inversion H0; subst.
+    Print ceval.
+    unfold my_state in H5.
+    unfold aeval in H4.
+    unfold my_state in H4. unfold t_update in H4.
+    rewrite <- eqb_string_refl in H4.
+    unfold t_update in H5.
+    unfold t_empty in H5.
+    set (blah := equal_f H5 x); simpl in blah.
+    rewrite <- eqb_string_refl in blah.
+    subst.
+    rewrite eqb_string_sym in H4.
+    assert (eqb_string x x0 -> eqb_string x0 x)
+    simpl in H4.
+    unfold t_update in H4,blah. unfold my_state in H4. unfold t_update in H4. rewrite <- eqb_string_refl in H4.
+    unfold my_state in blah. unfold t_update in blah. unfold t_empty in blah.
+    rewrite <- eqb_string_refl in blah.
+    specialize (blah x).
+    unfold t_update in blah.
 
 Theorem congru_is_equiv3 : forall c1 c2, cequiv c1 c2 -> crec aequiv bequiv c1 c2.
 Proof.
@@ -906,6 +971,8 @@ Proof.
     destruct Hequiv.
     specialize (H (E_Skip (_ !-> 0))).
     inversion H; subst. simpl in H4.
+*)
+
 
 (** **** Exercise: 3 stars, advanced, optional (not_congr)
 
