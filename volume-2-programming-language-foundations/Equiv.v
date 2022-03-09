@@ -466,7 +466,17 @@ Theorem assign_aequiv : forall (x : string) a,
   aequiv x a ->
   cequiv <{ skip }> <{ x := a }>.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros x a Ha st st'. unfold aequiv in Ha.
+  split; intros H; inversion H; subst; clear H.
+  - assert (st' =[ x := a ]=> (x !-> aeval st' a; st')).
+    { apply E_Asgn. reflexivity. }
+    rewrite <- Ha in H. simpl in H.
+    rewrite t_update_same in H.
+    assumption.
+  - rewrite <- Ha.
+    rewrite t_update_same.
+    constructor.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard (equiv_classes) *)
@@ -763,6 +773,140 @@ Proof.
     + apply refl_cequiv.
 Qed.
 
+Print ceval.
+
+Inductive ccongru : com -> com -> Prop :=
+  | Congru_Skip : ccongru <{ skip }> <{ skip }>
+  | Congru_Asgn : forall a a' x, aequiv a a' -> ccongru <{x := a }> <{x := a'}>
+  | Congru_Seq : forall c1 c1' c2 c2', ccongru c1 c1' -> ccongru c2 c2' -> ccongru <{ c1;c2 }> <{ c1';c2' }>
+  | Congru_If : forall b b' c1 c1' c2 c2',
+      bequiv b b' -> ccongru c1 c1' -> ccongru c2 c2' ->
+      ccongru <{ if b then c1 else c2 end }> <{ if b' then c1' else c2' end }>
+  | Congru_While : forall b b' c c',
+      bequiv b b' -> ccongru c c' -> ccongru <{ while b do c end }> <{ while b' do c' end }>
+  .
+
+Theorem congru_is_equiv : forall c1 c2, ccongru c1 c2 -> cequiv c1 c2.
+Proof.
+  intros c1 c2 Hcongru.
+  induction Hcongru; subst.
+  - (* skip *) unfold cequiv. split; intros; assumption.
+  - (* assign *) apply CAsgn_congruence; assumption.
+  - (* seq *) apply CSeq_congruence; assumption.
+  - (* if *) apply CIf_congruence; assumption.
+  - (* while *) apply CWhile_congruence; assumption.
+  Qed. 
+  
+Example congruence_example2:
+  ccongru
+    (* Program 1: *)
+    <{ X := 0;
+       if (X = 0)
+       then
+         Y := 0
+       else
+         Y := 42
+       end }>
+    (* Program 2: *)
+    <{ X := 0;
+       if (X = 0)
+       then
+         Y := X - X   (* <--- Changed here *)
+       else
+         Y := 42
+       end }>.
+Proof.
+  apply Congru_Seq. apply Congru_Asgn. apply refl_aequiv.
+  apply Congru_If. apply refl_bequiv.
+  - apply Congru_Asgn.
+    unfold aequiv. simpl. lia.
+  - apply Congru_Asgn. apply refl_aequiv.
+  Qed.
+
+Print aequiv.
+
+Inductive crec (af : aexp -> aexp -> Type) (bf : bexp -> bexp -> Type): com -> com -> Prop :=
+  | CRec_Skip : crec af bf <{ skip }> <{ skip }>
+  | CRec_Asgn : forall a a' x, af a a' -> crec af bf <{x := a }> <{x := a'}>
+  | CRec_Seq : forall c1 c1' c2 c2', crec af bf c1 c1' -> crec af bf c2 c2' -> crec af bf <{ c1;c2 }> <{ c1';c2' }>
+  | CRec_If : forall b b' c1 c1' c2 c2',
+      bf b b' -> crec af bf c1 c1' -> crec af bf c2 c2' ->
+      crec af bf <{ if b then c1 else c2 end }> <{ if b' then c1' else c2' end }>
+  | CRec_While : forall b b' c c',
+      bf b b' -> crec af bf c c' -> crec af bf <{ while b do c end }> <{ while b' do c' end }>
+  .
+  
+Check crec_ind.  
+  
+  
+Theorem congru_is_equiv2 : forall c1 c2, crec aequiv bequiv c1 c2 -> cequiv c1 c2.
+Proof.
+  (*
+  intros c1 c2 Hcongru.
+  remember aequiv eqn:V.
+  remember bequiv eqn:X.
+  (* remember (aequiv bequiv c1 c2) eqn:E. *)
+  induction Hcongru; subst.
+  *)
+  intros c1 c2 Hcongru.
+  induction Hcongru.
+  - (* skip *) unfold cequiv. split; intros; assumption.
+  - (* assign *) apply CAsgn_congruence; assumption.
+  - (* seq *) apply CSeq_congruence; assumption.
+  - (* if *) apply CIf_congruence; assumption.
+  - (* while *) apply CWhile_congruence; assumption.
+  Qed. 
+
+From Coq Require Import FunctionalExtensionality.
+
+(*
+Theorem blahblah : forall x (n : nat), (forall x0 : string, (x !-> n; t_empty 0) x0 = t_empty 0 x0) -> False.
+Proof.
+  intros x.
+  destruct x.
+  - intros n H.
+    
+    
+  destruct x.
+*)
+
+Theorem all_from_skip: forall x a, (forall st st' : state, st =[ skip ]=> st' -> st =[ x := a ]=> st') -> False.
+Proof.
+  intros x a H.
+  set (my_state := t_empty 0).
+  assert (my_state =[ x := a ]=> my_state).
+  { apply H. apply E_Skip. }
+  inversion H0; subst.
+  Print functional_extensionality.
+  Print Coq.Logic.FunctionalExtensionality.
+  set (blah := equal_f H5).
+  apply equal_f in H5.
+  (* TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  Try destructing or inverting on aeval a, and based on whether that is 0 or greater
+  than zero, I pick a starting state that will make the function passed in fail!
+  *)
+
+Theorem congru_is_equiv3 : forall c1 c2, cequiv c1 c2 -> crec aequiv bequiv c1 c2.
+Proof.
+  unfold cequiv.
+  intros c1 c2 Hequiv. destruct c1,c2.
+  - constructor.
+  - Print state. Print total_map.
+    About t_empty.
+    
+    About total_map.
+    Print PLF.Maps.
+    Print t_empty.
+    Check t_empty 0.
+    exfalso.
+    About state.
+    Print PLF.Imp.state.
+    About total_map.
+    specialize (Hequiv (t_empty 0) (t_empty 0)).
+    destruct Hequiv.
+    specialize (H (E_Skip (_ !-> 0))).
+    inversion H; subst. simpl in H4.
+
 (** **** Exercise: 3 stars, advanced, optional (not_congr)
 
     We've shown that the [cequiv] relation is both an equivalence and
@@ -781,7 +925,7 @@ Qed.
     Compiler optimizations such as constant folding are a canonical
     example, but there are many others. *)
 
-(** A program transformation is _sound_ if it preserves the
+(*** A program transformation is _sound_ if it preserves the
     behavior of the original program. *)
 
 Definition atrans_sound (atrans : aexp -> aexp) : Prop :=
