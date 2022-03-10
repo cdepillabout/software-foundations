@@ -1102,6 +1102,39 @@ Proof.
     *
 *)
 
+From Coq Require Import Lists.ListSet.
+
+Print set.
+Check empty_set.
+Check set_add string_dec.
+
+Print eqb_string.
+Check string_dec.
+
+Inductive c_vars_set : com -> set string -> Prop :=
+  | E_Vars_Set_Skip : c_vars_set <{ skip }> (@empty_set string)
+  | E_Vars_Set_Asgn : 
+      forall (a : aexp) (x : string), c_vars_set <{ x := a }> (set_add string_dec x (@empty_set string))
+  | E_Vars_Set_Seq :
+      forall (c1 c2 : com) s1 s2, c_vars_set c1 s1 -> c_vars_set c2 s2 -> c_vars_set <{ c1; c2 }> (set_union string_dec s1 s2)
+  .
+  
+Definition cequiv_same_vars_set (c1 c2 : com) : Prop :=
+  forall vs, c_vars_set c1 vs <-> c_vars_set c2 vs.
+
+Theorem skip_same_vars : forall x a,
+  cequiv_same_vars_set
+    <{ skip; x := a }>
+    <{ x := a }>.
+Proof.
+  intros x a.
+  split; intros H; inversion H; subst.
+  - (* -> *)
+    (* TODO: HERE??? *)
+    inversion H2; subst. inversion H4; subst.
+  - (* <- *)
+    constructor.
+Qed.
 
 (* FILL IN HERE
 
