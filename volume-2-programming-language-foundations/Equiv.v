@@ -980,7 +980,132 @@ Proof.
     a congruence on commands.  Can you think of a relation on commands
     that is an equivalence but _not_ a congruence? *)
 
+Definition cequiv_one_state (c1 c2 : com) : Prop :=
+  (t_empty 0 =[ c1 ]=> t_empty 0) <-> (t_empty 0 =[ c2 ]=> t_empty 0).
+
+Theorem skip_left_one_state : forall c,
+  cequiv_one_state
+    <{ skip; c }>
+    c.
+Proof.
+  (* WORKED IN CLASS *)
+  intros c.
+  split; intros H.
+  - (* -> *)
+    inversion H. subst.
+    inversion H2. subst.
+    assumption.
+  - (* <- *)
+    apply E_Seq with (t_empty 0).
+    apply E_Skip.
+    assumption.
+Qed.
+
+Lemma refl_cequiv_one_state : forall (c : com), cequiv_one_state c c.
+Proof.
+  unfold cequiv_one_state. intros c. reflexivity.  Qed.
+
+Lemma sym_cequiv_one_state : forall (c1 c2 : com),
+  cequiv_one_state c1 c2 -> cequiv_one_state c2 c1.
+Proof.
+  unfold cequiv_one_state. intros c1 c2 H.
+  rewrite H. reflexivity.
+Qed.
+
+Lemma trans_cequiv_one_state : forall (c1 c2 c3 : com),
+  cequiv_one_state c1 c2 -> cequiv_one_state c2 c3 -> cequiv_one_state c1 c3.
+Proof.
+  unfold cequiv_one_state. intros c1 c2 c3 H12 H23.
+  rewrite H12. apply H23.
+Qed.
+
+Theorem CAsgn_congruence_one_state : forall x a a',
+  aequiv a a' ->
+  cequiv_one_state <{x := a}> <{x := a'}>.
+Proof.
+  intros x a a' Heqv.
+  split; intros Hceval.
+  - (* -> *)
+    inversion Hceval. subst.
+    unfold aequiv in Heqv.
+    rewrite (Heqv _) in H2.
+    rewrite H3 at 1.
+    apply E_Asgn.
+    rewrite H3 in H2.
+    assumption.
+  - (* <- *)
+    Admitted.
+
+Inductive c_le_2 : nat -> com -> Prop :=
+    E_Le_2_Skip : c_le_2 1 <{ skip }>
+  | E_Le_2_Asgn : forall (a : aexp) (x : string), c_le_2 1 <{ x := a }>
+  | E_Le_2_Seq : forall n m (c1 c2 : com), c_le_2 n c1 -> c_le_2 m c2 -> n + m <= 2 -> c_le_2 (n + m) <{ c1; c2 }>
+  | E_Le_2_If : forall (b : bexp) (c1 c2 : com), c_le_2 1 <{ if b then c1 else c2 end }>
+  .
+
+Definition cequiv_le_2 n (c1 c2 : com) : Prop :=
+  c_le_2 n c1 <-> c_le_2 n c2.
+
+Theorem skip_left_le_2 : forall x a,
+  cequiv_le_2 1
+    <{ skip }>
+    <{ x := a }>.
+Proof.
+  (* WORKED IN CLASS *)
+  intros c.
+  split; intros H.
+  - (* -> *)
+    constructor.
+  - (* <- *)
+    constructor.
+Qed.
+
+Lemma refl_cequiv_le_2 : forall n (c : com), cequiv_le_2 n c c.
+Proof.
+  unfold cequiv_le_2. intros c. reflexivity.  Qed.
+
+Lemma sym_cequiv_le_2 : forall n (c1 c2 : com),
+  cequiv_le_2 n c1 c2 -> cequiv_le_2 n c2 c1.
+Proof.
+  unfold cequiv_le_2. intros n c1 c2 H.
+  rewrite H. reflexivity.
+Qed.
+
+Lemma trans_cequiv_le_2 : forall n (c1 c2 c3 : com),
+  cequiv_le_2 n c1 c2 -> cequiv_le_2 n c2 c3 -> cequiv_le_2 n c1 c3.
+Proof.
+  unfold cequiv_le_2. intros n c1 c2 c3 H12 H23.
+  rewrite H12. apply H23.
+Qed.
+
+Theorem n_le_2_cequiv_thing : forall n c, c_le_2 n c -> n <= 2.
+Proof.
+  intros n c H.
+  inversion H; subst; try lia.
+  Qed.
+
+(* It looks like I am not able to write a congruence here.  Don't know if this is a "legitimate" congruence though. *)
+
+(*
+Theorem CSeq_congruence_le_2 : forall n c1 c1' c2 c2',
+  cequiv_le_2 n c1 c1' -> cequiv_le_2 n c2 c2' ->
+  cequiv_le_2 n <{ c1;c2 }> <{ c1';c2' }>.
+Proof.
+  unfold cequiv_le_2.
+  intros n c1 c1' c2 c2' Hequiv1 Hequiv2.
+  destruct Hequiv1,Hequiv2.
+  split; intro H3; set (G := n_le_2_cequiv_thing _ _ H3); induction H3.
+  - destruct n0,m; simpl in *.
+    * 
+  
+   apply E_Le_2_Seq.
+    *
+*)
+
+
 (* FILL IN HERE
+
+(* TODO: Try to make an equivalence as explained in that stack overflow post, where you replace variables. *)
 
     [] *)
 
