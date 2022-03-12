@@ -1116,11 +1116,17 @@ Inductive c_vars_set : com -> set string -> Prop :=
   | E_Vars_Set_Asgn : 
       forall (a : aexp) (x : string), c_vars_set <{ x := a }> (set_add string_dec x (@empty_set string))
   | E_Vars_Set_Seq :
-      forall (c1 c2 : com) s1 s2, c_vars_set c1 s1 -> c_vars_set c2 s2 -> c_vars_set <{ c1; c2 }> (set_union string_dec s1 s2)
+      forall (c1 c2 : com) s1 s2, c_vars_set c1 s1 -> c_vars_set c2 s2 ->
+      c_vars_set <{ c1; c2 }> (set_union string_dec s1 s2)
   .
   
 Definition cequiv_same_vars_set (c1 c2 : com) : Prop :=
   forall vs, c_vars_set c1 vs <-> c_vars_set c2 vs.
+
+Theorem set_add_empty_is_singleton : forall A (x : A) f, set_add f x (empty_set A) = [x].
+Proof.
+  unfold empty_set. unfold set_add. reflexivity.
+Qed.
 
 Theorem skip_same_vars : forall x a,
   cequiv_same_vars_set
@@ -1132,15 +1138,318 @@ Proof.
   - (* -> *)
     (* TODO: HERE??? *)
     inversion H2; subst. inversion H4; subst.
+    unfold set_union in *.
+    rewrite set_add_empty_is_singleton in *.
+    unfold empty_set in *.
+    unfold set_add in *. assumption.
   - (* <- *)
-    constructor.
+    replace (set_add string_dec x (empty_set string))
+      with (set_union string_dec (@empty_set string) (set_add string_dec x (empty_set string))).
+    * constructor. constructor. assumption.
+    * unfold set_union. unfold empty_set. unfold set_add. reflexivity.
+  Qed. 
+
+
+Lemma refl_cequiv_same_vars_set : forall (c : com), cequiv_same_vars_set c c.
+Proof.
+  unfold cequiv_same_vars_set. intros c. reflexivity.  Qed.
+
+Lemma sym_cequiv_same_vars_set : forall (c1 c2 : com),
+  cequiv_same_vars_set c1 c2 -> cequiv_same_vars_set c2 c1.
+Proof.
+  unfold cequiv_same_vars_set. intros c1 c2 H vs. specialize (H vs).
+  rewrite H. reflexivity.
 Qed.
 
+Lemma trans_cequiv_same_vars_set : forall (c1 c2 c3 : com),
+  cequiv_same_vars_set c1 c2 -> cequiv_same_vars_set c2 c3 -> cequiv_same_vars_set c1 c3.
+Proof.
+  unfold cequiv_same_vars_set. intros c1 c2 c3 H12 H23 vs.
+  specialize (H12 vs); specialize (H23 vs).
+  rewrite H12. apply H23.
+Qed.
+
+Theorem CSeq_congruence_le_2 : forall c1 c1' c2 c2',
+  cequiv_same_vars_set c1 c1' -> cequiv_same_vars_set c2 c2' ->
+  cequiv_same_vars_set <{ c1;c2 }> <{ c1';c2' }>.
+Proof.
+  unfold cequiv_same_vars_set.
+  intros c1 c1' c2 c2' Hc1 Hc2 vs. split; intros H; inversion H; subst.
+  - specialize (Hc1 s1); specialize (Hc2 s2). apply Hc1 in H2; apply Hc2 in H4.
+    constructor; assumption.
+  - specialize (Hc1 s1); specialize (Hc2 s2). apply Hc1 in H2; apply Hc2 in H4.
+    constructor; assumption.
+  Qed.
+
+
 (* FILL IN HERE
+
+
 
 (* TODO: Try to make an equivalence as explained in that stack overflow post, where you replace variables. *)
 
     [] *)
+    
+Definition var_swap: Type := (string * string).
+
+Print t_update.
+Check t_update_eq : forall (A : Type) (m : total_map A) (x : string) (v : A), (x !-> v; m) x = v.
+Check t_update_neq : forall (A : Type) (m : total_map A) (x1 x2 : string) (v : A),
+  x1 <> x2 -> (x1 !-> v; m) x2 = m x2.
+Check t_update_same : forall (A : Type) (m : total_map A) (x : string), (x !-> m x; m) = m.
+Check t_update_shadow : forall (A : Type) (m : total_map A) (x : string) (v1 v2 : A),
+  (x !-> v2; x !-> v1; m) = (x !-> v2; m).
+Check t_update_permute : forall (A : Type) (m : total_map A) (v1 v2 : A) (x1 x2 : string),
+  x2 <> x1 -> (x1 !-> v1; x2 !-> v2; m) = (x2 !-> v2; x1 !-> v1; m).
+
+Definition swap_vars (vs : var_swap) (s : state): state :=
+  match vs with
+  | (renameA, renameB) =>
+      (renameA !-> s renameB; renameB !-> s renameA; s)
+  end.
+
+Example y_test_1:  (Y !-> 3; _ !-> 0) Y = 3. Proof. reflexivity. Qed.
+Example y_test_2:  (Y !-> 3; _ !-> 0) X = 0. Proof. reflexivity. Qed.
+Example swap_x_test_1:  (swap_vars (X,Y) (X !-> 3; _ !-> 0)) X = 0. Proof. reflexivity. Qed.
+Example swap_x_test_2:  (swap_vars (X,Y) (X !-> 3; _ !-> 0)) Y = 3. Proof. reflexivity. Qed.
+
+Theorem t_update_same_as_empty : forall (x : string) (n : nat), (x !-> n; _ !-> n) = (_ !-> n).
+Proof.
+  intros x n. unfold t_empty. unfold t_update. apply functional_extensionality.
+  intros y.
+  destruct (eqb_string x y); reflexivity.
+Qed.
+
+Theorem unwind_e_asgn : forall x a n st, aeval st a = n ->
+  st =[ x := a ]=> (x !-> aeval st a; st).
+Proof.
+  intros x a n st H. rewrite H. now apply E_Asgn.
+Qed. 
+
+Example ceval_swap_example1 : forall a st, st =[ X := a ]=> (X !-> aeval st a; st).
+Proof. intros a st. constructor. reflexivity. Qed.
+
+Example ceval_swap_example2 : t_empty 0 =[ X := 3 ]=> swap_vars (X,Y) (Y !-> 3; _ !-> 0).
+Proof.
+  unfold swap_vars.
+  rewrite t_update_eq. rewrite t_update_shadow.
+  rewrite t_update_neq.
+  - replace ((_ !-> 0) X) with 0 by reflexivity.
+    rewrite t_update_same_as_empty. constructor. reflexivity.
+  - unfold not. intro H. discriminate.
+  Qed.
+  
+Example ceval_swap_example2' : forall a st, 
+  st =[ X := a ]=> swap_vars (X,Y) (Y !-> aeval st a; X !-> st Y; st).
+Proof.
+  unfold swap_vars.
+  intros a st.
+  rewrite t_update_eq.
+  rewrite t_update_shadow.
+  rewrite t_update_permute by (intros; discriminate).
+  rewrite t_update_shadow.
+  rewrite t_update_neq by (intro; discriminate).
+  rewrite t_update_eq.
+  rewrite t_update_permute by (intros; discriminate).
+  rewrite t_update_same.
+  now constructor.
+  Qed.
+  
+Example ceval_swap_example3 : t_empty 0 =[ Y := 3 ]=> (Y !-> 3; _ !-> 0).
+Proof. constructor. reflexivity. Qed.
+  
+Example ceval_swap_example4 : t_empty 0 =[ Y := 3 ]=> swap_vars (X,Y) (X !-> 3; _ !-> 0).
+Proof.
+  unfold swap_vars.
+  rewrite t_update_eq.
+  rewrite t_update_permute.
+  * rewrite t_update_neq.
+    - rewrite t_update_shadow. replace ((_ !-> 0) Y) with 0 by (reflexivity).
+      rewrite t_update_same_as_empty. constructor. reflexivity.
+    - intro H. discriminate.
+  * intro H. discriminate.
+  Qed.
+
+Print ceval_swap_example4.
+
+Print ceval. Print state.
+
+Definition cequiv_under_var_swaps (c1 c2 : com) : Prop :=
+  exists x y, forall st st',
+  st =[ c1 ]=> swap_vars (x,y) st' <-> st =[ c2 ]=> (x !-> st' y; st').
+
+
+
+
+
+
+
+
+Fixpoint swap_id_aexp (x y : string) (a : aexp) : aexp :=
+  match a with
+  | ANum n => ANum n
+  | AId str => if eqb_string x str then AId y else AId str
+  | APlus b c => APlus (swap_id_aexp x y b) (swap_id_aexp x y c)
+  | AMinus b c => AMinus (swap_id_aexp x y b) (swap_id_aexp x y c)
+  | AMult b c => AMult (swap_id_aexp x y b) (swap_id_aexp x y c)
+  end.
+
+Fixpoint swap_id_bexp (x y : string) (b : bexp) : bexp :=
+  match b with
+  | BTrue => BTrue
+  | BFalse => BFalse
+  | BEq a a' => BEq (swap_id_aexp x y a) (swap_id_aexp x y a')
+  | BLe a a' => BLe (swap_id_aexp x y a) (swap_id_aexp x y a')
+  | BNot b' => BNot (swap_id_bexp x y b')
+  | BAnd b1 b2 => BAnd (swap_id_bexp x y b1) (swap_id_bexp x y b2)
+  end.
+
+Fixpoint swap_id_com (x y : string) (c : com) : com :=
+  match c with
+  | CSkip => CSkip
+  | CAsgn str a => if eqb_string x str then CAsgn y (swap_id_aexp x y a) else CAsgn str a
+  | CSeq c1 c2 => CSeq (swap_id_com x y c1) (swap_id_com x y c2)
+  | CIf b c1 c2 => CIf (swap_id_bexp x y b) (swap_id_com x y c1) (swap_id_com x y c2)
+  | CWhile b c' => CWhile (swap_id_bexp x y b) (swap_id_com x y c')
+  end.
+  
+Fixpoint no_vars (a : aexp): Prop :=
+  match a with
+  | ANum n => True
+  | AId str => False
+  | APlus b c => no_vars b /\ no_vars c
+  | AMinus b c => no_vars b /\ no_vars c
+  | AMult b c => no_vars b /\ no_vars c
+  end.
+  
+Theorem no_vars_under_plus : forall a1 a2, no_vars a1 -> no_vars a2 -> no_vars (APlus a1 a2).
+Proof.
+  intros a1 a2 Hnoa1 Hnoa2. unfold no_vars. fold no_vars. split; assumption.
+Qed.
+
+(* no_vars <{ c1 + c2 }> -> no_vars c1 /\ no_vars c2. *)
+  
+Theorem swap_id_is_no_op_when_no_vars : forall x y c, no_vars c -> swap_id_aexp x y c = c.
+Proof.
+  intros x y c. induction c. 
+  - simpl. reflexivity.
+  - simpl. intros. destruct H.
+  - unfold swap_id_aexp. fold swap_id_aexp.
+    intros Hno_both. unfold no_vars in Hno_both. fold no_vars in Hno_both. destruct Hno_both as [HHH FFF].
+    apply IHc1 in HHH. apply IHc2 in FFF. rewrite HHH. now rewrite FFF.
+  - unfold swap_id_aexp. fold swap_id_aexp.
+    intros Hno_both. unfold no_vars in Hno_both. fold no_vars in Hno_both. destruct Hno_both as [HHH FFF].
+    apply IHc1 in HHH. apply IHc2 in FFF. rewrite HHH. now rewrite FFF.
+  - unfold swap_id_aexp. fold swap_id_aexp.
+    intros Hno_both. unfold no_vars in Hno_both. fold no_vars in Hno_both. destruct Hno_both as [HHH FFF].
+    apply IHc1 in HHH. apply IHc2 in FFF. rewrite HHH. now rewrite FFF.
+  Qed.
+  
+Definition cequiv_under_id_change (c1 c2 : com) : Prop :=
+  exists x y, swap_id_com x y c1 = c2.
+
+Check eqb_string.
+
+Theorem if_not_known : forall {A} (b : bool) (n m z : A),
+  (if b then n else m) = z -> ~(m = z) -> b = true /\ n = z.
+Proof.
+  intros A b n m z. destruct b.
+  - intros. split; auto.
+  - intros. unfold not in H0. apply H0 in H. destruct H.
+  Qed. 
+
+Theorem simple_id_change : forall a,
+  no_vars a ->
+  cequiv_under_id_change
+    <{ X := a }>
+    <{ Y := a }>.
+Proof.
+  
+  unfold cequiv_under_id_change.
+  induction a; intros H; exists X,Y.
+  - reflexivity.
+  - destruct H.
+  - destruct H.
+    specialize (IHa1 H); destruct IHa1. destruct H1.
+    specialize (IHa2 H0); destruct IHa2. destruct H2.
+    unfold swap_id_com.
+    rewrite <- eqb_string_refl.
+    assert (no_vars <{ a1 + a2 }>).
+    { apply no_vars_under_plus; assumption. }
+    rewrite (swap_id_is_no_op_when_no_vars X Y _ H3).
+    reflexivity.
+  - destruct H.
+    specialize (IHa1 H); destruct IHa1. destruct H1.
+    specialize (IHa2 H0); destruct IHa2. destruct H2.
+    unfold swap_id_com.
+    rewrite <- eqb_string_refl.
+    assert (no_vars <{ a1 - a2 }>).
+    { unfold no_vars. fold no_vars. split; assumption. }
+    now rewrite (swap_id_is_no_op_when_no_vars X Y _ H3).
+  - destruct H.
+    specialize (IHa1 H); destruct IHa1. destruct H1.
+    specialize (IHa2 H0); destruct IHa2. destruct H2.
+    unfold swap_id_com.
+    rewrite <- eqb_string_refl.
+    assert (no_vars <{ a1 * a2 }>).
+    { unfold no_vars. fold no_vars. split; assumption. }
+    now rewrite (swap_id_is_no_op_when_no_vars X Y _ H3).
+  Qed.
+
+(* TODO: NEED TO DO THIS THE NEXT DAY!!! *)
+
+Lemma refl_cequiv_under_id_change : forall (c : com), cequiv_under_id_change c c.
+Proof.
+  unfold cequiv_under_id_change. intros c. exists X,X. 
+  reflexivity.  Qed.
+
+Lemma sym_cequiv_same_vars_set : forall (c1 c2 : com),
+  cequiv_same_vars_set c1 c2 -> cequiv_same_vars_set c2 c1.
+Proof.
+  unfold cequiv_same_vars_set. intros c1 c2 H vs. specialize (H vs).
+  rewrite H. reflexivity.
+Qed.
+
+Lemma trans_cequiv_same_vars_set : forall (c1 c2 c3 : com),
+  cequiv_same_vars_set c1 c2 -> cequiv_same_vars_set c2 c3 -> cequiv_same_vars_set c1 c3.
+Proof.
+  unfold cequiv_same_vars_set. intros c1 c2 c3 H12 H23 vs.
+  specialize (H12 vs); specialize (H23 vs).
+  rewrite H12. apply H23.
+Qed.
+
+(*
+
+Theorem rename_vars_example : forall a,
+  cequiv_under_var_swaps
+    <{ X := a }>
+    <{ Y := a }>.
+Proof.
+  intros a. unfold cequiv_under_var_swaps.
+  exists X,Y. intros st st'. unfold swap_vars. split.
+  - admit.
+  - intros H. inversion H. subst. inversion H.  subst.
+    rewrite t_update_eq. rewrite t_update_eq. rewrite t_update_permute by (intro; discriminate).
+    rewrite t_update_shadow.
+    rewrite t_update_permute by discriminate.
+    rewrite t_update_shadow.
+    rewrite t_update_neq by discriminate.
+    rewrite t_update_eq.
+    apply 
+    replace ((Y !-> aeval st a; st) X) with (st X) by (reflexivity).
+    rewrite t_update_shadow.
+    replace (Y !-> st X; Y !-> aeval st a; st) with (Y !-> st X; st).
+    * admit.
+    * 
+    rewrite t_update_same.
+    Print ceval.
+    inversion H. subst.
+    constructor.
+    rewrite t_update_neq.
+    * 
+    unfold t_update.
+    unfold t_update in H. 
+*)
 
 (* ################################################################# *)
 (** * Program Transformations *)
