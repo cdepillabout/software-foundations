@@ -1396,19 +1396,78 @@ Proof.
     now rewrite (swap_id_is_no_op_when_no_vars X Y _ H3).
   Qed.
 
-(* TODO: NEED TO DO THIS THE NEXT DAY!!! *)
+Theorem swap_id_aexp_same : forall x a, swap_id_aexp x x a = a.
+Proof.
+  intros x a. induction a; try reflexivity.
+  - unfold swap_id_aexp. unfold eqb_string. remember (string_dec x x0) as cw.
+    destruct cw.
+    * now rewrite e.
+    * reflexivity.
+  - unfold swap_id_aexp. fold swap_id_aexp. now rewrite IHa1,IHa2. 
+  - unfold swap_id_aexp. fold swap_id_aexp. now rewrite IHa1,IHa2. 
+  - unfold swap_id_aexp. fold swap_id_aexp. now rewrite IHa1,IHa2. 
+  Qed.
+  
+Theorem swap_id_bexp_same : forall x b, swap_id_bexp x x b = b.
+Proof.
+  intros x b.
+  induction b; try reflexivity;
+  try
+    ( unfold swap_id_bexp;
+      fold swap_id_bexp;
+      rewrite swap_id_aexp_same;
+      rewrite swap_id_aexp_same
+    );
+  try reflexivity.
+  - unfold swap_id_bexp. fold swap_id_bexp. now rewrite IHb.
+  - unfold swap_id_bexp. fold swap_id_bexp. now rewrite IHb1,IHb2. 
+  Qed.
+
+Theorem swap_id_com_same : forall x c, swap_id_com x x c = c.
+Proof.
+  intros x c.
+  induction c;
+  try
+    ( unfold swap_id_com;
+      fold swap_id_com
+      (* rewrite swap_id_aexp_same;
+      rewrite swap_id_aexp_same *)
+    );
+  try reflexivity;
+  try rewrite swap_id_bexp_same;
+  try rewrite swap_id_aexp_same;
+  subst.
+  - destruct (eqb_string x x0) eqn:E.
+    * apply eqb_string_true_iff in E; now subst. 
+    * reflexivity.
+  - now rewrite IHc1,IHc2.
+  - now rewrite IHc1,IHc2.
+  - now rewrite IHc.
+  Qed.
 
 Lemma refl_cequiv_under_id_change : forall (c : com), cequiv_under_id_change c c.
 Proof.
-  unfold cequiv_under_id_change. intros c. exists X,X. 
-  reflexivity.  Qed.
+  unfold cequiv_under_id_change. intros c. exists X,X.
+  now rewrite swap_id_com_same.
+  Qed.
 
-Lemma sym_cequiv_same_vars_set : forall (c1 c2 : com),
-  cequiv_same_vars_set c1 c2 -> cequiv_same_vars_set c2 c1.
+(* Lemma double_swap_aexp : forall x y, swap_id_aexp x y (swap_id_aexp y x a). *)
+
+(*
+
+Lemma sym_cequiv_under_id_change : forall (c1 c2 : com),
+  cequiv_under_id_change c1 c2 -> cequiv_under_id_change c2 c1.
 Proof.
-  unfold cequiv_same_vars_set. intros c1 c2 H vs. specialize (H vs).
-  rewrite H. reflexivity.
+  unfold cequiv_under_id_change. intros c1 c2 H.
+  destruct H as [x [y H]]. exists y,x.
+  unfold swap_id_com in H. induction c1; subst.
+  - unfold swap_id_com. reflexivity.
+  - destruct (eqb_string x x0) eqn:E.
+    * apply eqb_string_true_iff in E. subst.
+      unfold swap_id_com. rewrite <- eqb_string_refl.
 Qed.
+
+
 
 Lemma trans_cequiv_same_vars_set : forall (c1 c2 c3 : com),
   cequiv_same_vars_set c1 c2 -> cequiv_same_vars_set c2 c3 -> cequiv_same_vars_set c1 c3.
@@ -1417,6 +1476,81 @@ Proof.
   specialize (H12 vs); specialize (H23 vs).
   rewrite H12. apply H23.
 Qed.
+
+*)
+
+Module FreeCEquiv.
+
+Inductive cequiv: com -> com -> Prop :=
+  | CEquivRefl : forall c, cequiv c c
+  | CEquivSym : forall c1 c2, cequiv c2 c1 -> cequiv c1 c2
+  | CEquivTrans : forall c1 c2 c3, cequiv c1 c2 -> cequiv c2 c3 -> cequiv c1 c3
+  | CEquivSwap : forall x y c1 c2, swap_id_com x y c1 = c2 -> cequiv c1 c2
+  .
+
+
+Lemma refl_cequiv : forall (c : com), cequiv c c.
+Proof. constructor. Qed.
+
+Lemma sym_cequiv : forall (c1 c2 : com), cequiv c1 c2 -> cequiv c2 c1.
+Proof. intros c1 c2 H. apply CEquivSym. apply H. Qed.
+
+Lemma trans_cequiv : forall (c1 c2 c3 : com), cequiv c1 c2 -> cequiv c2 c3 -> cequiv c1 c3.
+Proof. intros c1 c2 c3 H12 H23. apply CEquivTrans with c2; auto. Qed.
+
+(* Theorem CSeq_congruence : ~ (forall c1 c1' c2 c2',
+  cequiv c1 c1' -> cequiv c2 c2' -> cequiv <{ c1;c2 }> <{ c1';c2' }>).
+Proof.
+  unfold not. intros H.
+  set (c1 := <{ X := 100 }>). set (c1' := <{ Y := 100 }>).
+  set (c2 := <{ X := 200 }>). set (c2' := <{ Z := 200 }>).
+  assert (cequiv c1 c1') by (now apply (CEquivSwap X Y)).
+  assert (cequiv c2 c2') by (now apply (CEquivSwap X Z)).
+  specialize (H _ _ _ _ H0 H1).
+  inversion H; subst.
+  - *)
+
+(*  
+Theorem CSeq_congruence : forall c1 c1' c2 c2',
+  cequiv c1 c1' -> cequiv c2 c2' -> cequiv <{ c1;c2 }> <{ c1';c2' }>.
+Proof.
+  intros c1 c1' c2 c2' Hc1.
+  induction Hc1; intros Hc2.
+  - inversion Hc2; subst.
+    * constructor.
+    *  
+*)
+
+(*
+Example no_cseq_congru : 
+  cequiv <{ X := 100 }> <{ Y := 100 }> ->
+  cequiv <{ X := 200 }> <{ Z := 200 }> ->
+  cequiv <{ X := 100; X := 200 }> <{ Y := 100; Z := 200 }> ->
+  False.
+Proof.
+  (* intros Hc1 Hc2 H.
+  remember (<{ X := 100; X := 200 }>).
+  remember (<{ Y := 100; Z := 200 }>).
+  induction H; subst.
+  - discriminate.
+  - 
+  *)
+  remember (<{ X := 100; X := 200 }>).
+  remember (<{ Y := 100; Z := 200 }>).
+  remember (<{ X := 100 }>).
+  remember (<{ Y := 100 }>).
+  remember (<{ X := 200 }>).
+  remember (<{ Z := 200 }>).
+  intros Hc1 Hc2 H. generalize dependent Hc1. generalize dependent Hc2.
+  inversion H; subst.
+  - discriminate.
+  -  intros Hc1. induction Hc1.
+    * 
+*)
+
+End FreeCEquiv.
+
+
 
 (*
 
