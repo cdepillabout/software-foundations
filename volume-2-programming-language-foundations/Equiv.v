@@ -380,7 +380,7 @@ Proof.
 
     Explain what the lemma [while_true_nonterm] means in English.
 
-(* FILL IN HERE *)
+(* IN HERE *)
 *)
 (** [] *)
 
@@ -436,7 +436,14 @@ Proof.
 Theorem seq_assoc : forall c1 c2 c3,
   cequiv <{(c1;c2);c3}> <{c1;(c2;c3)}>.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros c1 c2 c3 st st'. split; intros H; inversion H; subst.
+  - inversion H2; subst. apply E_Seq with st'1.
+    * assumption.
+    * apply E_Seq with st'0; assumption.
+  - inversion H5. subst. apply E_Seq with st'1.
+    * apply E_Seq with st'0; assumption.
+    * assumption.
+  Qed.
 (** [] *)
 
 (** Proving program properties involving assignments is one place
@@ -730,7 +737,10 @@ Theorem CSeq_congruence : forall c1 c1' c2 c2',
   cequiv c1 c1' -> cequiv c2 c2' ->
   cequiv <{ c1;c2 }> <{ c1';c2' }>.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold cequiv. intros c1 c1' c2 c2' Hc1 Hc2 st st'. split; intros H; inversion H; subst.
+  - apply Hc1 in H2. apply Hc2 in H5. apply E_Seq with st'0; assumption.
+  - apply Hc1 in H2. apply Hc2 in H5. apply E_Seq with st'0; assumption.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (CIf_congruence) *)
@@ -739,7 +749,13 @@ Theorem CIf_congruence : forall b b' c1 c1' c2 c2',
   cequiv <{ if b then c1 else c2 end }>
          <{ if b' then c1' else c2' end }>.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold cequiv. unfold bequiv. intros b b' c1 c1' c2 c2' Hb Hc1 Hc2 st st'. split; intros H; inversion H; subst.
+  - rewrite Hb in H5. rewrite Hc1 in H6. apply E_IfTrue; assumption.
+  - rewrite Hb in H5. rewrite Hc2 in H6. apply E_IfFalse; assumption.
+  - rewrite <- Hb in H5. rewrite <- Hc1 in H6. apply E_IfTrue; assumption.
+  - rewrite <- Hb in H5. rewrite <- Hc2 in H6. apply E_IfFalse; assumption.
+  Qed.
+
 (** [] *)
 
 (** For example, here are two equivalent programs and a proof of their
@@ -1307,7 +1323,7 @@ Fixpoint swap_id_bexp (x y : string) (b : bexp) : bexp :=
 Fixpoint swap_id_com (x y : string) (c : com) : com :=
   match c with
   | CSkip => CSkip
-  | CAsgn str a => if eqb_string x str then CAsgn y (swap_id_aexp x y a) else CAsgn str a
+  | CAsgn str a => if eqb_string x str then CAsgn y (swap_id_aexp x y a) else CAsgn str (swap_id_aexp x y a)
   | CSeq c1 c2 => CSeq (swap_id_com x y c1) (swap_id_com x y c2)
   | CIf b c1 c2 => CIf (swap_id_bexp x y b) (swap_id_com x y c1) (swap_id_com x y c2)
   | CWhile b c' => CWhile (swap_id_bexp x y b) (swap_id_com x y c')
@@ -1546,6 +1562,68 @@ Proof.
   - discriminate.
   -  intros Hc1. induction Hc1.
     * 
+*)
+
+Example cseq_congru_1 : 
+  cequiv <{ X := Y; Y := Z }> <{ X := X; X := Z }>.
+Proof.
+  Print cequiv.
+  apply CEquivSwap with Y X. simpl. reflexivity.
+Qed.
+
+Example cseq_congru_2 : 
+  cequiv <{ X := X; X := Z }> <{ X := X; X := X }>.
+Proof.
+  apply CEquivSwap with Z X. simpl. reflexivity.
+Qed.
+  
+Example cseq_congru_3 : 
+  cequiv <{ X := Y; Y := Z }> <{ X := X; X := X }>.
+Proof.
+  apply CEquivTrans with <{ X := X; X := Z }>.
+  apply cseq_congru_1. apply cseq_congru_2.
+Qed.
+
+Example cseq_congru_4 : 
+  cequiv <{ Z := Y; X := Z }> <{ Z := X; X := Z }>.
+Proof. Admitted.
+
+Example cseq_congru_5 : 
+  cequiv <{ Z := X; X := Z }> <{ X := X; X := X }>.
+Proof.
+  apply CEquivSwap with Z X. simpl. reflexivity.
+Qed.
+  
+Example cseq_congru_6 : 
+  cequiv <{ Z := Y; X := Z }> <{ X := X; X := X }>.
+Proof.
+  apply CEquivTrans with  <{ Z := X; X := Z }>.
+  apply cseq_congru_4. apply cseq_congru_5.
+Qed.
+
+Example cseq_congru_7 : cequiv <{ X := Y; Y := Z }> <{ Z := Y; X := Z }>.
+Proof.
+  apply CEquivTrans with <{ X := X; X := X }>.
+  - apply cseq_congru_3.
+  - apply CEquivSym. apply cseq_congru_6.
+Qed.
+
+(*
+
+Example no_cseq_congru : 
+  cequiv <{ X := Y; Y := Z }> <{ Z := Y; X := Z }> ->
+  False.
+Proof.
+  intros H.
+  remember (<{ X := Y}>) as xy. remember ( <{ Y := Z }>) as yz.
+  remember (<{ Z := Y}>) as zy. remember ( <{ X := Z }>) as xz.
+  remember (<{ xy ; yz }>).
+  remember (<{ zy; xz }>).
+  inversion H.
+  - subst. discriminate. 
+  - subst. apply IHcequiv.
+    * Check cequiv_ind. subst.
+    
 *)
 
 End FreeCEquiv.
@@ -1897,7 +1975,26 @@ Proof.
        become constants after folding *)
       simpl. destruct (n =? n0); reflexivity.
   - (* BLe *)
-    (* FILL IN HERE *) admit.
+    (* simpl. unfold beval. destruct (fold_constants_aexp a1) eqn:E.
+    * destruct (fold_constants_aexp a2) eqn:F.
+      +  *)
+    simpl.
+    (*
+    remember (fold_constants_aexp a1) as a1' eqn:Heqa1. 
+    remember (fold_constants_aexp a2) as a2' eqn:Heqa2.
+    replace (aeval st a1) with (aeval st a1') by
+       (subst a1'; rewrite <- fold_constants_aexp_sound; reflexivity).
+    replace (aeval st a2) with (aeval st a2') by
+       (subst a2'; rewrite <- fold_constants_aexp_sound; reflexivity).
+    destruct a1'; destruct a2'; try reflexivity.
+      simpl. destruct (n <=? n0); reflexivity.
+    *)
+    replace (aeval st a1) with (aeval st (fold_constants_aexp a1)) by
+      (rewrite <- fold_constants_aexp_sound; reflexivity).
+    replace (aeval st a2) with (aeval st (fold_constants_aexp a2)) by
+      (rewrite <- fold_constants_aexp_sound; reflexivity).
+    destruct (fold_constants_aexp a1) eqn:H; destruct (fold_constants_aexp a2) eqn:G; try reflexivity.
+      simpl. destruct (n <=? n0); reflexivity.  
   - (* BNot *)
     simpl. remember (fold_constants_bexp b) as b' eqn:Heqb'.
     rewrite IHb.
@@ -1908,7 +2005,7 @@ Proof.
     remember (fold_constants_bexp b2) as b2' eqn:Heqb2'.
     rewrite IHb1. rewrite IHb2.
     destruct b1'; destruct b2'; reflexivity.
-(* FILL IN HERE *) Admitted.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (fold_constants_com_sound)
