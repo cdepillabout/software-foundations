@@ -1629,6 +1629,97 @@ Proof.
 End FreeCEquiv.
 
 
+Module EquivWithSwap.
+
+Definition var_equiv_with_swap (s1 s2 : string) : Prop :=
+  match s1 with
+  | "X"%string => s2 = Y
+  | "Y"%string => s2 = X
+  | _ => s1 = s2 
+  end.
+  
+Example var_equiv_example1 : var_equiv_with_swap "X" "Y".
+Proof. reflexivity. Qed.
+Example var_equiv_example2 : var_equiv_with_swap "Y" "X".
+Proof. reflexivity. Qed.
+Example var_equiv_example3 : var_equiv_with_swap "G" "G".
+Proof. reflexivity. Qed.
+Example var_equiv_example4 : var_equiv_with_swap "X" "X" -> False.
+Proof. intros. discriminate. Qed.
+
+Fixpoint aequiv_with_swap (a1 a2 : aexp) : Prop :=
+  match (a1,a2) with
+  | (ANum n1, ANum n2) => n1 = n2
+  | (AId s1, AId s2) => var_equiv_with_swap s1 s2
+  | (<{a1' + a1''}>, <{a2' + a2''}>) => aequiv_with_swap a1' a2' /\ aequiv_with_swap a1'' a2''
+  | (<{a1' - a1''}>, <{a2' - a2''}>) => aequiv_with_swap a1' a2' /\ aequiv_with_swap a1'' a2''
+  | (<{a1' * a1''}>, <{a2' * a2''}>) => aequiv_with_swap a1' a2' /\ aequiv_with_swap a1'' a2''
+  | _ => False
+  end.
+
+Example aequiv_with_swap_example1 : aequiv_with_swap X Y.
+Proof. reflexivity. Qed.
+Example aequiv_with_swap_example2 :
+  aequiv_with_swap <{ X + 100 - Y * (AId "G"%string) }> <{ Y + 100 - X * (AId "G"%string) }>.
+Proof. now auto. Qed.
+Example aequiv_with_swap_example3 : ~ (aequiv_with_swap <{ X }> <{ X }>).
+Proof. simpl. intro H. discriminate. Qed.
+Example aequiv_with_swap_example4 :
+  ~ (aequiv_with_swap <{ X + 100 - Y - (AId "G"%string) }> <{ Y + 100 - X * (AId "G"%string) }>).
+Proof. simpl. intro H. destruct H. destruct H. Qed.
+
+Fixpoint bequiv_with_swap (b1 b2 : bexp) : Prop :=
+  match (b1,b2) with
+  | (<{ true }>, <{ true }>) => True
+  | (<{ false }>, <{ false }>) => True
+  | (<{ a1 = a1' }>, <{ a2 = a2' }>) => aequiv_with_swap a1 a2 /\ aequiv_with_swap a1' a2'
+  | (<{ a1 <= a1' }>, <{ a2 <= a2' }>) => aequiv_with_swap a1 a2 /\ aequiv_with_swap a1' a2'
+  | (<{ ~ b }>, <{ ~ b' }>) => bequiv_with_swap b b'
+  | (<{ b1' && b1'' }>, <{ b2' && b2'' }>) => bequiv_with_swap b1' b2' /\ bequiv_with_swap b1'' b2''
+  | _ => False
+  end.
+
+Fixpoint cequiv_with_swap (c1 c2 : com) : Prop :=
+  match (c1, c2) with
+  | (<{ skip }>, <{ skip }>) => True
+  | (<{ s1 := a1 }>, <{ s2 := a2 }>) => var_equiv_with_swap s1 s2 /\ aequiv_with_swap a1 a2
+  | (<{ c1'; c1'' }>, <{ c2' ; c2'' }>) => cequiv_with_swap c1' c2' /\ cequiv_with_swap c1'' c2''
+(*   | (<{ if b1 then c1' else c1'' }>, <{ *)
+  | _ => False
+  end.
+
+Example cequiv_with_swap_example1 :
+  cequiv_with_swap
+    <{ skip ; X := Y + 100 ; "G" := X }>
+    <{ skip ; Y := X + 100 ; "G" := Y }>.
+Proof. now auto. Qed.
+Example cequiv_with_swap_example2 :
+  ~ (cequiv_with_swap <{ skip ; "G" := Y + 100 }> <{ skip ; "F" := X + 100 }>).
+Proof. simpl. intro H. destruct H.  destruct H0. discriminate. Qed.
+
+Inductive cequiv : com -> com -> Prop :=
+  | CEquivRefl : forall c, cequiv c c
+  | CEquivSwap : forall c1 c2, cequiv_with_swap c1 c2 -> cequiv c1 c2
+  .
+  
+Example cequiv_example1 :
+  cequiv
+    <{ skip ; X := Y + 100 ; "G" := X }>
+    <{ skip ; Y := X + 100 ; "G" := Y }>.
+Proof. constructor. simpl. auto. Qed.
+Example cequiv_example2:
+  cequiv
+    <{ skip ; X := X + 100 ; "G" := X }>
+    <{ skip ; X := X + 100 ; "G" := X }>.
+Proof. constructor. Qed.
+Example cequiv_example3:
+  ~ (cequiv <{ X := X + 100 ; "G" := Y }> <{ X := X + 100 ; "G" := X }>).
+Proof.
+  simpl. intros H. inversion H; subst.
+  simpl in H0. destruct H0. destruct H0. discriminate. 
+Qed.
+
+End EquivWithSwap.
 
 (*
 
