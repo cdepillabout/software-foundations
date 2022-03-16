@@ -1631,11 +1631,36 @@ End FreeCEquiv.
 
 Module EquivWithSwap.
 
+Inductive xOrYOrOther : string -> Type :=
+  | IsX : xOrYOrOther "X"
+  | IsY : xOrYOrOther "Y"
+  | IsOther : forall s, xOrYOrOther s
+  .
+  
+Definition make_x_or_y_or_other (x : string): xOrYOrOther x :=
+  match x as m return xOrYOrOther m with
+  | "X"%string => IsX
+  | "Y"%string => IsY
+  | n => IsOther n
+  end. 
+
 Definition var_equiv_with_swap (s1 s2 : string) : Prop :=
-  match s1 with
-  | "X"%string => s2 = Y
-  | "Y"%string => s2 = X
-  | _ => s1 = s2 
+  match make_x_or_y_or_other s1 with
+  | IsX =>
+      match make_x_or_y_or_other s2 with
+      | IsY => True
+      | _ => False
+      end
+  | IsY =>
+      match make_x_or_y_or_other s2 with
+      | IsX => True
+      | _ => False
+      end
+  | IsOther s1' =>
+      match make_x_or_y_or_other s2 with
+      | IsOther s2' => s1' = s2'
+      | _ => False
+      end
   end.
   
 Example var_equiv_example1 : var_equiv_with_swap "X" "Y".
@@ -1645,33 +1670,20 @@ Proof. reflexivity. Qed.
 Example var_equiv_example3 : var_equiv_with_swap "G" "G".
 Proof. reflexivity. Qed.
 Example var_equiv_example4 : var_equiv_with_swap "X" "X" -> False.
-Proof. intros. discriminate. Qed.
+Proof. unfold var_equiv_with_swap. simpl. intros. auto. Qed.
 Example var_equiv_example5 : var_equiv_with_swap "G" "Y" -> False.
-Proof. intros. discriminate. Qed.
+Proof. intros. unfold var_equiv_with_swap in *. simpl in *. auto. Qed.
 Example var_equiv_example6 : var_equiv_with_swap "Y" "G" -> False.
-Proof. intros. discriminate. Qed.
+Proof. intros. unfold var_equiv_with_swap in *. simpl in *. auto. Qed.
 
 Theorem var_equiv_with_swap_sym : forall s1 s2, var_equiv_with_swap s1 s2 -> var_equiv_with_swap s2 s1.
 Proof.
-  intros s1 s2. unfold var_equiv_with_swap. intros H.
-  destruct (string_dec s1 "Y", (string_dec s1 "X", (string_dec s2 "Y", string_dec s2 "X"))) as
-            [ [ | ]            [ [ | ]            [ [ | ]              [ | ]         ] ] ].
-  - subst; discriminate.
-  - subst; discriminate.
-  - subst; discriminate.
-  - subst; discriminate.
-  - subst; discriminate.
-  - subst; discriminate.
-  - subst. reflexivity.
-  - subst. subst. simpl. auto.
-  - subst. auto.
-  - subst. auto.
-  - subst. auto.
-  - subst. subst. exfalso. apply n0. reflexivity.
-  - subst. subst. discriminate.
-  - (* TODO: In this case, we know htat s1 is not Y or X, but s2 is Y.  But H tells us that s1 = s2.  exfalso. *)
-    (* TODO: I think I can create a specialized inductive type for the string_dec s1 "Y" stuff, so it will
-       make it easier. *)
+  unfold var_equiv_with_swap. intros s1 s2 H.
+  destruct (make_x_or_y_or_other s1) eqn:E;
+  destruct (make_x_or_y_or_other s2) eqn:F;
+  try destruct H;
+  reflexivity.
+Qed.
 
 Fixpoint aequiv_with_swap (a1 a2 : aexp) : Prop :=
   match (a1,a2) with
@@ -1683,13 +1695,15 @@ Fixpoint aequiv_with_swap (a1 a2 : aexp) : Prop :=
   | _ => False
   end.
 
+(* TODO: Prove aequiv_with_swap_sym. *)
+
 Example aequiv_with_swap_example1 : aequiv_with_swap X Y.
 Proof. reflexivity. Qed.
 Example aequiv_with_swap_example2 :
   aequiv_with_swap <{ X + 100 - Y * (AId "G"%string) }> <{ Y + 100 - X * (AId "G"%string) }>.
 Proof. now auto. Qed.
 Example aequiv_with_swap_example3 : ~ (aequiv_with_swap <{ X }> <{ X }>).
-Proof. simpl. intro H. discriminate. Qed.
+Proof. simpl. intro H. apply var_equiv_example4. auto. Qed.
 Example aequiv_with_swap_example4 :
   ~ (aequiv_with_swap <{ X + 100 - Y - (AId "G"%string) }> <{ Y + 100 - X * (AId "G"%string) }>).
 Proof. simpl. intro H. destruct H. destruct H. Qed.
