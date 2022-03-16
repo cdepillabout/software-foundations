@@ -1646,6 +1646,32 @@ Example var_equiv_example3 : var_equiv_with_swap "G" "G".
 Proof. reflexivity. Qed.
 Example var_equiv_example4 : var_equiv_with_swap "X" "X" -> False.
 Proof. intros. discriminate. Qed.
+Example var_equiv_example5 : var_equiv_with_swap "G" "Y" -> False.
+Proof. intros. discriminate. Qed.
+Example var_equiv_example6 : var_equiv_with_swap "Y" "G" -> False.
+Proof. intros. discriminate. Qed.
+
+Theorem var_equiv_with_swap_sym : forall s1 s2, var_equiv_with_swap s1 s2 -> var_equiv_with_swap s2 s1.
+Proof.
+  intros s1 s2. unfold var_equiv_with_swap. intros H.
+  destruct (string_dec s1 "Y", (string_dec s1 "X", (string_dec s2 "Y", string_dec s2 "X"))) as
+            [ [ | ]            [ [ | ]            [ [ | ]              [ | ]         ] ] ].
+  - subst; discriminate.
+  - subst; discriminate.
+  - subst; discriminate.
+  - subst; discriminate.
+  - subst; discriminate.
+  - subst; discriminate.
+  - subst. reflexivity.
+  - subst. subst. simpl. auto.
+  - subst. auto.
+  - subst. auto.
+  - subst. auto.
+  - subst. subst. exfalso. apply n0. reflexivity.
+  - subst. subst. discriminate.
+  - (* TODO: In this case, we know htat s1 is not Y or X, but s2 is Y.  But H tells us that s1 = s2.  exfalso. *)
+    (* TODO: I think I can create a specialized inductive type for the string_dec s1 "Y" stuff, so it will
+       make it easier. *)
 
 Fixpoint aequiv_with_swap (a1 a2 : aexp) : Prop :=
   match (a1,a2) with
@@ -1718,6 +1744,39 @@ Proof.
   simpl. intros H. inversion H; subst.
   simpl in H0. destruct H0. destruct H0. discriminate. 
 Qed.
+
+
+
+Theorem cequiv_with_swap_sym : forall c1 c2, cequiv_with_swap c1 c2 -> cequiv_with_swap c2 c1.
+Proof.
+  intros c1. induction c1; simpl; intros c2 H; destruct c2; try (destruct H); try reflexivity.
+  - unfold cequiv_with_swap. unfold var_equiv_with_swap in *. split.
+    * (* destruct (string_dec x "Y", string_dec x "X", string_dec x0 "Y", string_dec x0 "X") as [ ] *)
+      destruct
+        (string_dec x "Y", (string_dec x "X", (string_dec x0 "Y", string_dec x0 "X"))) as
+        [ [ | ]            [ [ | ]            [ [ | ]              [ | ]         ] ] ];
+        subst; simpl; auto; try discriminate.
+      + apply n1 in H. destruct H.
+      + apply n0 in H. destruct H.
+      + unfold not in n1. clear n1. clear H0. clear a a0. admit.
+      + admit.
+      + 
+      + subst. simpl. reflexivity.
+      + subst. simpl. reflexivity.
+      + subst. simpl.
+      + destruct (string_dec x "X"); subst.
+        -- subst. simpl. reflexivity.
+        -- Print right. assert (x = x0). { 
+  - destruct c2.
+
+Lemma refl_cequiv : forall (c : com), cequiv c c.
+Proof. constructor. Qed.
+
+Lemma sym_cequiv : forall (c1 c2 : com), cequiv c1 c2 -> cequiv c2 c1.
+Proof. intros c1 c2 H. inversion H; subst; auto. Qed.
+
+Lemma trans_cequiv : forall (c1 c2 c3 : com), cequiv c1 c2 -> cequiv c2 c3 -> cequiv c1 c3.
+Proof. intros c1 c2 c3 H12 H23. apply CEquivTrans with c2; auto. Qed.
 
 End EquivWithSwap.
 
