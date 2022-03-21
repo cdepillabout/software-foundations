@@ -2504,89 +2504,57 @@ Proof.
   - unfold aeval. fold aeval. rewrite IHvar_not_used_in_aexp1. rewrite IHvar_not_used_in_aexp2. reflexivity.
 Qed.
 
+Theorem aeval_subst_is_same_as_aeval :
+  forall a2 a1 st x1,
+  var_not_used_in_aexp x1 a1 ->
+  aeval (x1 !-> aeval st a1; st) (subst_aexp x1 a1 a2) = aeval (x1 !-> aeval st a1; st) a2.
+Proof.
+  induction a2; try reflexivity; intros a1 st x1 Hvarnot.
+  - destruct (eqb_string x1 x) eqn:E.
+    * apply eqb_string_true_iff in E; subst. cbn. rewrite <- eqb_string_refl.
+      rewrite (var_not_used_in_aeval _ _ _ _ Hvarnot). now rewrite t_update_eq.
+    * simpl. rewrite E. simpl. reflexivity.
+  - cbn. rewrite (IHa2_1 _ _ _ Hvarnot). now rewrite (IHa2_2 _ _ _ Hvarnot).
+  - simpl. rewrite (IHa2_1 _ _ _ Hvarnot). now rewrite (IHa2_2 _ _ _ Hvarnot).
+  - simpl. rewrite (IHa2_1 _ _ _ Hvarnot). now rewrite (IHa2_2 _ _ _ Hvarnot).
+  Qed.
+
+Theorem subst_equiv_to :
+  forall (x1 x2 : string) (a1 a2 : aexp),
+  var_not_used_in_aexp x1 a1 ->
+  forall st st', st =[ x1 := a1; x2 := a2 ]=> st' ->
+  st =[ x1 := a1; x2 := (subst_aexp x1 a1 a2) ]=> st'.
+Proof.
+  intros x1 x2 a1 a2 Hvarnot st st' H. inversion H; subst.
+  inversion H2; inversion H5; subst.
+  apply E_Seq with (x1 !-> aeval st a1; st); try assumption.
+  constructor.
+  apply aeval_subst_is_same_as_aeval. assumption.
+  Qed.
+  
+Theorem equiv_to_subst :
+  forall (x1 x2 : string) (a1 a2 : aexp),
+  var_not_used_in_aexp x1 a1 ->
+  forall st st', st =[ x1 := a1; x2 := (subst_aexp x1 a1 a2) ]=> st' ->
+  st =[ x1 := a1; x2 := a2 ]=> st'.
+Proof.
+  intros x1 x2 a1 a2 Hvarnot st st' H. inversion H; subst.
+  inversion H2; inversion H5; subst.
+  apply E_Seq with (x1 !-> aeval st a1; st); try assumption.
+  constructor.
+  symmetry. apply aeval_subst_is_same_as_aeval. assumption.
+  Qed.
+
 Theorem subst_equiv :
   forall (x1 x2 : string) (a1 a2 : aexp),
   var_not_used_in_aexp x1 a1 ->
   cequiv <{ x1 := a1; x2 := a2 }> <{ x1 := a1; x2 := (subst_aexp x1 a1 a2) }>.
 Proof.
-  intros x1 x2 a1 a2. generalize dependent a1.
-  induction a2; intros a1 Hvarnot.
-  - unfold cequiv. reflexivity.
-  - split; intro H.
-    * unfold subst_aexp. inversion H; subst. apply E_Seq with st'0; try assumption.
-      inversion H5. subst. constructor. clear H.
-      destruct (eqb_string x1 x) eqn:E.
-      + inversion H2. subst. rewrite (var_not_used_in_aeval _ _ _ _ Hvarnot).
-        unfold aeval at 2. apply eqb_string_true_iff in E. subst.
-        now rewrite t_update_eq.
-      + reflexivity.
-    * inversion H; subst. 
-      destruct (eqb_string x1 x) eqn:E.
-      + apply eqb_string_true_iff in E; subst.
-        inversion H5; subst. apply E_Seq with st'0.
-        -- assumption.
-        -- inversion H2; subst. constructor.
-           unfold aeval at 1. rewrite t_update_eq.
-           rewrite var_not_used_in_aeval. reflexivity. assumption.
-      + apply eqb_string_false_iff in E.
-        inversion H5; subst. apply E_Seq with st'0; try assumption.
-  - unfold subst_aexp. fold subst_aexp.
-    specialize (IHa2_1 _ Hvarnot).
-    specialize (IHa2_2 _ Hvarnot).
-    unfold cequiv in *.
-    intros st st'. split; intros H.
-    * inversion H; subst.
-      inversion H5; subst.
-      apply E_Seq with st'0; try assumption.
-      apply E_Asgn.
-  (*
   split.
-  - intros H'; inversion H; subst.
-    * inversion H'; subst. clear H'.
-      inverseion H5; subst.
-  *)
-  (*
-  intros x1 x2 a1 a2 Hnotvar st st'. split; intro H; inversion H; subst.
-  - apply E_Seq with st'0; try assumption.
-    inversion H2; subst. inversion H2; subst.
-    inversion H5; subst. inversion H5; subst.
-    constructor.
-    unfold subst_aexp.
-    induction a2.
-    * fold subst_aexp. reflexivity.
-    * destruct (eqb_string x1 x) eqn:E.
-      + simpl. apply eqb_string_true_iff in E. subst. unfold t_update at 2. 
-        rewrite <- eqb_string_refl.
-        apply var_not_used_in_aeval. assumption.
-      + reflexivity.
-    * fold subst_aexp in *.
-  *)
-  (* intros x1 x2 a1 a2. generalize dependent a1. generalize dependent x2. generalize dependent x1.
-  induction a2; intros.
-  - simpl. unfold cequiv. reflexivity.
-  - *)
-  (* intros x1 x2 a1 a2 Hvarnot.
-  assert (aequiv a2 (subst_aexp x1 a1 a2)).
-  { unfold aequiv.
-    induction a2 eqn:F.
-    - reflexivity.
-    - admit. (* simpl. destruct (eqb_string x1 x) eqn:E.
-      *  *)
-    - 
+  - now apply subst_equiv_to.
+  - now apply equiv_to_subst.
+  Qed.
   
-  (*
-  apply CSeq_congruence; try (unfold cequiv; reflexivity).
-  induction Hvarnot; subst.
-  - unfold cequiv. unfold subst_aexp. simpl.
-  *)
-  
-  induction Hvarnot.
-  - *)
-
-(* FILL IN HERE
-
-    [] *)
-
 (** **** Exercise: 3 stars, standard (inequiv_exercise)
 
     Prove that an infinite loop is not equivalent to [skip] *)
