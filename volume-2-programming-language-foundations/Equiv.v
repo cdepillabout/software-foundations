@@ -1198,13 +1198,9 @@ Proof.
   Qed.
 
 
-(* FILL IN HERE
+(*  IN HERE *)
 
 
-
-(* TODO: Try to make an equivalence as explained in that stack overflow post, where you replace variables. *)
-
-    [] *)
     
 Definition var_swap: Type := (string * string).
 
@@ -2291,7 +2287,11 @@ Proof.
       apply trans_cequiv with c2; try assumption.
       apply if_false; assumption.
   - (* while *)
-    (* FILL IN HERE *) Admitted.
+    assert (bequiv b (fold_constants_bexp b)) by (apply fold_constants_bexp_sound).
+    destruct (fold_constants_bexp b) eqn:Heqb; try (apply CWhile_congruence; assumption).
+    + apply while_true; assumption.
+    + apply while_false. assumption.
+  Qed.
 (** [] *)
 
 (* ----------------------------------------------------------------- *)
@@ -2477,10 +2477,111 @@ Lemma aeval_weakening : forall x st a ni,
   var_not_used_in_aexp x a ->
   aeval (x !-> ni ; st) a = aeval st a.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros x st a ni H. induction H; subst.
+  - reflexivity.
+  - simpl. apply t_update_neq. assumption.
+  - simpl. now rewrite IHvar_not_used_in_aexp1,IHvar_not_used_in_aexp2.
+  - simpl. now rewrite IHvar_not_used_in_aexp1,IHvar_not_used_in_aexp2.
+  - simpl. now rewrite IHvar_not_used_in_aexp1,IHvar_not_used_in_aexp2.
+  Qed.
 
 (** Using [var_not_used_in_aexp], formalize and prove a correct version
     of [subst_equiv_property]. *)
+
+Definition subst_equiv_property_correct := forall x1 x2 a1 a2,
+  var_not_used_in_aexp x1 a1 ->
+  cequiv <{ x1 := a1; x2 := a2 }>
+         <{ x1 := a1; x2 := subst_aexp x1 a1 a2 }>.
+
+Theorem var_not_used_in_aeval :
+  forall st x a n, var_not_used_in_aexp x a -> aeval (x !-> n; st) a = aeval st a.
+Proof.
+  intros st x a n H. induction H; subst.
+  - reflexivity.
+  - now apply t_update_neq.
+  - unfold aeval. fold aeval. rewrite IHvar_not_used_in_aexp1. rewrite IHvar_not_used_in_aexp2. reflexivity.
+  - unfold aeval. fold aeval. rewrite IHvar_not_used_in_aexp1. rewrite IHvar_not_used_in_aexp2. reflexivity.
+  - unfold aeval. fold aeval. rewrite IHvar_not_used_in_aexp1. rewrite IHvar_not_used_in_aexp2. reflexivity.
+Qed.
+
+Theorem subst_equiv :
+  forall (x1 x2 : string) (a1 a2 : aexp),
+  var_not_used_in_aexp x1 a1 ->
+  cequiv <{ x1 := a1; x2 := a2 }> <{ x1 := a1; x2 := (subst_aexp x1 a1 a2) }>.
+Proof.
+  intros x1 x2 a1 a2. generalize dependent a1.
+  induction a2; intros a1 Hvarnot.
+  - unfold cequiv. reflexivity.
+  - split; intro H.
+    * unfold subst_aexp. inversion H; subst. apply E_Seq with st'0; try assumption.
+      inversion H5. subst. constructor. clear H.
+      destruct (eqb_string x1 x) eqn:E.
+      + inversion H2. subst. rewrite (var_not_used_in_aeval _ _ _ _ Hvarnot).
+        unfold aeval at 2. apply eqb_string_true_iff in E. subst.
+        now rewrite t_update_eq.
+      + reflexivity.
+    * inversion H; subst. 
+      destruct (eqb_string x1 x) eqn:E.
+      + apply eqb_string_true_iff in E; subst.
+        inversion H5; subst. apply E_Seq with st'0.
+        -- assumption.
+        -- inversion H2; subst. constructor.
+           unfold aeval at 1. rewrite t_update_eq.
+           rewrite var_not_used_in_aeval. reflexivity. assumption.
+      + apply eqb_string_false_iff in E.
+        inversion H5; subst. apply E_Seq with st'0; try assumption.
+  - unfold subst_aexp. fold subst_aexp.
+    specialize (IHa2_1 _ Hvarnot).
+    specialize (IHa2_2 _ Hvarnot).
+    unfold cequiv in *.
+    intros st st'. split; intros H.
+    * inversion H; subst.
+      inversion H5; subst.
+      apply E_Seq with st'0; try assumption.
+      apply E_Asgn.
+  (*
+  split.
+  - intros H'; inversion H; subst.
+    * inversion H'; subst. clear H'.
+      inverseion H5; subst.
+  *)
+  (*
+  intros x1 x2 a1 a2 Hnotvar st st'. split; intro H; inversion H; subst.
+  - apply E_Seq with st'0; try assumption.
+    inversion H2; subst. inversion H2; subst.
+    inversion H5; subst. inversion H5; subst.
+    constructor.
+    unfold subst_aexp.
+    induction a2.
+    * fold subst_aexp. reflexivity.
+    * destruct (eqb_string x1 x) eqn:E.
+      + simpl. apply eqb_string_true_iff in E. subst. unfold t_update at 2. 
+        rewrite <- eqb_string_refl.
+        apply var_not_used_in_aeval. assumption.
+      + reflexivity.
+    * fold subst_aexp in *.
+  *)
+  (* intros x1 x2 a1 a2. generalize dependent a1. generalize dependent x2. generalize dependent x1.
+  induction a2; intros.
+  - simpl. unfold cequiv. reflexivity.
+  - *)
+  (* intros x1 x2 a1 a2 Hvarnot.
+  assert (aequiv a2 (subst_aexp x1 a1 a2)).
+  { unfold aequiv.
+    induction a2 eqn:F.
+    - reflexivity.
+    - admit. (* simpl. destruct (eqb_string x1 x) eqn:E.
+      *  *)
+    - 
+  
+  (*
+  apply CSeq_congruence; try (unfold cequiv; reflexivity).
+  induction Hvarnot; subst.
+  - unfold cequiv. unfold subst_aexp. simpl.
+  *)
+  
+  induction Hvarnot.
+  - *)
 
 (* FILL IN HERE
 
