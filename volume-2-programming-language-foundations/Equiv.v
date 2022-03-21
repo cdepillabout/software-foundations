@@ -2342,6 +2342,50 @@ Proof.
 (* FILL IN HERE
 
     [] *)
+    
+Fixpoint optimize_0plus_aexp (a:aexp) : aexp :=
+  match a with
+  | ANum n => ANum n
+  | AId s => AId s
+  | <{ 0 + a2 }> => optimize_0plus_aexp a2
+  | <{ a1 + a2 }> => <{ (optimize_0plus_aexp a1) + (optimize_0plus_aexp a2) }>
+  | <{ a1 - a2 }> => <{ (optimize_0plus_aexp a1) - (optimize_0plus_aexp a2) }>
+  | <{ a1 * a2 }> => <{ (optimize_0plus_aexp a1) * (optimize_0plus_aexp a2) }>
+  end.
+  
+Fixpoint optimize_0plus_bexp (b : bexp) : bexp :=
+  match b with
+  | <{true}> => <{true}>
+  | <{false}> => <{false}>
+  | <{ a1 = a2 }>  => <{ (optimize_0plus_aexp a1) = (optimize_0plus_aexp a2) }>
+  | <{ a1 <= a2 }>  => <{ (optimize_0plus_aexp a1) <= (optimize_0plus_aexp a2) }>
+  | <{ ~ b1 }>  => <{ ~ (optimize_0plus_bexp b1) }>
+  | <{ b1 && b2 }>  => <{ (optimize_0plus_bexp b1) && (optimize_0plus_bexp b2) }>
+  end.
+  
+Print com.
+
+Fixpoint optimize_0plus_com (c : com) : com :=
+  match c with
+  | <{skip}> => <{skip}>
+  | <{ x := a }> => <{ x := (optimize_0plus_aexp a) }>
+  | <{ c1 ; c2 }> => <{ (optimize_0plus_com c1) ; (optimize_0plus_com c2) }>
+  | <{ if b then c1 else c2 end }> => <{ if (optimize_0plus_bexp b) then (optimize_0plus_com c1) else (optimize_0plus_com c2) end }>
+  | <{ while b do c' end }> => <{ while (optimize_0plus_bexp b) do (optimize_0plus_com c') end }>
+  end.
+  
+
+Theorem optimize_0plus_aexp_sound :
+  atrans_sound optimize_0plus_aexp.
+Proof.
+  unfold atrans_sound. induction a; try (simpl; apply refl_aequiv); unfold aequiv in *; intros st.
+  - replace (aeval st <{ a1 + a2 }>) with ((aeval st a1) + (aeval st a2)) by reflexivity.
+    rewrite IHa1. rewrite IHa2.
+    destruct a1; try reflexivity.
+    * destruct n; try reflexivity.
+  - simpl. rewrite IHa1. now rewrite IHa2.
+  - simpl. rewrite IHa1. now rewrite IHa2.
+  Qed.
 
 (* ################################################################# *)
 (** * Proving Inequivalence *)
