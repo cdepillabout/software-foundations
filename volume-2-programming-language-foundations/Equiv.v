@@ -2562,8 +2562,14 @@ Proof.
 Theorem inequiv_exercise:
   ~ cequiv <{ while true do skip end }> <{ skip }>.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  intros H. unfold cequiv in H. specialize (H empty_st empty_st).
+  destruct H.
+  assert (empty_st =[ skip ]=> empty_st) by constructor.
+  specialize (H0 H1). clear H H1. remember (<{ while true do skip end }>) as c.
+  induction H0; subst; try discriminate.
+  - inversion Heqc; subst. discriminate.
+  - inversion Heqc; subst. now apply IHceval2.
+  Qed.
 
 (* ################################################################# *)
 (** * Extended Exercise: Nondeterministic Imp *)
