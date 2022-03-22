@@ -2338,10 +2338,6 @@ Proof.
 
    - Prove that the optimizer is sound.  (This part should be _very_
      easy.)  *)
-
-(* FILL IN HERE
-
-    [] *)
     
 Fixpoint optimize_0plus_aexp (a:aexp) : aexp :=
   match a with
@@ -2385,6 +2381,30 @@ Proof.
     * destruct n; try reflexivity.
   - simpl. rewrite IHa1. now rewrite IHa2.
   - simpl. rewrite IHa1. now rewrite IHa2.
+  Qed.
+  
+Theorem optimize_0plus_bexp_sound :
+  btrans_sound optimize_0plus_bexp.
+Proof.
+  unfold btrans_sound. induction b; try (simpl; apply refl_bequiv); intros st; simpl; unfold bequiv in *.
+  - assert (Ha1: aeval st a1 = aeval st (optimize_0plus_aexp a1)) by (apply optimize_0plus_aexp_sound).
+    assert (Ha2: aeval st a2 = aeval st (optimize_0plus_aexp a2)) by (apply optimize_0plus_aexp_sound).
+    now rewrite Ha1,Ha2.
+  - assert (Ha1: aeval st a1 = aeval st (optimize_0plus_aexp a1)) by (apply optimize_0plus_aexp_sound).
+    assert (Ha2: aeval st a2 = aeval st (optimize_0plus_aexp a2)) by (apply optimize_0plus_aexp_sound).
+    now rewrite Ha1,Ha2.
+  - now rewrite IHb.
+  - now rewrite IHb1,IHb2.
+  Qed. 
+ 
+Theorem optimize_0plus_com_sound :
+  ctrans_sound optimize_0plus_com.
+Proof.
+  unfold ctrans_sound. induction c; simpl; try (apply refl_cequiv).
+  - apply CAsgn_congruence. apply optimize_0plus_aexp_sound.
+  - apply CSeq_congruence; assumption.
+  - apply CIf_congruence. apply optimize_0plus_bexp_sound. assumption. assumption.
+  - apply CWhile_congruence. apply optimize_0plus_bexp_sound. assumption.
   Qed.
 
 (* ################################################################# *)
@@ -2729,6 +2749,7 @@ Inductive ceval : com -> state -> state -> Prop :=
       st  =[ c ]=> st' ->
       st' =[ while b do c end ]=> st'' ->
       st  =[ while b do c end ]=> st''
+  | E_Havoc : forall st x n, st =[ havoc x ]=> (x !-> n; st)
 (* FILL IN HERE *)
 
   where "st =[ c ]=> st'" := (ceval c st st').
