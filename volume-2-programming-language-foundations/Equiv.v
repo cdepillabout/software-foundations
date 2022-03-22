@@ -2758,13 +2758,12 @@ Inductive ceval : com -> state -> state -> Prop :=
     your definition: *)
 
 Example havoc_example1 : empty_st =[ havoc X ]=> (X !-> 0).
-Proof.
-(* FILL IN HERE *) Admitted.
+Proof. apply E_Havoc. Qed.
 
 Example havoc_example2 :
   empty_st =[ skip; havoc Z ]=> (Z !-> 42).
 Proof.
-(* FILL IN HERE *) Admitted.
+  eapply E_Seq.  apply E_Skip. apply E_Havoc. Qed.
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_Check_rule_for_HAVOC : option (nat*string) := None.
@@ -2793,7 +2792,27 @@ Definition pYX :=
 
 Theorem pXY_cequiv_pYX :
   cequiv pXY pYX \/ ~cequiv pXY pYX.
-Proof. (* FILL IN HERE *) Admitted.
+Proof.
+  left. unfold cequiv. unfold pXY. unfold pYX.
+  split; intros H.
+  - inversion H; subst. inversion H2; subst. inversion H2. subst.
+    inversion H5; subst. inversion H5; subst.
+    assert ((Y !-> n2; X !-> n; st) = (X !-> n; Y !-> n2; st)).
+    { apply t_update_permute. intro. discriminate. }
+    rewrite H0.
+    apply E_Seq with (Y !-> n2; st).
+    apply E_Havoc.
+    apply E_Havoc.
+  - inversion H; subst. inversion H2; subst. inversion H2. subst.
+    inversion H5; subst. inversion H5; subst.
+    assert ((Y !-> n; X !-> n2; st) = (X !-> n2; Y !-> n; st)).
+    { apply t_update_permute. intro. discriminate. }
+    rewrite <- H0.
+    apply E_Seq with (X !-> n2; st).
+    apply E_Havoc.
+    apply E_Havoc.
+  Qed.
+  
 (** [] *)
 
 (** **** Exercise: 4 stars, standard, optional (havoc_copy)
@@ -2812,7 +2831,24 @@ Definition pcopy :=
 
 Theorem ptwice_cequiv_pcopy :
   cequiv ptwice pcopy \/ ~cequiv ptwice pcopy.
-Proof. (* FILL IN HERE *) Admitted.
+Proof.
+  right. unfold not. unfold ptwice. unfold pcopy. unfold cequiv.
+  intro H. specialize (H empty_st (Y !-> 2; X !-> 1)).
+  destruct H.
+  assert (empty_st =[ havoc X; havoc Y ]=> (Y !-> 2; X !-> 1)).
+  { apply E_Seq with (X !-> 1). apply E_Havoc. apply E_Havoc. }
+  specialize (H H1).
+  inversion H; subst.
+  inversion H4; subst.
+  inversion H4; subst.
+  inversion H7; subst.
+  unfold aeval in H9.
+  rewrite t_update_eq in H9.
+  clear H6 H4 H7 H1 H0 H.
+  set (G := equal_f H9).
+  set (P := G Y). cbv in P.
+  set (O := G X). cbv in O. rewrite P in O. discriminate.
+  Qed.
 (** [] *)
 
 (** The definition of program equivalence we are using here has some
