@@ -2886,10 +2886,21 @@ Lemma p1_may_diverge : forall st st', st X <> 0 ->
   ~ st =[ p1 ]=> st'.
 Proof. (* FILL IN HERE *) Admitted.
 
+
 Lemma p2_may_diverge : forall st st', st X <> 0 ->
   ~ st =[ p2 ]=> st'.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros st st' Hnot H.
+  remember p2 as c eqn:Hcc.
+  unfold p2 in *.
+  induction H; try inversion Hcc; subst; simpl in H.
+  - destruct (st X) eqn:E.
+    * now apply Hnot.
+    * discriminate.
+  - inversion H0; subst.
+    apply IHceval2; assumption.
+  Qed.
+    
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced (p1_p2_equiv)
