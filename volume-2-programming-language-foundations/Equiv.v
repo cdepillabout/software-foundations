@@ -2961,7 +2961,32 @@ Definition p4 : com :=
      Z := 1 }>.
 
 Theorem p3_p4_inequiv : ~ cequiv p3 p4.
-Proof. \
+Proof. 
+  unfold cequiv. intro H.
+  assert ((X !-> 5) =[ p3 ]=> (Z !-> 5; X !-> 0; Z !-> 1; X !-> 5)).
+  { apply E_Seq with (Z !-> 1; X !-> 5).
+    * now constructor.
+    * apply E_WhileTrue with (Z !-> 5; X !-> 0; Z !-> 1; X !-> 5).
+      + reflexivity.
+      + apply E_Seq with (X !-> 0; Z !-> 1; X !-> 5); apply E_Havoc.
+      + now apply E_WhileFalse.
+  }
+  apply (H _ _) in H0.
+  inversion H0; subst.
+  inversion H3; subst. simpl in *.
+  rewrite t_update_shadow in H6,H3.
+  assert (X <> Z) by (intro V; discriminate).
+  rewrite (t_update_permute _ _ _ _ _ _ H1) in H6.
+  rewrite t_update_shadow in H6.
+  assert (Z <> X) by (intro V; discriminate).
+  rewrite (t_update_permute _ _ _ _ _ _ H1) in H6.
+  rewrite t_update_shadow in H6.
+  inversion H6; subst. simpl in *.
+  assert (forall x, (Z !-> 1; X !-> 0) x = (X !-> 0; Z !-> 5) x) by (now apply equal_f).
+  specialize (H4 Z). rewrite t_update_eq in H4. rewrite t_update_neq in H4; try assumption.
+  rewrite t_update_eq in H4. discriminate.
+  Qed.
+    
 (** [] *)
 
 (** **** Exercise: 5 stars, advanced, optional (p5_p6_equiv)
@@ -2983,7 +3008,30 @@ Definition p6 : com :=
   <{ X := 1 }>.
 
 Theorem p5_p6_equiv : cequiv p5 p6.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. unfold cequiv. unfold p5. unfold p6.
+  intros st st'. destruct (st X =? 1) eqn:E; split; intro H.
+  - apply beq_nat_true in E.
+    inversion H; subst; try simpl in H4.
+    * rewrite E in H4. simpl in H4.
+      assert (st' = (X !-> 1; st')).
+      { apply functional_extensionality.
+        intro x. destruct (string_dec X x).
+        - subst. now rewrite t_update_eq.
+        - rewrite t_update_neq; try reflexivity. assumption.
+      }
+      rewrite H0 at 2. now apply E_Asgn.
+    * simpl in H2. rewrite E in H2. simpl in H2. discriminate.
+  - apply beq_nat_true in E.
+    inversion H; subst. simpl in *.
+    assert (st = (X !-> 1; st)).
+    { apply functional_extensionality.
+      intro x. destruct (string_dec X x).
+        - subst. now rewrite t_update_eq.
+        - rewrite t_update_neq; try reflexivity. assumption.
+    }
+    rewrite <- H0.
+    apply E_WhileFalse. simpl. now rewrite E.
+  - 
 (** [] *)
 
 End Himp.
