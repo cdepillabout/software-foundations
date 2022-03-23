@@ -3031,7 +3031,31 @@ Proof. unfold cequiv. unfold p5. unfold p6.
     }
     rewrite <- H0.
     apply E_WhileFalse. simpl. now rewrite E.
-  - 
+  - apply beq_nat_false in E.
+    remember <{ while ~ X = 1 do havoc X end }> as c eqn:Hc.
+    induction H; try (discriminate); inversion Hc; subst; clear Hc.
+    * simpl in H.
+      replace (st X =? 1) with false in H; try discriminate.
+      rewrite <- eqb_neq in E. now symmetry.
+    * simpl in H.
+      inversion H0; subst. inversion H0; subst. clear H0.
+      rewrite t_update_eq in IHceval2.
+      destruct (eqb_spec n 1).
+      + subst. inversion H1; subst.
+        -- now apply E_Asgn.
+        -- discriminate.
+      + assert (<{ while ~ X = 1 do havoc X end }> = <{ while ~ X = 1 do havoc X end }>) by reflexivity.
+        specialize (IHceval2 n1 H0).
+        inversion IHceval2; subst.
+        simpl. rewrite t_update_shadow. now constructor.
+  - inversion H; subst. simpl in *. inversion H; subst. simpl in *.
+    clear H4.
+    apply E_WhileTrue with (X !-> 1; st).
+    + simpl. now rewrite E.
+    + apply E_Havoc.
+    + now apply E_WhileFalse.
+  Qed.
+        
 (** [] *)
 
 End Himp.
