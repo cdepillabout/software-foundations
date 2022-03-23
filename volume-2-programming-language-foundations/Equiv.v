@@ -2750,7 +2750,7 @@ Inductive ceval : com -> state -> state -> Prop :=
       st' =[ while b do c end ]=> st'' ->
       st  =[ while b do c end ]=> st''
   | E_Havoc : forall st x n, st =[ havoc x ]=> (x !-> n; st)
-(* FILL IN HERE *)
+(*  IN HERE *)
 
   where "st =[ c ]=> st'" := (ceval c st st').
 
@@ -2884,8 +2884,25 @@ Definition p2 : com :=
 
 Lemma p1_may_diverge : forall st st', st X <> 0 ->
   ~ st =[ p1 ]=> st'.
-Proof. (* FILL IN HERE *) Admitted.
-
+Proof. 
+  intros st st' Hnot H.
+  remember p1 as c eqn:Hcc.
+  unfold p1 in *.
+  induction H; try inversion Hcc; subst; simpl in H.
+  - destruct (st X) eqn:E.
+    * now apply Hnot.
+    * discriminate.
+  - clear Hcc.
+    destruct (st X) eqn:E.
+    * simpl in H. discriminate.
+    * apply IHceval2; try reflexivity.
+      inversion H0; subst.
+      inversion H7; subst.
+      rewrite t_update_eq.
+      simpl.
+      rewrite add_comm. simpl.    
+      intro Hn. discriminate.
+  Qed.
 
 Lemma p2_may_diverge : forall st st', st X <> 0 ->
   ~ st =[ p2 ]=> st'.
@@ -2909,7 +2926,21 @@ Proof.
     equivalent. *)
 
 Theorem p1_p2_equiv : cequiv p1 p2.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. 
+  unfold cequiv. intros st st'. destruct (st X) eqn:E; split; intro H.
+  - unfold p1 in *; unfold p2 in *.
+    inversion H; subst.
+    + apply E_WhileFalse. simpl. now rewrite E.
+    + simpl in H2. now rewrite E in H2.
+  - unfold p1 in *; unfold p2 in *.
+    inversion H; subst.
+    + apply E_WhileFalse. simpl. now rewrite E.
+    + simpl in H2. now rewrite E in H2.
+  - exfalso. apply (p1_may_diverge st st'); try assumption.
+    intro Contra. now rewrite E in Contra.
+  - exfalso. apply (p2_may_diverge st st'); try assumption.
+    intro Contra. now rewrite E in Contra.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced (p3_p4_inequiv)
@@ -2930,7 +2961,7 @@ Definition p4 : com :=
      Z := 1 }>.
 
 Theorem p3_p4_inequiv : ~ cequiv p3 p4.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. \
 (** [] *)
 
 (** **** Exercise: 5 stars, advanced, optional (p5_p6_equiv)
