@@ -354,7 +354,8 @@ Theorem hoare_post_true : forall (P Q : Assertion) c,
   (forall st, Q st) ->
   {{P}} c {{Q}}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros P Q c Hq st st' Hc Hp. auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 1 star, standard (hoare_pre_false) *)
@@ -366,7 +367,8 @@ Theorem hoare_pre_false : forall (P Q : Assertion) c,
   (forall st, ~ (P st)) ->
   {{P}} c {{Q}}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros ? ? ? HnP ? ? ? HP. apply HnP in HP. destruct HP.
+  Qed.
 (** [] *)
 
 (* ################################################################# *)
@@ -591,7 +593,11 @@ Example hoare_asgn_examples1 :
       X := 2 * X
     {{ X <= 10 }}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  (* eexists. apply hoare_asgn.*)
+  exists ((X <= 10)%assertion [X |-> 2 * X]).
+  apply hoare_asgn.
+  Qed.
+(* Print hoare_asgn_examples1. (X <= 10 [X |-> 2 * X]).*)
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (hoare_asgn_examples2) *)
@@ -600,7 +606,11 @@ Example hoare_asgn_examples2 :
     {{ P }}
       X := 3
     {{ 0 <=  X /\ X <= 5 }}.
-Proof. (* FILL IN HERE *) Admitted.
+Proof.
+  (* eexists. apply hoare_asgn. *)
+  exists ((0 <=  X /\ X <= 5)%assertion [X |-> 3]).
+  apply hoare_asgn.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, especially useful (hoare_asgn_wrong)
@@ -619,7 +629,15 @@ Proof. (* FILL IN HERE *) Admitted.
     [a], and your counterexample needs to exhibit an [a] for which
     the rule doesn't work.) *)
 
-(* FILL IN HERE *)
+Theorem hoare_asgn_wrong : (forall a, {{ True }} X := a {{ X = a }}) -> False.
+  unfold hoare_triple. intros H.
+  Print aexp.
+  specialize (H (APlus X 1) empty_st (X !-> 1)).
+  assert (empty_st =[ X := X + 1 ]=> (X !-> 1)).
+  { now constructor. }
+  specialize (H H0 I). clear H0. simpl in H.
+  unfold t_update in H. simpl in H. discriminate.
+  Qed.
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_hoare_asgn_wrong : option (nat*string) := None.
