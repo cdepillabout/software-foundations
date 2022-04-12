@@ -111,7 +111,7 @@ Definition assn3 : Assertion :=
             ~ (((S (st Z)) * (S (st Z))) <= st X).
 Definition assn4 : Assertion :=
   fun st => st Z = max (st X) (st Y).
-(* FILL IN HERE *)
+(* IN HERE *)
 End ExAssertions.
 (** [] *)
 
@@ -293,7 +293,7 @@ End ExPrettyAssertions.
           c
           {{(Z * Z) <= m /\ ~ (((S Z) * (S Z)) <= m)}}
 *)
-(* FILL IN HERE
+(* IN HERE
 
     [] *)
 
@@ -324,7 +324,7 @@ End ExPrettyAssertions.
         while ~(X = 0) do X := X + 1 end
       {{X = 100}}
 *)
-(* FILL IN HERE
+(* IN HERE
 
     [] *)
 
@@ -667,7 +667,10 @@ Theorem hoare_asgn_fwd :
   {{fun st => P (X !-> m ; st)
            /\ st X = aeval (X !-> m ; st) a }}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros m a P st st' Hc [HP Hs].
+  inversion Hc; subst. rewrite t_update_shadow, t_update_same, t_update_eq.
+  auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, advanced, optional (hoare_asgn_fwd_exists)
@@ -690,7 +693,12 @@ Theorem hoare_asgn_fwd_exists :
   {{fun st => exists m, P (X !-> m ; st) /\
                 st X = aeval (X !-> m ; st) a }}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros a P st st' Hc HP.
+  inversion Hc; subst.
+  exists (st X).
+  rewrite t_update_shadow, t_update_eq, t_update_same.
+  auto.
+  Qed.
 (** [] *)
 
 (* ================================================================= *)
