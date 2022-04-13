@@ -853,6 +853,7 @@ Qed.
 Hint Unfold assert_implies hoare_triple assn_sub t_update : core.
 Hint Unfold assert_of_Prop Aexp_of_nat Aexp_of_aexp : core.
 
+
 (** Also recall that [auto] will search for a proof involving [intros]
     and [apply].  By default, the theorems that it will apply include
     any of the local hypotheses, as well as theorems in a core
@@ -1029,7 +1030,10 @@ Example assn_sub_ex1' :
   X := 2 * X
   {{ X <= 10 }}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  eapply hoare_consequence_pre.
+  - apply hoare_asgn.
+  - (* unfold "->>". simpl. unfold assn_sub. unfold t_update. simpl. lia. *) assn_auto.
+  Qed.
 
 Example assn_sub_ex2' :
   {{ 0 <= 3 /\ 3 <= 5 }}
