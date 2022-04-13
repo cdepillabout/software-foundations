@@ -1040,7 +1040,21 @@ Example assn_sub_ex2' :
   X := 3
   {{ 0 <= X /\ X <= 5 }}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  eapply hoare_consequence_pre.
+  - apply hoare_asgn.
+  - simpl. assn_auto.
+  Qed.
+  
+Example assn_sub_ex2'' :
+  {{ 0 <= 3 /\ 3 <= 5 }}
+  X := 3
+  {{ 0 <= X /\ X <= 5 }}.
+Proof.
+  About hoare_consequence_post.
+  apply hoare_consequence_post with (Q' := (X = 3)%assertion).
+  - simpl. unfold hoare_triple. intros st st' c _. inversion c; subst. simpl. auto.
+  - unfold "->>". simpl. lia.
+  Qed.
 
 (** [] *)
 
@@ -1147,9 +1161,9 @@ Example hoare_asgn_example4 :
   Y := 2
     {{ X = 1 /\ Y = 2 }}.
 Proof.
-  apply hoare_seq with (Q := (X = 1)%assertion).
-  (* The annotation [%assertion] is needed here to help Coq parse correctly. *)
-  (* FILL IN HERE *) Admitted.
+  apply hoare_seq with (Q := (X = 1)%assertion);
+  eapply hoare_consequence_pre; try apply hoare_asgn; auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (swap_exercise)
@@ -1165,15 +1179,27 @@ Proof.
     your proof will want to start at the end and work back to the
     beginning of your program.)  *)
 
-Definition swap_program : com
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition swap_program : com :=
+  <{ Z := X; X := Y; Y := Z }>.
 
 Theorem swap_exercise :
   {{X <= Y}}
   swap_program
   {{Y <= X}}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold swap_program.
+  apply hoare_seq with (Q := (Z = X /\ X <= Y /\ Z <= Y)%assertion).
+  - apply hoare_seq with (Q := (X = Y /\ Z <= X /\ Z <= Y)%assertion).
+    * eapply hoare_consequence_pre.
+      + apply hoare_asgn.
+      + assn_auto.
+    * eapply hoare_consequence_pre.
+      + apply hoare_asgn.
+      + assn_auto.
+  - eapply hoare_consequence_pre.
+    * apply hoare_asgn.
+    * auto.
+  Qed. 
 (** [] *)
 
 (** **** Exercise: 4 stars, standard (invalid_triple)
