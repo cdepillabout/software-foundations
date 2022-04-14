@@ -1232,7 +1232,13 @@ Theorem invalid_triple : ~ forall (a : aexp) (n : nat),
 Proof.
   unfold hoare_triple.
   intros H.
-  (* FILL IN HERE *) Admitted.
+  assert (empty_st =[ X := 3; Y := X ]=> (Y !-> 3; X !-> 3)).
+  { eapply E_Seq. constructor. reflexivity. simpl. constructor. reflexivity. }
+  assert (empty_st X = 0) by reflexivity.
+  specialize (H X 0 empty_st (Y !-> 3; X !-> 3) H0 H1).
+  unfold t_update in H. simpl in H. discriminate.
+  Qed.
+  
 (** [] *)
 
 (* ================================================================= *)
@@ -1348,7 +1354,7 @@ Proof.
       unfold "->>", assn_sub, t_update, bassn.
       simpl. intros st [_ H].
       apply eqb_eq in H.
-      rewrite H. lia.
+      (* rewrite H. *) lia.
   - (* Else *)
     eapply hoare_consequence_pre.
     + apply hoare_asgn.
