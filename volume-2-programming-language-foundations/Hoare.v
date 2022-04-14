@@ -1431,7 +1431,9 @@ Theorem if_minus_plus :
   end
   {{Y = X + Z}}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  apply hoare_if; eapply hoare_consequence_pre;
+    try apply hoare_asgn; try assn_auto''.
+  Qed.
 (** [] *)
 
 (* ----------------------------------------------------------------- *)
@@ -1516,7 +1518,14 @@ Inductive ceval : com -> state -> state -> Prop :=
       st  =[ c ]=> st' ->
       st' =[ while b do c end ]=> st'' ->
       st  =[ while b do c end ]=> st''
-(* FILL IN HERE *)
+(* IN HERE *)
+  | E_If1True : forall st st' b c,
+      beval st b = true ->
+      st =[ c ]=> st' ->
+      st =[ if1 b then c end ]=> st'
+  | E_If1False : forall st b c,
+      beval st b = false ->
+      st =[ if1 b then c end ]=> st
 
 where "st '=[' c ']=>' st'" := (ceval c st st').
 
@@ -1527,11 +1536,11 @@ Hint Constructors ceval : core.
 
 Example if1true_test :
   empty_st =[ if1 X = 0 then X := 1 end ]=> (X !-> 1).
-Proof. (* FILL IN HERE *) Admitted.
+Proof. eauto. Qed.
 
 Example if1false_test :
   (X !-> 2) =[ if1 X = 0 then X := 1 end ]=> (X !-> 2).
-Proof. (* FILL IN HERE *) Admitted.
+Proof. eauto. Qed.
 
 (** [] *)
 
