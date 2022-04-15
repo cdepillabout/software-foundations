@@ -1576,7 +1576,17 @@ Notation "{{ P }}  c  {{ Q }}" := (hoare_triple P c Q)
     be in the assertion scope.  For example, if you want [e] to be
     parsed as an assertion, write it as [(e)%assertion]. *)
 
-(* FILL IN HERE *)
+
+(* IN HERE *)
+
+Theorem hoare_if : forall P Q (b:bexp) c,
+  {{ P /\ b }} c {{Q}} ->
+  ((P /\ ~ b)%assertion ->> Q) ->
+  {{P}} if1 b then c end {{Q}}.
+Proof.
+  intros P Q b c HTrue HFalse st st' HE HP.
+  inversion HE; subst; eauto.
+Qed.
 
 (** For full credit, prove formally [hoare_if1_good] that your rule is
     precise enough to show the following valid Hoare triple:
@@ -1587,6 +1597,7 @@ Notation "{{ P }}  c  {{ Q }}" := (hoare_triple P c Q)
   end
   {{ X = Z }}
 *)
+
 (* Do not modify the following line: *)
 Definition manual_grade_for_hoare_if1 : option (nat*string) := None.
 (** [] *)
@@ -1626,7 +1637,16 @@ Lemma hoare_if1_good :
     X := X + Y
   end
   {{ X = Z }}.
-Proof. (* FILL IN HERE *) Admitted.
+Proof.
+  apply hoare_if.
+  - eapply hoare_consequence_pre.
+    * apply hoare_asgn.
+    * assn_auto''.
+  - simpl. intros st [Hs Hno].
+    apply eq_true_negb_classical,beq_nat_true in Hno.
+    rewrite Hno in *. rewrite add_0_r in Hs. assumption.
+  Qed.
+
 (** [] *)
 
 End If1.
@@ -1748,6 +1768,24 @@ Proof.
   eapply hoare_consequence_post.
   - apply hoare_while. apply hoare_post_true. auto.
   - simpl. intros st [Hinv Hguard]. congruence.
+Qed.
+
+Theorem always_loop_hoare2 : forall Q c,
+  {{True}} while true do c end {{Q}}.
+Proof.
+  intros Q c.
+  eapply hoare_consequence_post.
+  - apply hoare_while. apply hoare_post_true. auto.
+  - simpl. intros st [Hinv Hguard]. congruence.
+Qed.
+
+Theorem never_loop_hoare2 : forall Q c,
+  {{Q}} while false do c end {{Q}}.
+Proof.
+  intros Q c.
+  eapply hoare_consequence_post.
+  - apply hoare_while. simpl. intros ??? [_ H]. discriminate.
+  - simpl. intros st [Hinv Hguard]. auto.
 Qed.
 
 (** Of course, this result is not surprising if we remember that
