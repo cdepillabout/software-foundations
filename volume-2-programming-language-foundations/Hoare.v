@@ -1880,9 +1880,20 @@ Inductive ceval : state -> com -> state -> Prop :=
       st  =[ c ]=> st' ->
       st' =[ while b do c end ]=> st'' ->
       st  =[ while b do c end ]=> st''
-(* FILL IN HERE *)
+(* IN HERE *)
+  | E_RepeatEnd : forall st st' b c,
+      st =[ c ]=> st' ->
+      beval st' b = true ->
+      st =[ repeat c until b end ]=> st'
+  | E_RepeatLoop : forall st st' st'' b c,
+      st =[ c ]=> st' ->
+      beval st' b = false ->
+      st' =[ repeat c until b end ]=> st'' ->
+      st =[ repeat c until b end ]=> st''
 
 where "st '=[' c ']=>' st'" := (ceval st c st').
+
+About ceval_ind.
 
 (** A couple of definitions from above, copied here so they use the
     new [ceval]. *)
@@ -1906,13 +1917,108 @@ Definition ex1_repeat :=
 Theorem ex1_repeat_works :
   empty_st =[ ex1_repeat ]=> (Y !-> 1 ; X !-> 1).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  apply E_RepeatEnd; auto.
+  eapply E_Seq. apply E_Asgn. reflexivity. apply E_Asgn. reflexivity.
+  Qed.
 
 (** Now state and prove a theorem, [hoare_repeat], that expresses an
     appropriate proof rule for [repeat] commands.  Use [hoare_while]
     as a model, and try to make your rule as precise as possible. *)
 
-(* FILL IN HERE *)
+(*  IN HERE *)
+
+Theorem hoare_repeat : forall P Q c (b : bexp),
+  {{ P }} c {{ Q }} ->
+  {{ Q /\ ~ b }} c {{ Q }} ->
+  {{ P }} repeat c until b end {{ Q /\ b }}.
+Proof.
+  (*
+  intros P Q c b HPQ HQQ st st' Hc HP.
+  remember <{repeat c until b end}> as repc eqn:Hrepc.
+  induction Hc; inversion Hrepc; subst; clear Hrepc.
+  - eauto.
+  - unfold hoare_triple,bassn in *. specialize (HPQ st st' Hc1 HP).
+    specialize (IHHc2 Logic.eq_refl). _refl H). assumption.
+  *)
+  (* intros P Q c b HPQ HQQ st st' Hc HP.
+  unfold hoare_triple,bassn in *.
+  remember <{repeat c until b end}> as repc eqn:Hrepc.
+  induction Hc; inversion Hrepc; subst; clear Hrepc.
+  - eauto.
+  - split.
+    * *)
+  (*
+  intros P Q c b HPQ HQQ st st' Hc HP.
+  unfold hoare_triple,bassn in *.
+  inversion Hc; subst.
+  - eauto.
+  - rename st' into st''. rename st'0 into st'.
+    specialize (HPQ _ _ H1 HP).
+    inversion H5; subst.
+    * specialize (HQQ _ _ H4).
+      assert (Q st' /\ beval st' b <> true).
+      { split; auto. congruence. }
+      specialize (HQQ H). auto.
+    * *)
+  (*
+  unfold hoare_triple, bassn.
+  intros P Q c b HPQ HQQ st st' Hc HP.
+  split.
+  * eapply HPQ; try apply HP. remember <{ repeat c until b end }> eqn:E. induction Hc; inversion E; subst.
+    + assumption.
+    + admit.
+  * inversion Hc; subst. assumption.
+    inversion H5; subst. rename st' into st'', st'0 into st'. assumption.
+    rename st' into st''', st'0 into st', st'1 into st''.
+  remember <{repeat c until b end}> as repc eqn:Hrepc.
+  induction Hc; inversion Hrepc; subst.
+  - specialize (HPQ st st' Hc HP). split. apply HPQ. apply H.  
+  - specialize (HPQ st st' Hc1 HP).
+    specialize (IHHc2 Logic.eq_refl). 
+  *)
+  (*
+  unfold hoare_triple, bassn.
+  intros P Q c b HPQ HQQ st st' Hc.
+  generalize dependent HQQ. generalize dependent HPQ. generalize dependent Q. generalize dependent P.
+  remember <{repeat c until b end}> as repc eqn:Hrepc.
+  induction Hc; inversion Hrepc; subst.
+  - eauto.
+  - intros P Q HPQ HQQ HP.
+  *)
+  (*
+  unfold hoare_triple,bassn in *.
+  intros P Q c b HPQ HQQ st st' Hc HP.
+  remember <{repeat c until b end}> as repc eqn:Hrepc.
+  induction Hc; inversion Hrepc; subst; clear Hrepc.
+  - eauto.
+  - apply IHHc2; auto.
+  
+   specialize (IHHc2 Logic.eq_refl).
+  
+   specialize (HPQ st st' Hc1 HP).
+     _refl H). assumption.
+  *)
+  unfold hoare_triple,bassn in *.
+  intros P Q c b HPQ HQQ st st' Hrepc HP.
+  inversion Hrepc as [| | | | | | | m n o p Hc Hbevalst' q r s | m st'0 o p q Hc Hbevalst' Hrepc' u v x ]; subst.
+  - split.
+    * eapply HPQ. apply Hc. apply HP.
+    * apply Hbevalst'.
+  - rename st' into st'', st'0 into st'.
+    assert (HQst': Q st'). { eapply HPQ. apply Hc. apply HP. }
+    clear HPQ HP Hrepc Hc.
+    remember <{ repeat c until b end }> as rcom eqn:Heqrcom.
+    induction Hrepc'; inversion Heqrcom; subst; clear Heqrcom.
+    * rename st' into st'', st0 into st'.
+      assert (beval st' b <> true).
+      { unfold not. intros Hbevalst'true. rewrite Hbevalst' in Hbevalst'true. discriminate Hbevalst'true. }
+      assert (HQst'': Q st'').
+      { apply (HQQ st' st'' Hrepc'). split. apply HQst'. apply H0. }
+      split. apply HQst''. apply H.
+    * clear IHHrepc'1. rename st'' into st''', st' into st'', st0 into st'.
+      specialize (IHHrepc'2 H Logic.eq_refl).
+      apply IHHrepc'2; clear IHHrepc'2. eapply HQQ. apply Hrepc'1. split. apply HQst'. congruence.
+  Qed.
 
 (** For full credit, make sure (informally) that your rule can be used
     to prove the following valid Hoare triple:
@@ -1924,6 +2030,44 @@ Proof.
   until X = 0 end
   {{ X = 0 /\ Y > 0 }}
 *)
+
+Theorem hoare_consequence_post' : forall (P Q Q' : Assertion) c,
+  {{P}} c {{Q'}} ->
+  Q' ->> Q ->
+  {{P}} c {{Q}}.
+Proof.
+  intros P Q Q' c H H1 st st' Hc Hp.
+  unfold "->>", hoare_triple in *.
+  eauto.
+Qed.
+
+Theorem hoare_seq : forall P Q R c1 c2,
+     {{Q}} c2 {{R}} ->
+     {{P}} c1 {{Q}} ->
+     {{P}} c1; c2 {{R}}.
+Proof.
+  unfold hoare_triple.
+  intros P Q R c1 c2 H1 H2 st st' H12 Pre.
+  inversion H12; subst.
+  eauto.
+Qed.
+
+Example hoare_repeat_example_1 :
+  {{ X > 0 }}
+  repeat
+    Y := X;
+    X := X - 1
+  until X = 0 end
+  {{ X = 0 /\ Y > 0 }}.
+Proof.
+  eapply hoare_consequence_post'.
+  - apply hoare_repeat.
+    admit.
+    (* simpl.
+    eapply hoare_seq.
+    *)
+  - simpl. unfold "->>". intros st [H H1].
+    apply eqb_eq in H1. lia.
 
 End RepeatExercise.
 
