@@ -2179,13 +2179,22 @@ Proof. eauto. Qed.
 (** Complete the Hoare rule for [HAVOC] commands below by defining
     [havoc_pre], and prove that the resulting rule is correct. *)
 
-Definition havoc_pre (X : string) (Q : Assertion) (st : total_map nat) : Prop
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Print Assertion.
+
+Locate "|->".
+
+Print assn_sub.
+
+Definition havoc_pre (X : string) (Q : Assertion) (st : total_map nat) : Prop :=
+  forall (n : nat), Q [ X |-> n ] st.
 
 Theorem hoare_havoc : forall (Q : Assertion) (X : string),
   {{ havoc_pre X Q }} havoc X {{ Q }}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold havoc_pre, assn_sub. simpl.
+  intros Q X st st' Hhav HQ.
+  inversion Hhav; subst. apply HQ.
+  Qed. 
 
 (** [] *)
 
@@ -2204,7 +2213,10 @@ Theorem havoc_post : forall (P : Assertion) (X : string),
 Proof.
   intros P X. eapply hoare_consequence_pre.
   - apply hoare_havoc.
-  - (* FILL IN HERE *) Admitted.
+  - unfold havoc_pre, "->>", assn_sub. intros st HP n. simpl.
+    exists (st X).  rewrite t_update_shadow. rewrite t_update_same.
+    assumption.
+  Qed.
 
 (** [] *)
 
