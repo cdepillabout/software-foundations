@@ -1932,72 +1932,6 @@ Theorem hoare_repeat : forall P Q c (b : bexp),
   {{ Q /\ ~ b }} c {{ Q }} ->
   {{ P }} repeat c until b end {{ Q /\ b }}.
 Proof.
-  (*
-  intros P Q c b HPQ HQQ st st' Hc HP.
-  remember <{repeat c until b end}> as repc eqn:Hrepc.
-  induction Hc; inversion Hrepc; subst; clear Hrepc.
-  - eauto.
-  - unfold hoare_triple,bassn in *. specialize (HPQ st st' Hc1 HP).
-    specialize (IHHc2 Logic.eq_refl). _refl H). assumption.
-  *)
-  (* intros P Q c b HPQ HQQ st st' Hc HP.
-  unfold hoare_triple,bassn in *.
-  remember <{repeat c until b end}> as repc eqn:Hrepc.
-  induction Hc; inversion Hrepc; subst; clear Hrepc.
-  - eauto.
-  - split.
-    * *)
-  (*
-  intros P Q c b HPQ HQQ st st' Hc HP.
-  unfold hoare_triple,bassn in *.
-  inversion Hc; subst.
-  - eauto.
-  - rename st' into st''. rename st'0 into st'.
-    specialize (HPQ _ _ H1 HP).
-    inversion H5; subst.
-    * specialize (HQQ _ _ H4).
-      assert (Q st' /\ beval st' b <> true).
-      { split; auto. congruence. }
-      specialize (HQQ H). auto.
-    * *)
-  (*
-  unfold hoare_triple, bassn.
-  intros P Q c b HPQ HQQ st st' Hc HP.
-  split.
-  * eapply HPQ; try apply HP. remember <{ repeat c until b end }> eqn:E. induction Hc; inversion E; subst.
-    + assumption.
-    + admit.
-  * inversion Hc; subst. assumption.
-    inversion H5; subst. rename st' into st'', st'0 into st'. assumption.
-    rename st' into st''', st'0 into st', st'1 into st''.
-  remember <{repeat c until b end}> as repc eqn:Hrepc.
-  induction Hc; inversion Hrepc; subst.
-  - specialize (HPQ st st' Hc HP). split. apply HPQ. apply H.  
-  - specialize (HPQ st st' Hc1 HP).
-    specialize (IHHc2 Logic.eq_refl). 
-  *)
-  (*
-  unfold hoare_triple, bassn.
-  intros P Q c b HPQ HQQ st st' Hc.
-  generalize dependent HQQ. generalize dependent HPQ. generalize dependent Q. generalize dependent P.
-  remember <{repeat c until b end}> as repc eqn:Hrepc.
-  induction Hc; inversion Hrepc; subst.
-  - eauto.
-  - intros P Q HPQ HQQ HP.
-  *)
-  (*
-  unfold hoare_triple,bassn in *.
-  intros P Q c b HPQ HQQ st st' Hc HP.
-  remember <{repeat c until b end}> as repc eqn:Hrepc.
-  induction Hc; inversion Hrepc; subst; clear Hrepc.
-  - eauto.
-  - apply IHHc2; auto.
-  
-   specialize (IHHc2 Logic.eq_refl).
-  
-   specialize (HPQ st st' Hc1 HP).
-     _refl H). assumption.
-  *)
   unfold hoare_triple,bassn in *.
   intros P Q c b HPQ HQQ st st' Hrepc HP.
   inversion Hrepc as [| | | | | | | m n o p Hc Hbevalst' q r s | m st'0 o p q Hc Hbevalst' Hrepc' u v x ]; subst.
@@ -2041,6 +1975,18 @@ Proof.
   eauto.
 Qed.
 
+Theorem hoare_consequence_pre : forall (P P' Q : Assertion) c,
+  {{P'}} c {{Q}} ->
+  P ->> P' ->
+  {{P}} c {{Q}}.
+Proof.
+  unfold hoare_triple, "->>".
+  intros P P' Q c Hhoare Himp st st' Heval Hpre.
+  apply Hhoare with (st := st).
+  - assumption.
+  - apply Himp. assumption.
+Qed.
+
 Theorem hoare_seq : forall P Q R c1 c2,
      {{Q}} c2 {{R}} ->
      {{P}} c1 {{Q}} ->
@@ -2052,22 +1998,43 @@ Proof.
   eauto.
 Qed.
 
+Theorem hoare_asgn : forall Q X a,
+  {{Q [X |-> a]}} X := a {{Q}}.
+Proof.
+  unfold hoare_triple.
+  intros Q X a st st' HE HQ.
+  inversion HE. subst.
+  unfold assn_sub in HQ. assumption.  Qed.
+
 Example hoare_repeat_example_1 :
   {{ X > 0 }}
   repeat
     Y := X;
     X := X - 1
   until X = 0 end
-  {{ X = 0 /\ Y > 0 }}.
+  {{ Y > 0 /\ X = 0 }}.
 Proof.
+  simpl.
   eapply hoare_consequence_post'.
-  - apply hoare_repeat.
-    admit.
-    (* simpl.
-    eapply hoare_seq.
-    *)
-  - simpl. unfold "->>". intros st [H H1].
-    apply eqb_eq in H1. lia.
+  - apply
+    (hoare_repeat
+      (X > 0)%assertion
+      (Y > 0)%assertion
+      <{ Y := X; X := X - 1}>
+      <{ X = 0 }>).
+    * eapply hoare_seq.
+      + eapply hoare_asgn with (Q := (Y > 0)%assertion).
+      + simpl. unfold assn_sub,t_update. simpl.
+        eapply hoare_consequence_pre.
+        -- apply hoare_asgn.
+        -- assn_auto''.
+    * apply hoare_seq with (Q := (Y > 0)%assertion).
+      + eapply hoare_consequence_pre. apply hoare_asgn. assn_auto''.
+      + eapply hoare_consequence_pre.
+        -- apply hoare_asgn.
+        -- assn_auto''.
+  - assn_auto'.
+  Qed.
 
 End RepeatExercise.
 
