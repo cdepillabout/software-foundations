@@ -2564,5 +2564,23 @@ End HoareAssertAssume.
 (** [] *)
 
 
+Goal forall n x,  n + x = n -> x < 1.
+intros n x H. induction n in H |-.
+- cbn in H. subst. left.
+- apply IHn. cbn in H. injection H. auto.
+Qed.
+
+Goal forall n x,  n + x = n -> x < 1.
+intros n x H. induction n.
+- cbn in H; subst; left.
+- apply IHn; cbn in H; now injection H.
+Qed.
+
+Goal forall n:nat, n = n -> n - n = 0 -> n <= n.
+intros n Heq Hdiff.
+induction n in Hdiff |- *.
+- constructor.
+- constructor.
+Qed.
 
 (* 2021-08-11 15:11 *)
