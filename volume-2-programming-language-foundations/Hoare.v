@@ -2404,7 +2404,12 @@ Theorem assert_implies_assume : forall P b Q,
      ({{P}} assert b {{Q}})
   -> ({{P}} assume b {{Q}}).
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros P b Q. unfold hoare_triple.
+  intros Hhoare st r Hc HP.
+  inversion Hc; subst; clear Hc.
+  assert (Hass: st =[ assert b ]=> RNormal st) by (apply E_AssertTrue; auto).
+  eauto.
+  Qed.
 
 (** Your task is now to state Hoare rules for [assert] and [assume],
     and use them to prove a simple program correct.  Name your hoare
@@ -2467,7 +2472,22 @@ Qed.
 (** State and prove your hoare rules, [hoare_assert] and
     [hoare_assume], below. *)
 
-(* FILL IN HERE *)
+(* IN HERE *)
+
+Theorem hoare_assume : forall P b, {{P}} assume b {{P /\ b}}.
+Proof.
+  intros P b st st' Hc HP.
+  inversion Hc; subst; clear Hc.
+  eauto.
+  Qed.
+  
+Theorem hoare_assert : forall (P : Assertion) (b : bexp), {{P /\ b}} assert b {{P}}.
+Proof.
+  intros P b st st' Hc (HP & Hb).
+  inversion Hc; subst; clear Hc.
+  - eauto.
+  - congruence.
+  Qed.
 
 (** Here are the other proof rules (sanity check) *)
 (* NOTATION : IY -- Do we want <{ }> to be printing in here? *)
@@ -2531,7 +2551,14 @@ Example assert_assume_example:
   assert (X = 2)
   {{True}}.
 Proof.
-(* FILL IN HERE *) Admitted.
+  apply hoare_seq with (Q := (True /\ <{X = 1}>)%assertion).
+  - eapply hoare_seq.
+    + apply hoare_assert.
+    + simpl. eapply hoare_consequence_pre.
+      * eapply hoare_asgn.
+      * assn_auto''.
+  - apply (hoare_assume True <{X = 1}>).
+  Qed. 
 
 End HoareAssertAssume.
 (** [] *)
