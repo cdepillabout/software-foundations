@@ -2347,6 +2347,38 @@ Definition hoare_triple
 Notation "{{ P }}  c  {{ Q }}" :=
   (hoare_triple P c Q) (at level 90, c custom com at level 99)
   : hoare_spec_scope.
+  
+Definition hoare_triple2
+           (P : Assertion) (c : com) (Q : Assertion) : Prop :=
+  forall st,
+     (forall st', st =[ c ]=> RNormal st' -> P st  -> Q st') /\
+     (st =[ c ]=> RError -> P st -> False).
+     
+Lemma hoare_triple_same_forward : forall P Q c, hoare_triple P c Q -> hoare_triple2 P c Q.
+Proof.
+  unfold hoare_triple, hoare_triple2.
+  intros P Q c Hhoare st.
+  split. 
+  - intros st' Hc HP.
+    specialize (Hhoare st (RNormal st') Hc HP).
+    destruct Hhoare as [st'0 [Heq HQ]].
+    injection Heq as X; subst. assumption.
+  - intros Hc HP.
+    specialize (Hhoare st RError Hc HP).
+    destruct Hhoare as [st' [Heq HQ]].
+    discriminate.
+  Qed.
+  
+Lemma hoare_triple_same_backward : forall P Q c, hoare_triple2 P c Q -> hoare_triple P c Q.
+Proof.
+  unfold hoare_triple, hoare_triple2.
+  intros P Q c Hhoare st r Hc HP.
+  specialize (Hhoare st).
+  destruct Hhoare.
+  destruct r as [st'|].
+  - eauto.
+  - exfalso. auto. 
+  Qed.
 
 (** To test your understanding of this modification, give an example
     precondition and postcondition that are satisfied by the [ASSUME]
@@ -2356,7 +2388,17 @@ Notation "{{ P }}  c  {{ Q }}" :=
 Theorem assert_assume_differ : exists (P:Assertion) b (Q:Assertion),
        ({{P}} assume b {{Q}})
   /\ ~ ({{P}} assert b {{Q}}).
-(* FILL IN HERE *) Admitted.
+Proof.
+  exists True. exists BFalse. exists True. unfold hoare_triple.
+  split.
+  - intros st r Hc _.
+    inversion Hc; subst. simpl in *. discriminate.
+  - unfold not. intros H.
+    assert (empty_st =[ assert false ]=> RError) by (apply E_AssertFalse; auto).
+    specialize (H empty_st RError H0 I).
+    destruct H as [st' [Contra _]].
+    discriminate.
+  Qed.
 
 Theorem assert_implies_assume : forall P b Q,
      ({{P}} assert b {{Q}})
