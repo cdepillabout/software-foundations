@@ -677,7 +677,7 @@ Qed.
     Write an informal decorated program showing that this procedure
     is correct, and justify each use of [->>]. *)
 
-(* FILL IN HERE *)
+(* IN HERE *)
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_decorations_in_slow_assignment : option (nat*string) := None.
@@ -791,6 +791,12 @@ Proof.
     + lia.
 Qed.
 
+Lemma parity_plus_2 : forall x,
+  parity (S (S x)) = parity x.
+Proof.
+  intros x. unfold parity. reflexivity.
+Qed.
+
 Theorem parity_correct : forall (m:nat),
   {{ X = m }}
   while 2 <= X do
@@ -798,7 +804,25 @@ Theorem parity_correct : forall (m:nat),
   end
   {{  X = parity m }}.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros m.
+  About hoare_consequence.
+  eapply hoare_consequence with (P' := (ap parity X = ap parity m)%assertion).
+  * apply hoare_while.
+    eapply hoare_consequence_pre.
+    + apply hoare_asgn.
+    + verify_assn.
+      destruct (st X) eqn:E1; try discriminate.
+      destruct n; try discriminate.
+      rewrite parity_plus_2 in H.
+      assert (S (S n) - 2 = n). { simpl. now rewrite sub_0_r. }
+      now rewrite H1.
+  * verify_assn.
+  * verify_assn.
+    destruct (st X) eqn:E1.
+    + now simpl in H.
+    + destruct n; try discriminate.
+      now simpl in H.
+  Qed. 
 (** [] *)
 
 (* ================================================================= *)
@@ -1104,7 +1128,7 @@ Definition manual_grade_for_decorations_in_two_loops : option (nat*string) := No
 
     Write a decorated program for this, and justify each use of [->>]. *)
 
-(* FILL IN HERE
+(* IN HERE
 
     [] *)
 
