@@ -701,7 +701,7 @@ Definition manual_grade_for_decorations_in_slow_assignment : option (nat*string)
     specification of [add_slowly]; then (informally) decorate the
     program accordingly, and justify each use of [->>]. *)
 
-(* FILL IN HERE
+(* IN HERE
 
     [] *)
 
@@ -1208,7 +1208,7 @@ Definition is_wp P c Q :=
      while true do X := 0 end
      {{ X = 0 }}
 *)
-(* FILL IN HERE
+(* IN HERE
 
     [] *)
 
@@ -1221,7 +1221,19 @@ Definition is_wp P c Q :=
 Theorem is_wp_example :
   is_wp (Y <= 4) <{X := Y + 1}> (X <= 5).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  split.
+  - eapply hoare_consequence_pre.
+    * apply hoare_asgn.
+    * verify_assn.
+  - unfold "->>", hoare_triple.
+    intros ? H st HP.
+    simpl in *.
+    assert (st =[ X := Y + 1 ]=> (X !-> st Y + 1; st)).
+    { now apply E_Asgn. }
+    specialize (H st _ H0 HP).
+    unfold t_update in H. simpl in H.
+    lia.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, advanced, optional (hoare_asgn_weakest)
@@ -1232,7 +1244,12 @@ Proof.
 Theorem hoare_asgn_weakest : forall Q X a,
   is_wp (Q [X |-> a]) <{ X := a }> Q.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros Q X a. split.
+  - apply hoare_asgn.
+  - unfold hoare_triple, "->>", assn_sub. simpl. intros P' H st HP'.
+    assert (st =[ X := a ]=> (X !-> aeval st a; st)) by (now apply E_Asgn).
+    eauto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, advanced, optional (hoare_havoc_weakest)
@@ -1246,7 +1263,14 @@ Lemma hoare_havoc_weakest : forall (P Q : Assertion) (X : string),
   {{ P }} havoc X {{ Q }} ->
   P ->> havoc_pre X Q.
 Proof.
-(* FILL IN HERE *) Admitted.
+  About havoc_pre.
+  Check havoc_pre.
+  Print havoc_pre.
+  unfold hoare_triple, "->>", havoc_pre, assn_sub.
+  intros P Q X H st HP n.
+  assert (st =[ havoc X ]=> (X !-> aeval st n; st)) by (apply E_Havoc).
+  eauto.
+  Qed.
 End Himp2.
 (** [] *)
 
