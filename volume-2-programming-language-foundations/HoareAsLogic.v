@@ -238,8 +238,8 @@ Qed.
 Theorem provable_true_post : forall c P,
     derivable P c True.
 Proof.
-  (* FILL IN HERE *) Admitted.
-
+  induction c; intros P; eauto using derivable, H_Consequence_pre.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (provable_false_pre) *)
@@ -250,7 +250,26 @@ Proof.
 Theorem provable_false_pre : forall c Q,
     derivable False c Q.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction c; intros Q; eauto using derivable, H_Consequence_pre, H_Consequence_post.
+  - eapply H_Consequence_post.
+    * apply H_Skip.
+    * contradiction.
+  - eapply H_Consequence_pre.
+    * apply H_Asgn.
+    * contradiction.
+  - apply H_If.
+    * eapply H_Consequence_pre.
+      + eapply IHc1.
+      + intros. destruct H. destruct H.
+    * eapply H_Consequence_pre. apply IHc2. intros ? [[]].
+  - assert (derivable (False /\ b)%assertion c False).
+    { eapply H_Consequence_pre. apply IHc. intros ? [[]]. }
+    eapply H_Consequence.
+    * eapply H_While. apply X.
+    * eauto.
+    * simpl. intros ? [[]].
+  Qed.
+  
 
 (** [] *)
 
