@@ -2161,7 +2161,10 @@ Lemma fib_eqn : forall n,
   n > 0 ->
   fib n + fib (pred n) = fib (1 + n).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction n.
+  - lia.
+  - simpl. reflexivity.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced, optional (fib)
