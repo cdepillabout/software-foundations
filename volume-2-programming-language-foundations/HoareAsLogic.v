@@ -307,7 +307,14 @@ Proof.
 Theorem hoare_sound : forall P c Q,
   derivable P c Q -> valid P c Q.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros P c Q Hderiv. unfold valid.
+  induction Hderiv; try eauto.
+  - apply hoare_skip. 
+  - apply hoare_asgn.
+  - eapply hoare_seq; eauto.
+  - eapply hoare_if; eauto.
+  - eapply hoare_while; eauto.
+  Qed.
 (** [] *)
 
 (** The proof of completeness is more challenging.  To carry out the
@@ -352,7 +359,9 @@ Proof. eauto. Qed.
 Lemma wp_seq : forall P Q c1 c2,
     derivable P c1 (wp c2 Q) -> derivable (wp c2 Q) c2 Q -> derivable P <{c1; c2}> Q.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  eauto using H_Seq.
+  Qed.
+  
 
 (** [] *)
 
@@ -365,7 +374,10 @@ Proof.
 Lemma wp_invariant : forall b c Q,
     valid (wp <{while b do c end}> Q /\ b) c (wp <{while b do c end}> Q).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold valid, wp.
+  intros b c Q st st' Hc [Hw Hb] st'' Hwhile.
+  eauto.
+  Qed.
 
 (** [] *)
 
@@ -386,8 +398,18 @@ Theorem hoare_complete: forall P c Q,
   valid P c Q -> derivable P c Q.
 Proof.
   unfold valid. intros P c. generalize dependent P.
-  induction c; intros P Q HT.
-  (* FILL IN HERE *) Admitted.
+  induction c; intros P Q HT; eauto using H_Consequence_post,derivable,H_Consequence_pre.
+  - set (G := wp c2 Q).
+    assert (derivable G c2 Q).
+    { apply IHc2. unfold G. unfold wp. eauto. }
+    rename Q into R, G into Q.
+    eapply H_Seq.
+    + unfold wp in Q.
+      apply (IHc1 P Q).
+      unfold Q.
+      eauto.
+    + apply X.
+  Admitted.
 
 (** [] *)
 
