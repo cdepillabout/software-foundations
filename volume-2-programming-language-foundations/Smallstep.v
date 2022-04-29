@@ -9,6 +9,70 @@ From Coq Require Import Lists.List. Import ListNotations.
 From PLF Require Import Maps.
 From PLF Require Import Imp.
 
+
+Module TestStuff.
+
+(* This module shows that there are two ways of making sure
+   an inductive datatype is a certain constructor.  In this
+   example, we make sure that a value of the MyMaybe datatype is 
+   constructed with the Just constructor.
+   
+   One method is creating another inductive data type (IsJustInd) 
+   that is indexed by MyMaybe, but only has a single constructor
+   that is indexed using Just.
+   
+   Another method is a function using pattern matching. *)
+
+Inductive MyMaybe : Type :=
+  | Just : forall (n : nat), MyMaybe
+  | Nothing : MyMaybe.
+  
+Check MyMaybe.
+Check Just 3.
+
+Inductive IsJustInd : MyMaybe -> Prop :=
+  | IsJustIndCon : forall n, IsJustInd (Just n).
+  
+Check forall x, IsJustInd x.
+Check IsJustInd (Just 3).
+Check IsJustInd Nothing.
+Check IsJustIndCon 3.
+
+Definition isJustFun (m : MyMaybe) : Prop :=
+  match m with
+  | Just _ => True
+  | Nothing => False
+  end.
+  
+Check forall x, isJustFun x.
+Check isJustFun (Just 3).
+Check isJustFun Nothing.
+Compute isJustFun (Just 3).
+
+Theorem IsJustIndImpliesFun : forall m, IsJustInd m -> isJustFun m.
+Proof.
+  (* Inversion on IsJustInd m *)
+  intros m H. inversion H. simpl. apply I.
+  Qed.
+  
+Theorem IsJustIndImpliesFun2 : forall m, IsJustInd m -> isJustFun m.
+Proof.
+  (* Induction on m *)
+  induction m; simpl; intros.
+  - apply I.
+  - inversion H.
+  Qed.
+  
+Theorem isJustFunImpliesInd : forall m, isJustFun m -> IsJustInd m.
+Proof.
+  induction m; simpl; intros.
+  - apply IsJustIndCon.
+  - destruct H.
+  Qed.
+
+End TestStuff.
+
+
 (** The evaluators we have seen so far (for [aexp]s, [bexp]s,
     commands, ...) have been formulated in a "big-step" style: they
     specify how a given expression can be evaluated to its final
