@@ -262,7 +262,9 @@ Example test_step_2 :
           (C 2)
           (C 4)).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  repeat constructor.
+  (* apply ST_Plus2. apply ST_Plus2. apply ST_PlusConstConst. *)
+  Qed.
 (** [] *)
 
 End SimpleArith1.
