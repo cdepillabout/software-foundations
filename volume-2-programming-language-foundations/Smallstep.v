@@ -524,7 +524,13 @@ Inductive step : tm -> tm -> Prop :=
 Theorem step_deterministic :
   deterministic step.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold deterministic.
+  intros x y1 y2 Hxtoy1. generalize dependent y2.
+  induction Hxtoy1; intros y2 Hxtoy2; inversion Hxtoy2; subst; try solve_by_inverts 2; try auto.
+  - specialize (IHHxtoy1 _ H2); now subst.
+  - specialize (IHHxtoy1 _ H4); now subst.
+  Qed. 
+  
 (** [] *)
 
 (* ================================================================= *)
@@ -625,6 +631,14 @@ Proof. (* a corollary of [strong_progress]... *)
   - (* r *) exfalso. apply H. assumption.
 Qed.
 
+Lemma nf_is_value2 : forall t,
+  normal_form step t -> value t.
+Proof. (* a corollary of [strong_progress]... *)
+  unfold normal_form. intros t H.
+  destruct (strong_progress t); eauto; try (exfalso; auto).
+Qed.
+
+
 Corollary nf_same_as_value : forall t,
   normal_form step t <-> value t.
 Proof.
@@ -676,7 +690,14 @@ Inductive step : tm -> tm -> Prop :=
 Lemma value_not_same_as_normal_form :
   exists v, value v /\ ~ normal_form step v.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  exists (P (C 0) (C 0)).
+  split.
+  - apply v_funny.
+  - unfold normal_form, not.
+    intros H; apply H; clear H.
+    exists (C 0). constructor.
+  Qed.
+  
 End Temp1.
 
 (** [] *)
@@ -711,7 +732,11 @@ Inductive step : tm -> tm -> Prop :=
 Lemma value_not_same_as_normal_form :
   exists v, value v /\ ~ normal_form step v.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold normal_form, not.
+  exists (C 0).
+  split; auto using value. intros H; apply H; clear H.
+  exists (P (C 0) (C 0)). constructor.
+  Qed.
 
 End Temp2.
 (** [] *)
@@ -746,7 +771,12 @@ Inductive step : tm -> tm -> Prop :=
 Lemma value_not_same_as_normal_form :
   exists t, ~ value t /\ normal_form step t.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold normal_form, not.
+  exists (P (C 0) (P (C 0) (C 0))).
+  split.
+  - intros H; inversion H.
+  - intros [t' H]. inversion H; subst. inversion H3.
+  Qed.
 
 End Temp3.
 (** [] *)
@@ -788,22 +818,28 @@ Inductive step : tm -> tm -> Prop :=
     thought exercise, but for an extra challenge feel free to prove
     your answers in Coq.) *)
 
-Definition bool_step_prop1 :=
-  fls --> fls.
+Definition bool_step_prop1 : ~ (fls --> fls).
+Proof.
+  intros H. inversion H.
+  Qed.
 
-(* FILL IN HERE *)
+(* IN HERE *)
 
-Definition bool_step_prop2 :=
-     test
+Definition bool_step_prop2 : ~
+  (  test
        tru
        (test tru tru tru)
        (test fls fls fls)
   -->
-     tru.
+     tru).
+Proof.
+  intros H.
+  inversion H.
+  Qed.
 
-(* FILL IN HERE *)
+(* IN HERE *)
 
-Definition bool_step_prop3 :=
+Definition bool_step_prop3 :
      test
        (test tru tru tru)
        (test tru tru tru)
@@ -813,8 +849,11 @@ Definition bool_step_prop3 :=
        tru
        (test tru tru tru)
        fls.
+Proof.
+  repeat constructor.
+Qed.
 
-(* FILL IN HERE *)
+(* IN HERE *)
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_smallstep_bools : option (nat*string) := None.
@@ -828,14 +867,25 @@ Definition manual_grade_for_smallstep_bools : option (nat*string) := None.
 Theorem strong_progress_bool : forall t,
   value t \/ (exists t', t --> t').
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction t; try (left; constructor).
+  right. destruct IHt1 as [H | [t' H]].
+  - destruct H.
+    + exists t2. constructor.
+    + exists t3. constructor.
+  - exists (test t' t2 t3).
+    now constructor.
+  Qed. 
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (step_deterministic) *)
 Theorem step_deterministic :
   deterministic step.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold deterministic.
+  intros x y1 y2 Hxtoy1; generalize dependent y2.
+  induction Hxtoy1; intros y2 Hxtoy2; inversion Hxtoy2; subst; try solve_by_inverts 2; try auto.
+  now specialize (IHHxtoy1 _ H3); subst.
+  Qed.
 (** [] *)
 
 Module Temp5.
