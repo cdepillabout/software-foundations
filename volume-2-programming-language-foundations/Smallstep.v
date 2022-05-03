@@ -921,7 +921,9 @@ Inductive step : tm -> tm -> Prop :=
   | ST_If : forall t1 t1' t2 t3,
       t1 --> t1' ->
       test t1 t2 t3 --> test t1' t2 t3
-  (* FILL IN HERE *)
+  | ST_ShortCircuit : forall t v,
+      value v ->
+      test t v v --> v
 
   where " t '-->' t' " := (step t t').
 
@@ -936,7 +938,8 @@ Definition bool_step_prop4 :=
 Example bool_step_prop4_holds :
   bool_step_prop4.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  constructor. constructor.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard, optional (properties_of_altered_step)
@@ -951,20 +954,40 @@ Proof.
 
       Optional: prove your answer correct in Coq. *)
 
-(* FILL IN HERE
+Theorem step_deterministic :
+  ~ deterministic step.
+Proof.
+  unfold deterministic, not. intros H.
+  specialize (H (test (test tru fls fls) tru tru) (test fls tru tru) (tru)).
+  assert (test fls tru tru = tru).
+  { apply H; repeat constructor. }
+  inversion H0.
+  Qed.
+
+(* IN HERE
    - Does a strong progress theorem hold? Write yes or no and
      briefly (1 sentence) explain your answer.
 
      Optional: prove your answer correct in Coq.
 *)
 
-(* FILL IN HERE
+Theorem strong_progress_bool : forall t,
+  value t \/ (exists t', t --> t').
+Proof.
+  induction t; try (left; constructor).
+  right. destruct IHt1 as [H | [t' H]].
+  - destruct H; eexists; constructor.
+  - eexists (test t' t2 t3).
+    now constructor.
+  Qed. 
+
+(* IN HERE
    - In general, is there any way we could cause strong progress to
      fail if we took away one or more constructors from the original
      step relation? Write yes or no and briefly (1 sentence) explain
      your answer.
 
-(* FILL IN HERE *)
+(* IN HERE *)
 *)
 (* Do not modify the following line: *)
 Definition manual_grade_for_properties_of_altered_step : option (nat*string) := None.
@@ -1113,7 +1136,8 @@ Qed.
 Lemma test_multistep_2:
   C 3 -->* C 3.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  constructor.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 1 star, standard, optional (test_multistep_3) *)
@@ -1122,7 +1146,8 @@ Lemma test_multistep_3:
    -->*
       P (C 0) (C 3).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  constructor.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard (test_multistep_4) *)
@@ -1137,7 +1162,10 @@ Lemma test_multistep_4:
         (C 0)
         (C (2 + (0 + 3))).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  econstructor. { apply ST_Plus2. constructor. apply ST_Plus2. constructor. constructor. }
+  econstructor. { apply ST_Plus2. constructor. apply ST_PlusConstConst. }
+  constructor.
+  Qed.
 (** [] *)
 
 (* ================================================================= *)
@@ -1167,7 +1195,17 @@ Proof.
   intros x y1 y2 P1 P2.
   destruct P1 as [P11 P12].
   destruct P2 as [P21 P22].
-  (* FILL IN HERE *) Admitted.
+  unfold step_normal_form,normal_form,not in *.
+  induction P11; inversion P21; subst.
+  - reflexivity.
+  - exfalso. eauto.
+  - exfalso. eauto.
+  - assert (deterministic step) by (apply step_deterministic).
+    unfold deterministic in *.
+    assert (y = y0).
+    { eapply H2; eauto. }
+    subst. clear H. apply IHP11; assumption.
+    Qed.
 (** [] *)
 
 (** Indeed, something stronger is true for this language (though
