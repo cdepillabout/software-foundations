@@ -1242,7 +1242,12 @@ Lemma multistep_congr_2 : forall t1 t2 t2',
      t2 -->* t2' ->
      P t1 t2 -->* P t1 t2'.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros t1 t2 t2' [n] H.
+  induction H; subst.
+  - constructor.
+  - assert (P (C n) x --> P (C n) y). { repeat constructor; auto. }
+    econstructor; eauto.
+  Qed.
 (** [] *)
 
 (** With these lemmas in hand, the main proof is a straightforward
@@ -1294,6 +1299,7 @@ Proof.
     destruct Hnormal2 as [n2].
     exists (C (n1 + n2)).
     split.
+    (* this is the real proof:
     + (* l *)
       apply multi_trans with (P (C n1) t2).
       * apply multistep_congr_1. apply Hsteps1.
@@ -1302,6 +1308,17 @@ Proof.
         apply multi_R. apply ST_PlusConstConst.
     + (* r *)
       apply nf_same_as_value. apply v_const.
+    *)
+    + assert (P t1 t2 -->* P (C n1) t2).
+      { apply multistep_congr_1. auto. }
+      assert (P (C n1) t2 -->* P (C n1) (C n2)).
+      { apply multistep_congr_2. constructor. auto. }
+      assert (P (C n1) (C n2) -->* C (n1 + n2)).
+      { repeat econstructor. }
+      eapply multi_trans. apply H.
+      eapply multi_trans. apply H0. apply H1.
+    + unfold normal_form. unfold not. intros [t' H].
+      inversion H.
 Qed.
 
 (* ================================================================= *)
