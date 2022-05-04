@@ -1417,7 +1417,15 @@ Proof.
 Theorem multistep__eval : forall t t',
   normal_form_of t t' -> exists n, t' = C n /\ t ==> n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold normal_form_of, step_normal_form, normal_form, not.
+  intros t t' [H Contra]. induction H.
+  - destruct (strong_progress x) as [H | [t' Htt]].
+    + destruct H. exists n. split; auto using eval.
+    + exfalso. apply Contra; clear Contra. eauto. 
+  - specialize (IHmulti Contra). destruct IHmulti as [n [HC Hyton]]; subst.
+    eauto using step__eval.
+  Qed.
+    
 (** [] *)
 
 (* ================================================================= *)
@@ -1434,7 +1442,10 @@ Proof.
 Theorem evalF_eval : forall t n,
   evalF t = n <-> t ==> n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros t n; split; 
+    generalize dependent n. induction t; intros m H; simpl in *; subst; eauto using eval.
+  intros m H; induction H; subst; auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars, standard (combined_properties)
@@ -1490,6 +1501,29 @@ Inductive step : tm -> tm -> Prop :=
     holds or does not hold, and prove your theorem.) *)
 
 (* FILL IN HERE *)
+
+Theorem deterministic_step : deterministic step.
+Proof.
+  unfold deterministic.
+  intros x y1 y2 Hxtoy1. generalize dependent y2.
+  induction Hxtoy1; intros y2 Hxtoy2;
+    inversion Hxtoy2; subst;
+    try solve_by_inverts 2;
+    eauto using step;
+    try (f_equal; eauto).
+  Qed.
+
+Theorem no_strong_progress_both : ~ (forall t : tm, value t \/ (exists t', t --> t')).
+Proof.
+  unfold not. intros Contra.
+  specialize (Contra (P tru tru)).
+  destruct Contra.
+  - inversion H.
+  - destruct H as [t' H].
+    inversion H; subst.
+    + inversion H3.
+    + inversion H4.
+  Qed.
 
 End Combined.
 
