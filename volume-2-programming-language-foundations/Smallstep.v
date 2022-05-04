@@ -1367,14 +1367,23 @@ Theorem eval__multistep : forall t n,
     includes [-->]. *)
 
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros t n H. induction H; subst.
+  - constructor.
+  - assert (P t1 t2 -->* P (C n1) t2) by (now apply multistep_congr_1).
+    assert (P (C n1) t2 -->* P (C n1) (C n2)) by (apply multistep_congr_2; try constructor; auto).
+    assert (P (C n1) (C n2) -->* C (n1 + n2)). { eapply multi_step. apply ST_PlusConstConst. apply multi_refl. }
+    eapply multi_trans. apply H1.
+    eapply multi_trans. apply H2.
+    eapply multi_trans. apply H3.
+    apply multi_refl.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced (eval__multistep_inf)
 
     Write a detailed informal version of the proof of [eval__multistep].
 
-(* FILL IN HERE *)
+(* IN HERE *)
 *)
 
 (* Do not modify the following line: *)
@@ -1391,7 +1400,8 @@ Lemma step__eval : forall t t' n,
      t  ==> n.
 Proof.
   intros t t' n Hs. generalize dependent n.
-  (* FILL IN HERE *) Admitted.
+  induction Hs; intros n Ht'ton; inversion Ht'ton; subst; eauto using eval.
+  Qed.
 (** [] *)
 
 (** The fact that small-step reduction implies big-step evaluation is now
