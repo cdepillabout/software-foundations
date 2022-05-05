@@ -1958,12 +1958,32 @@ Definition stack_multistep st := multi (stack_step st).
 
 (* Copy your definition of s_compile here *)
 
-Definition compiler_is_correct_statement : Prop
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+(*
+Fixpoint s_compile (e : aexp) : list sinstr :=
+  match e with
+  | ANum n => [ SPush n ]
+  | AId s => [ SLoad s ]
+  | APlus a1 a2 =>
+    let x := s_compile a1 in
+    let y := s_compile a2 in
+    x ++ y ++ [ SPlus ]
+  | AMinus a1 a2 =>
+    let x := s_compile a1 in
+    let y := s_compile a2 in
+    x ++ y ++ [ SMinus ]
+  | AMult a1 a2 =>
+    let x := s_compile a1 in
+    let y := s_compile a2 in
+    x ++ y ++ [ SMult ]
+  end
+  .
+*)
+
+Definition compiler_is_correct_statement : Prop. Admitted.
 
 Theorem compiler_is_correct : compiler_is_correct_statement.
 Proof.
-(* FILL IN HERE *) Admitted.
+(* IN HERE *) Admitted.
 (** [] *)
 
 (* ################################################################# *)
@@ -2053,7 +2073,8 @@ Theorem normalize_ex : exists e',
   (P (C 3) (P (C 2) (C 1)))
   -->* e' /\ value e'.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  eexists. split; try normalize; auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 1 star, standard, optional (normalize_ex')
@@ -2064,7 +2085,14 @@ Theorem normalize_ex' : exists e',
   (P (C 3) (P (C 2) (C 1)))
   -->* e' /\ value e'.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  eexists. split.
+  - apply multi_step with (P (C 3) (C 3)).
+    + repeat constructor.
+    + apply multi_step with (C 6).
+      * apply ST_PlusConstConst.
+      * apply multi_refl.
+  - constructor.
+  Qed.
 (** [] *)
 
 (* 2021-08-11 15:11 *)
