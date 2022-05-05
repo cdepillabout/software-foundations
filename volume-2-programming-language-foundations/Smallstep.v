@@ -1500,7 +1500,7 @@ Inductive step : tm -> tm -> Prop :=
     language.  (That is, state a theorem saying that the property
     holds or does not hold, and prove your theorem.) *)
 
-(* FILL IN HERE *)
+(* IN HERE *)
 
 Theorem deterministic_step : deterministic step.
 Proof.
@@ -1848,7 +1848,23 @@ Lemma par_body_n__Sn : forall n st,
   st X = n /\ st Y = 0 ->
   par_loop / st -->* par_loop / (X !-> S n ; st).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n st [HXn HY0]. unfold par_loop.
+  eapply multi_step. apply CS_Par2. apply CS_While.
+  eapply multi_step. apply CS_Par2. apply CS_IfStep.
+    apply BS_Eq1. apply AS_Id. rewrite HY0.
+  eapply multi_step. apply CS_Par2. apply CS_IfStep.
+    apply BS_Eq. simpl.
+  eapply multi_step. apply CS_Par2. apply CS_IfTrue.
+  eapply multi_step. apply CS_Par2. apply CS_SeqStep.
+    apply CS_AsgnStep. apply AS_Plus1. apply AS_Id. rewrite HXn.
+  eapply multi_step. apply CS_Par2. apply CS_SeqStep.
+    apply CS_AsgnStep. apply AS_Plus. 
+    rewrite Nat.add_1_r.
+  eapply multi_step. apply CS_Par2. apply CS_SeqStep.
+    apply CS_Asgn.
+  eapply multi_step. apply CS_Par2. apply CS_SeqFinish.
+  apply multi_refl.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard, optional (par_body_n) *)
@@ -1857,7 +1873,16 @@ Lemma par_body_n : forall n st,
   exists st',
     par_loop / st -->*  par_loop / st' /\ st' X = n /\ st' Y = 0.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n st [HX HY]. induction n.
+  - eauto using multi_refl.
+  - destruct IHn as [st' [ Hpar [Hst'Xn Hst'Y0]]].
+    exists (X !-> S n ; st').
+    assert (X <> Y) by (intros H; discriminate).
+    rewrite t_update_eq, (t_update_neq _ _ _ _ _ H).
+    assert (par_loop / st' -->* par_loop / (X !-> S n; st')) by (eauto using par_body_n__Sn).
+    split; eauto using multi_trans.
+  Qed.
+    
 (** [] *)
 
 (** ... the above loop can exit with [X] having any value
