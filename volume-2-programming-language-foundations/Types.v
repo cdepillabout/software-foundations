@@ -183,7 +183,14 @@ Hint Unfold stuck : core.
 Example some_term_is_stuck :
   exists t, stuck t.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold stuck, step_normal_form, normal_form, not.
+  exists (scc fls).
+  split; intros H.
+  - destruct H as [t' Hstep].
+    inversion Hstep; subst. inversion H0.
+  - inversion H; inversion H0; subst. inversion H2.
+  Qed.
+     
 (** [] *)
 
 (** However, although values and normal forms are _not_ the same in
@@ -195,7 +202,21 @@ Proof.
 Lemma value_is_nf : forall t,
   value t -> step_normal_form t.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold step_normal_form, not. intros t Hv. induction Hv; inversion H; subst; intros [t' Hstep].
+  - inversion Hstep.
+  - inversion Hstep.
+  - inversion Hstep.
+  (*
+  - clear H. generalize dependent Hstep. generalize dependent t'. induction H0; intros t' Hstep.
+    + inversion Hstep; subst. inversion H0.
+    + inversion Hstep; subst. eapply IHnvalue. apply H1.
+  *)
+  - clear H. generalize dependent Hstep. generalize dependent t'. generalize dependent H0.
+    rename t0 into t.
+    induction t; try (intros Hnvalue; inversion Hnvalue); intros t' Hstep.
+    + inversion Hstep; subst. inversion H0.
+    + subst. specialize (IHt H0). inversion Hstep; subst. eapply IHt. apply H1. 
+  Qed.
 
 (** (Hint: You will reach a point in this proof where you need to
     use an induction to reason about a term that is known to be a
