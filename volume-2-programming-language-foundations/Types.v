@@ -361,7 +361,8 @@ Example scc_hastype_nat__hastype_nat : forall t,
   |- scc t \in Nat ->
   |- t \in Nat.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros t Htscc. now inversion Htscc; subst.
+  Qed.
 (** [] *)
 
 (* ----------------------------------------------------------------- *)
@@ -421,7 +422,18 @@ Proof.
     + (* t1 can take a step *)
       destruct H as [t1' H1].
       exists (test t1' t2 t3). auto.
-  (* FILL IN HERE *) Admitted.
+  - destruct IHHT as [ Hv | [t' Hstep] ].
+    + apply (nat_canonical _ HT) in Hv.
+      auto.
+    + right. eauto.
+  - destruct IHHT as [ Hv | [t' Hstep] ]; right.
+    + apply (nat_canonical _ HT) in Hv. inversion Hv; eauto.
+    + eauto.
+  - destruct IHHT as [ Hv | [t' Hstep] ]; right.
+    + apply (nat_canonical _ HT) in Hv. inversion Hv; eauto.
+    + eauto.
+  Qed.
+  
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced (finish_progress_informal)
