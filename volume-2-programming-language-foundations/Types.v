@@ -201,6 +201,7 @@ Proof.
 (** **** Exercise: 3 stars, standard (value_is_nf) *)
 Lemma value_is_nf : forall t,
   value t -> step_normal_form t.
+  (* value t -> (exists t', t --> t') -> False *)
 Proof.
   unfold step_normal_form, not. intros t Hv. induction Hv; inversion H; subst; intros [t' Hstep].
   - inversion Hstep.
@@ -233,10 +234,27 @@ Proof.
     Use [value_is_nf] to show that the [step] relation is also
     deterministic. *)
 
+Lemma scc_nvalue_no_step : forall x y, nvalue x -> scc x --> y -> False.
+Proof with eauto.
+  intros x y Hnvalue; generalize dependent y. induction Hnvalue; subst; intros y Hscc.
+  - solve_by_inverts 2.
+  - inversion Hscc; subst. eapply IHHnvalue...
+  Qed.
+
 Theorem step_deterministic:
   deterministic step.
 Proof with eauto.
-  (* FILL IN HERE *) Admitted.
+  unfold deterministic. intros x y1 y2 Hxtoy1. generalize dependent y2.
+  induction Hxtoy1; intros y2 Hxtoy2; inversion Hxtoy2; subst; try solve_by_inverts 2...
+  - specialize (IHHxtoy1 _ H3). subst...
+  - specialize (IHHxtoy1 _ H0). subst...
+  - exfalso. eapply scc_nvalue_no_step; eauto.
+  - exfalso. eapply scc_nvalue_no_step; eauto.
+  - specialize (IHHxtoy1 _ H0); subst...
+  - exfalso. eapply scc_nvalue_no_step; eauto.
+  - exfalso. eapply scc_nvalue_no_step; eauto.
+  - specialize (IHHxtoy1 _ H0); subst...
+  Qed.
 (** [] *)
 
 (* ================================================================= *)
