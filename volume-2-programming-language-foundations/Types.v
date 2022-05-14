@@ -461,7 +461,7 @@ Proof.
       - If [t1] itself can take a step, then, by [ST_Test], so can
         [t].
 
-    - (* FILL IN HERE *)
+    - (*  IN HERE *)
  *)
 (* Do not modify the following line: *)
 Definition manual_grade_for_finish_progress_informal : option (nat*string) := None.
@@ -496,13 +496,24 @@ Proof.
          intros t' HE;
          (* and we can deal with several impossible
             cases all at once *)
-         try solve_by_invert.
+         try solve_by_invert;
+         try (inversion HE; subst; clear HE; eauto using scc_hastype_nat__hastype_nat).
+   (*
     - (* T_Test *) inversion HE; subst; clear HE.
       + (* ST_TESTTru *) assumption.
       + (* ST_TestFls *) assumption.
       + (* ST_Test *) apply T_Test; try assumption.
         apply IHHT1; assumption.
-    (* FILL IN HERE *) Admitted.
+    - inversion HE; subst; clear HE. eauto.
+    - inversion HE; subst; clear HE.
+      + eauto.
+      + now apply scc_hastype_nat__hastype_nat.
+      + eauto.
+    - inversion HE; subst; clear HE.
+      + eauto.
+      + eauto.
+      + apply T_Iszro. eauto. *)
+    Qed. 
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced (finish_preservation_informal)
@@ -533,7 +544,7 @@ Proof.
         by the IH, [|- t1' \in Bool].  The [T_Test] rule then gives us
         [|- test t1' then t2 else t3 \in T], as required.
 
-    - (* FILL IN HERE *)
+    - (* IN HERE *)
 *)
 (* Do not modify the following line: *)
 Definition manual_grade_for_finish_preservation_informal : option (nat*string) := None.
@@ -553,7 +564,10 @@ Theorem preservation' : forall t t' T,
   t --> t' ->
   |- t' \in T.
 Proof with eauto.
-  (* FILL IN HERE *) Admitted.
+  intros t t' T HH Hstep. generalize dependent HH. generalize dependent T.
+  induction Hstep; intros T Htype; inversion Htype; subst; eauto...
+  inversion H1; subst...
+  Qed.
 (** [] *)
 
 (** The preservation theorem is often called _subject reduction_,
