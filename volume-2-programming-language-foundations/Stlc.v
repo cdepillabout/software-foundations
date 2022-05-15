@@ -433,17 +433,59 @@ Check <{[x:=true] x}>.
     with the function given above. *)
 
 Inductive substi (s : tm) (x : string) : tm -> tm -> Prop :=
-  | s_var1 :
+  | s_varSame :
       substi s x (tm_var x) s
-  (* FILL IN HERE *)
-.
+  | s_varDiff : forall y, x <> y ->
+      substi s x (tm_var y) (tm_var y)
+  | s_absSame : forall T t,
+      substi s x <{\x:T, t}> <{\x:T, t}>
+  | s_absDiff : forall T t y, x <> y ->
+      substi s x <{\y:T, t}> <{\y:T, [x:=s]t}>
+  | s_app : forall t1 t2,
+      substi s x <{t1 t2}> <{ ([x:=s]t1) ([x:=s]t2) }>
+  | s_true :
+      substi s x <{true}> <{true}>
+  | s_false :
+      substi s x <{false}> <{false}>
+  | s_if : forall t1 t2 t3,
+      substi s x <{if t1 then t2 else t3}> <{if ([x:=s]t1) then ([x:=s]t2) else ([x:=s]t3) }>
+  .
+
+(*
+Fixpoint subst (x : string) (s : tm) (t : tm) : tm :=
+  match t with
+  | tm_var y =>
+      if eqb_string x y then s else t
+  | <{\y:T, t1}> =>
+      if eqb_string x y then t else <{\y:T, [x:=s] t1}>
+  | <{t1 t2}> =>
+      <{([x:=s] t1) ([x:=s] t2)}>
+  | <{true}> =>
+      <{true}>
+  | <{false}> =>
+      <{false}>
+  | <{if t1 then t2 else t3}> =>
+      <{if ([x:=s] t1) then ([x:=s] t2) else ([x:=s] t3)}>
+  end
+*)
 
 Hint Constructors substi : core.
 
 Theorem substi_correct : forall s x t t',
   <{ [x:=s]t }> = t' <-> substi s x t t'.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  split.
+  - generalize dependent t'. rename x0 into x. induction t; simpl; intros t' H; try (subst; eauto).
+    + rename s0 into y. destruct (eqb_stringP x y); subst; eauto.
+    + rename s0 into y. destruct (eqb_stringP x y); subst; eauto.
+  - intros H; induction H; subst; simpl in *;
+    try (eauto using eqb_string_true_iff,eqb_string_false_iff,eqb_string_refl,false_eqb_string).
+    + now rewrite <- eqb_string_refl.
+    + rewrite (false_eqb_string); auto.
+    + now rewrite <- eqb_string_refl.
+    + rewrite (false_eqb_string); auto.
+  Qed. 
+      
 (** [] *)
 
 (* ================================================================= *)
@@ -636,13 +678,18 @@ Lemma step_example5 :
        <{idBBBB idBB idB}>
   -->* idB.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  eapply multi_step.
+    apply ST_App1.
+    apply ST_AppAbs. auto.
+  simpl. eapply multi_step.
+    apply ST_AppAbs. auto.
+  simpl. apply multi_refl.
+  Qed.
 
 Lemma step_example5_with_normalize :
        <{idBBBB idBB idB}>
   -->* idB.
-Proof.
-  (* FILL IN HERE *) Admitted.
+Proof. normalize. Qed.
 (** [] *)
 
 (* ################################################################# *)
