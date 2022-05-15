@@ -824,7 +824,14 @@ Example typing_example_2_full :
           (y (y x)) \in
     (Bool -> (Bool -> Bool) -> Bool).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  repeat apply T_Abs.
+  apply T_App with (T2 := <{ Bool }>).
+  - now apply T_Var.
+  - apply T_App with (<{ Bool }>).
+    + now apply T_Var.
+    + apply T_Var. simpl.
+      now rewrite update_neq.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard (typing_example_3)
@@ -846,7 +853,10 @@ Example typing_example_3 :
                (y (x z)) \in
       T.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  eexists.
+  repeat apply T_Abs.
+  now repeat eapply T_App; apply T_Var.
+  Qed.
 (** [] *)
 
 (** We can also show that some terms are _not_ typable.  For example,
@@ -888,7 +898,19 @@ Example typing_nonexample_3 :
         empty |-
           \x:S, x x \in T).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold not. intros H. destruct H as [S [T H]].
+  inversion H; subst. clear H.
+  inversion H5; subst. clear H5.
+  inversion H2; subst. clear H2.
+  inversion H4; subst. clear H4.
+  rewrite update_eq in H1,H2.
+  inversion H2; subst. clear H2.
+  inversion H1. subst. clear H1.
+  generalize dependent H0. generalize dependent T1.
+  induction T2.
+  - discriminate.
+  - intros. injection H0; intros; subst. eapply IHT2_1. apply H1.
+  Qed.
 (** [] *)
 
 End STLC.
