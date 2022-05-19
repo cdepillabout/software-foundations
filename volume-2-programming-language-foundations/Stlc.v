@@ -484,6 +484,23 @@ Proof.
     + rewrite (false_eqb_string); auto.
     + now rewrite <- eqb_string_refl.
     + rewrite (false_eqb_string); auto.
+  Qed.
+  
+Theorem substi_correct_2 : forall s x t t',
+  <{ [x:=s]t }> = t' <-> substi s x t t'.
+Proof.
+  split.
+  - generalize dependent t'. rename x0 into x. induction t; simpl; intros t' H; try (subst; eauto).
+    + rename s0 into y. destruct (eqb_stringP x y); subst; eauto.
+    + rename s0 into y. destruct (eqb_stringP x y); subst; eauto.
+  - Ltac rewrite_eqb_string_refl := now rewrite <- eqb_string_refl.
+    Ltac rewrite_with tac := rewrite tac; auto.
+    intros H; induction H; subst; simpl in *;
+    try (eauto using eqb_string_true_iff,eqb_string_false_iff,eqb_string_refl,false_eqb_string).
+    + rewrite_eqb_string_refl.
+    + rewrite_with false_eqb_string.
+    + rewrite_eqb_string_refl.
+    + rewrite_with false_eqb_string.
   Qed. 
       
 (** [] *)
@@ -884,6 +901,33 @@ Proof.
   inversion H2; subst; clear H2.
   discriminate H1.
 Qed.
+
+(*
+Example typing_nonexample_1_2 :
+  ~ exists T,
+      empty |-
+        \x:Bool,
+            \y:Bool,
+               (x y) \in
+        T.
+Proof.
+  intros Hc. destruct Hc as [T Hc].
+  (* The [clear] tactic is useful here for tidying away bits of
+     the context that we're not going to need again. *)
+  Ltac inv_clear h := inversion h; subst; clear h.
+  Ltac inv_clear_many hs :=
+    match hs with
+    | nil => auto
+    | cons ?x ?t => inversion x; subst; clear x ; inv_clear_many t
+    end.
+  inv_clear_many (cons Hc (cons H4 (cons H5 nil))).
+  inv_clear Hc.
+  inv_clear H4.
+  inv_clear H5.
+  inv_clear H2.
+  discriminate H1.
+Qed.
+*)
 
 (** **** Exercise: 3 stars, standard, optional (typing_nonexample_3)
 
