@@ -437,7 +437,22 @@ Qed.
     You can state your counterexample informally in words, with a brief
     explanation. *)
 
-(* FILL IN HERE *)
+(* IN HERE *)
+
+Theorem reverse_step_not_always_same_type :
+  (forall t t' T, t --> t' -> empty |- t' \in T -> empty |- t \in T) -> False.
+Proof.
+  intros H.
+  specialize (H <{ (\y : Bool, true) (\x : Bool, true) }> <{ true }> Ty_Bool).
+  assert (<{ (\ y : Bool, true) (\ x : Bool, true) }> --> <{ true }>).
+  { apply ST_AppAbs. auto. }
+  assert (empty |- true \in Bool); auto.
+  specialize (H H0 H1). clear H0  H1.
+  inversion H; subst; clear H.
+  inversion H5; subst; clear H5.
+  inversion H6; subst; clear H6.
+  inversion H3.
+  Qed.
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_subject_expansion_stlc : option (nat*string) := None.
