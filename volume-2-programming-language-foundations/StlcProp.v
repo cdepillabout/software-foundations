@@ -480,15 +480,31 @@ Definition manual_grade_for_subject_expansion_stlc : option (nat*string) := None
 Definition stuck (t:tm) : Prop :=
   (normal_form step) t /\ ~ value t.
 
+Check progress :
+  forall (t : tm) (T : ty),
+  empty |- t \in T ->
+  value t \/ (exists t' : tm, t --> t').
+  
+Check preservation :
+  forall (t t' : tm) (T : ty),
+  empty |- t \in T ->
+  t --> t' ->
+  empty |- t' \in T.
+
 Corollary type_soundness : forall t t' T,
   empty |- t \in T ->
   t -->* t' ->
   ~(stuck t').
 Proof.
   intros t t' T Hhas_type Hmulti. unfold stuck.
-  intros [Hnf Hnot_val]. unfold normal_form in Hnf.
+  intros [Hnf Hnot_val]. unfold normal_form in Hnf. unfold not in *.
   induction Hmulti.
-  (* FILL IN HERE *) Admitted.
+  - rename x0 into t.
+    apply progress in Hhas_type as [|]; auto.
+  - rename x0 into t, y0 into t', z0 into t''.
+    apply IHHmulti; auto.
+    eapply preservation; eauto.
+  Qed.
 (** [] *)
 
 (* ################################################################# *)
@@ -504,7 +520,15 @@ Theorem unique_types : forall Gamma e T T',
   Gamma |- e \in T' ->
   T = T'.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros Gamma e T T' Het. generalize dependent T'.
+  induction Het; intros T' Hg; inversion Hg; subst; auto.
+  - rename x0 into e.
+    rewrite H2 in H. now inversion H.
+  - rewrite (IHHet T0); auto.
+  - specialize (IHHet2 T3 H4); subst.
+    specialize (IHHet1 <{ T3 -> T' }> H2); subst.
+    now inversion IHHet1.
+  Qed.
 (** [] *)
 
 (* ################################################################# *)
@@ -579,7 +603,7 @@ Definition closed (t:tm) :=
     understanding it is crucial to understanding substitution and its
     properties, which are really the crux of the lambda-calculus. *)
 
-(* FILL IN HERE *)
+(* IN HERE *)
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_afi : option (nat*string) := None.
@@ -632,7 +656,11 @@ Proof.
   generalize dependent T.
   induction H;
          intros; try solve [inversion H0; eauto].
-  (* FILL IN HERE *) Admitted.
+  rename y0 into y.
+  inversion H1; subst.
+  specialize (IHappears_free_in _ _ H7) as [T' HH].
+  rewrite update_neq in HH; eauto.
+  Qed.
 (** [] *)
 
 (** From the [free_in_context] lemma, it immediately follows that any
@@ -644,7 +672,10 @@ Corollary typable_empty__closed : forall t T,
     empty |- t \in T  ->
     closed t.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold closed, not. intros t T Ht x Happ.
+  apply (free_in_context _ _ _ _ Happ) in Ht.
+  destruct Ht as [T' H]. discriminate.
+  Qed.
 (** [] *)
 
 (** Finally, we establish _context_invariance_.  It is useful in cases
@@ -706,7 +737,24 @@ Proof.
   intros.
   generalize dependent Gamma'.
   induction H; intros; auto.
-  (* FILL IN HERE *) Admitted.
+  - rename x0 into y.
+    specialize (H0 y).
+    apply T_Var.
+    rewrite H0 in H; auto.
+  - rename x0 into x.
+    apply T_Abs.
+    apply IHhas_type. intros y Hafi.
+    destruct (eqb_stringP x y); subst.
+    + now repeat rewrite update_eq.
+    + repeat rewrite (update_neq _ _ _ _ _ n).
+      apply H0. apply afi_abs; auto.
+  - apply T_App with T2.
+    + apply IHhas_type1. intros y Hafi.
+      apply H1. apply afi_app1. auto.
+    + apply IHhas_type2. intros y Hafi.
+      apply H1. apply afi_app2. auto.
+  Qed.
+  
 (** [] *)
 
 (** The context invariance lemma can actually be used in place of the
@@ -723,7 +771,191 @@ Proof.
     Coq theorems).
     You can write [Admitted] for the proofs. *)
 
-(* FILL IN HERE *)
+Theorem prog''' : forall t T, empty |- t \in T -> value t /\ exists t', t --> t'.
+Admitted.
+
+Theorem preservation''' : forall t t' T, empty |- t \in T -> t --> t' -> empty |- t' \in T.
+Admitted.
+
+Lemma extra_same_on_gamma_in_lambda :
+  forall s t TOther TReal T Gamma,
+  s |-> TOther; Gamma |- \s:TReal, t \in T ->
+  Gamma |- \s:TReal, t \in T.
+  intros s t TOther TReal T Gamma H.
+  inversion H; subst.
+  rewrite update_shadow in H5.
+  apply T_Abs.
+  apply H5.
+  Qed.
+
+
+(*
+IHt : forall (t' : tm) (T T' : ty) (Gamma : context),
+      (Gamma |- t' \in T') ->
+      value t' -> (x |-> T'; Gamma |- t \in T) -> Gamma |- [x := t'] t \in T
+t' : tm
+T' : ty
+Gamma : context
+Htypet' : Gamma |- t' \in T'
+Hval : value t'
+T1 : ty
+n : x <> s
+H4 : x |-> T'; s |-> T''; Gamma |- t \in T1
+______________________________________(1/1)
+s |-> T''; Gamma |- [x := t'] t \in T1
+*)
+
+Definition gamma_typing_sub_thing :=
+  forall Gamma t' T' x s T'' t T,
+  ( forall (t' : tm) (T T' : ty) (Gamma : context),
+      (Gamma |- t' \in T') ->
+      value t' -> (x |-> T'; Gamma |- t \in T) -> Gamma |- [x := t'] t \in T
+  ) ->
+  Gamma |- t' \in T' ->
+  value t' -> 
+  x <> s ->
+  (x |-> T'; s |-> T''; Gamma |- t \in T) ->
+  (s |-> T''; Gamma |- [x := t'] t \in T).
+  
+Theorem gamma_typing_sub_thing_proof : gamma_typing_sub_thing.
+Admitted.
+  
+Definition gamma_typing_thing :=
+  forall x t t' T T' Gamma,
+  Gamma |- t' \in T' ->
+  value t' ->
+  x |-> T'; Gamma |- t \in T ->
+  Gamma |- [x := t'] t \in T.
+  
+
+Theorem gamma_typing_sub_proves_main_false : ~ gamma_typing_sub_thing -> ~ gamma_typing_thing.
+Proof.
+  unfold not, gamma_typing_sub_thing, gamma_typing_thing.
+  intros Hgamsub Hgam. apply Hgamsub; clear Hgamsub.
+  intros Gamma t' T' x s T'' t T Hind Hp Hval Hxns He.
+  clear Hind.
+  Admitted.
+  (*
+  (Gamma s = None 
+  inversion He; subst; clear He.
+  - simpl. destruct (eqb_stringP x x0); subst.
+    + 
+  *)
+
+Theorem gamma_typing_thing_proof :
+  gamma_typing_thing.
+Proof.
+  unfold gamma_typing_thing.
+  (*
+  intros x t t' T T' Gamma H Hv He.
+  generalize dependent Hv. generalize dependent H. generalize dependent t'.
+  induction t; intros t' Hp Hval.
+  - simpl. destruct (eqb_stringP x s); subst.
+    + inversion He; subst. rewrite update_eq in H1. injection H1. congruence. 
+    + inversion He; subst. rewrite update_neq in H1; auto.
+  - simpl. inversion He; subst.
+    specialize (IHt1 H2). eapply T_App. eapply IHt1. inversion Hp; subst; eauto.
+  *)
+  
+  intros x. induction t; intros t' T T' Gamma Htypet' Hval Htypet;
+    try solve [unfold subst; fold subst; inversion Htypet; subst; eauto].
+  - simpl. destruct (eqb_stringP x s); subst.
+    + inversion Htypet; subst. rewrite update_eq in H1. injection H1. intros; subst; auto.
+    + inversion Htypet; subst. rewrite update_neq in H1; auto.
+  - rename t into T''. rename t0 into t. simpl. destruct (eqb_stringP x s); subst.
+    + eapply extra_same_on_gamma_in_lambda. eauto.
+    + inversion Htypet; subst; clear Htypet. apply (T_Abs Gamma s T1 T'' <{ [x := t'] t }>).
+      rewrite update_permute in H4; eauto.
+      eapply gamma_typing_sub_thing_proof; eauto.
+      
+  Admitted.
+
+  (*
+  intros x. induction t; intros t' T T' Gamma Htypet' Hval Htypet;
+    try solve [unfold subst; fold subst; inversion Htypet; subst; eauto].
+  - simpl. destruct (eqb_stringP x s); subst.
+    + inversion Htypet; subst. rewrite update_eq in H1. injection H1. intros; subst; auto.
+    + inversion Htypet; subst. rewrite update_neq in H1; auto.
+  - simpl. destruct (eqb_stringP x s); subst.
+    + eapply extra_same_on_gamma_in_lambda. eauto.
+    + unfold subst. fold subst. rename t into T''.
+      inversion Htypet; subst; clear Htypet. apply (T_Abs Gamma s T1 T'' <{ [x := t'] t0 }>).
+      rewrite update_permute in H4; eauto.
+      (* HERE! *)
+      eapply IHt with T'.
+      * apply weakening with Gamma; auto. unfold inclusion.
+        intros m p H.
+        
+      * apply Hval.
+      * 
+  - inversion Htypet; subst.
+    unfold subst. simpl. fold subst. apply T_App with T2.
+    + apply (IHt1 _ _ T'); auto.
+    + eapply (IHt2); eauto.
+  - admit.
+  - 
+  - unfold subst. fold subst. inversion Htypet; subst. eauto.
+  - unfold subst. fold subst. inversion Htypet; subst. eauto. apply T_If; eauto.
+  Qed.
+  *)
+
+Theorem preservation_with_gamma :
+  forall t t' T Gamma, Gamma |- t \in T -> t --> t' -> Gamma |- t' \in T.
+Proof.
+  (*
+  intros t t' T Gamma H Hstep. generalize dependent H. generalize dependent Gamma. generalize dependent T.
+  induction Hstep; intros T Gamma Hp.
+  - inversion Hp; subst; clear Hp. inversion H3; subst; clear H3.
+  *)
+
+  intros t t' T Gamma H. generalize dependent t'.
+  induction H; intros t' Hstep; subst; try solve_by_inverts 2.
+  - (* t is application (t1 t2), and we know <{ t1 t2 }> --> t'.  Need to prove Gamma |- t' \in T1. *) 
+    inversion Hstep; subst.
+    + clear Hstep. clear IHhas_type2. clear IHhas_type1. rename x0 into x. rename t0 into t.
+      (* In this case t1 has become 
+           (\x : T2, t1)
+         so we know
+           <{ (\x : T2, t1) t2 }> --> <{ [x := t2] t1 }>.
+      *)
+      inversion H; subst. clear H.
+      admit.
+      (*eapply gamma_typing_thing; eauto.*)
+      (*
+      apply substitution_preserves_typing with T2.
+      * clear IHhas_type1. inversion H; subst. auto.
+      * clear IHhas_type1. inversion H; subst. clear H.
+        inversion H4; subst.
+        -- admit.
+        -- inversion H0; subst. auto.
+        -- inversion H0; subst. auto.
+      *)
+    + apply T_App with T2; eauto.
+    + apply T_App with T2; eauto.
+  - inversion Hstep; subst; eauto.
+  Admitted.
+
+Theorem preservation_not_gamma :
+  ~ (forall x t t' T T' Gamma, Gamma |- t' \in T' -> value t' -> x |-> T'; Gamma |- t \in T -> Gamma |- [x := t'] t \in T) ->
+  ~ (forall t t' T Gamma, Gamma |- t \in T -> t --> t' -> Gamma |- t' \in T).
+Proof.
+  unfold not. intros Hgamty Hpres.
+  apply Hgamty. intros x t t' T T' Gamma Ht'inT' Hval HtinT.
+  apply Hpres with (t := <{ (\x:T',t) t' }>).
+  - apply T_App with T'; auto.
+  - apply ST_AppAbs. apply Hval.
+  Qed.
+  
+ (*
+Theorem not_gamma_thing :
+  ~ (forall x t t' T T' Gamma, Gamma |- t' \in T' -> value t' -> x |-> T'; Gamma |- t \in T -> Gamma |- [x := t'] t \in T).
+Proof.
+  unfold not. intros H.
+
+Check progress.
+*)
+
+(* IN HERE *)
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_progress_preservation_statement : option (nat*string) := None.
