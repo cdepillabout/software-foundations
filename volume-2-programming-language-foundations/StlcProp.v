@@ -346,12 +346,23 @@ Lemma substitution_preserves_typing_from_typing_ind : forall Gamma x U t v T,
   x |-> U ; Gamma |- t \in T ->
   empty |- v \in U   ->
   Gamma |- [x:=v]t \in T.
-Proof.
+Proof with eauto.
   intros Gamma x U t v T Ht Hv.
   remember (x |-> U; Gamma) as Gamma'.
   generalize dependent Gamma.
-  induction Ht; intros Gamma' G; simpl; eauto.
- (* FILL IN HERE *) Admitted.
+  induction Ht; intros Gamma' G; simpl...
+  - rename x0 into y. destruct (eqb_stringP x y); subst.
+    + rewrite update_eq in H. injection H as H; subst.
+      apply weakening_empty...
+    + rewrite update_neq in H...
+  - rename x0 into y. destruct (eqb_stringP x y); subst.
+    + apply T_Abs. rewrite update_shadow in Ht...
+    + apply T_Abs.
+      specialize (IHHt (y |-> T2; Gamma')).
+      assert ((y |-> T2; x |-> U; Gamma') = (x |-> U; y |-> T2; Gamma')) by
+        (rewrite update_permute; eauto)...
+  Qed.
+
 (** [] *)
 
 (* ================================================================= *)
