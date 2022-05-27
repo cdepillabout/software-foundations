@@ -659,7 +659,7 @@ From PLF Require Import Stlc.
            else if (pred x)=0 then 0
            else 1 + (halve (pred (pred x)))
 
-    (* FILL IN HERE *)
+    (* IN HERE *)
 *)
 (** [] *)
 
@@ -669,7 +669,7 @@ From PLF Require Import Stlc.
     through to reduce to a normal form (assuming the usual reduction
     rules for arithmetic operations).
 
-    (* FILL IN HERE *)
+    (* IN HERE *)
 *)
 (** [] *)
 
@@ -1130,9 +1130,17 @@ Fixpoint subst (x : string) (s : tm) (t : tm) : tm :=
   (* Complete the following cases. *)
 
   (* pairs *)
-  (* FILL IN HERE *)
+  | <{ (t1, t2) }> => <{ ([x:=s] t1, [x:=s] t2) }>
+  | <{ t1.fst }> => <{ ([x := s] t1).fst }>
+  | <{ t1.snd }> => <{ ([x := s] t1).snd }>
+  
   (* let *)
-  (* FILL IN HERE *)
+  | <{ let y = t1 in t2 }> =>
+      if eqb_string x y then
+        <{ let y = ([x:=s]t1) in t2 }>
+      else 
+        <{ let y = ([x:=s]t1) in ([x:=s]t2) }>
+  
   (* fix *)
   (* FILL IN HERE *)
   | _ => t  (* ... and delete this line when you finish the exercise *)
@@ -1256,9 +1264,35 @@ Inductive step : tm -> tm -> Prop :=
   (* Add rules for the following extensions. *)
 
   (* pairs *)
-  (* FILL IN HERE *)
+  | ST_Pair1 : forall t1 t1' t2,
+       t1 --> t1' ->
+       <{ (t1, t2) }> --> <{ (t1', t2) }>
+  | ST_Pair2 : forall v1 t2 t2',
+       value v1 ->
+       t2 --> t2' ->
+       <{ (v1, t2) }> --> <{ (v1, t2') }>
+  | ST_Fst1 : forall t1 t1',
+       t1 --> t1' ->
+       <{ t1.fst }> --> <{ t1'.fst }>
+  | ST_FstPair : forall v1 v2,
+       value v1 ->
+       value v2 ->
+       <{ (v1, v2).fst }> --> <{ v1 }>
+  | ST_Snd1 : forall t1 t1',
+       t1 --> t1' ->
+       <{ t1.snd }> --> <{ t1'.snd }>
+  | ST_SndPair : forall v1 v2,
+       value v1 ->
+       value v2 ->
+       <{ (v1, v2).snd }> --> <{ v2 }>
   (* let *)
-  (* FILL IN HERE *)
+  | ST_Let1 : forall t1 t1' t2 x,
+       t1 --> t1' ->
+       <{ let x = t1 in t2 }> --> <{ let x = t1' in t2 }>
+  | ST_LetValue : forall v1 t2 x,
+       value v1 ->
+       <{ let x = v1 in t2 }> --> <{ [x:=v1] t2 }>
+  
   (* fix *)
   (* FILL IN HERE *)
 
@@ -1340,9 +1374,22 @@ Inductive has_type : context -> tm -> ty -> Prop :=
   (* Add rules for the following extensions. *)
 
   (* pairs *)
-  (* FILL IN HERE *)
+  | T_Pair : forall Gamma t1 T1 t2 T2,
+      Gamma |- t1 \in T1 ->
+      Gamma |- t2 \in T2 ->
+      Gamma |- <{(t1, t2)}> \in (T1 * T2)
+  | T_Fst : forall Gamma t T1 T2,
+      Gamma |- t \in (T1 * T2) ->
+      Gamma |- <{ t.fst }> \in T1
+  | T_Snd : forall Gamma t T1 T2,
+      Gamma |- t \in (T1 * T2) ->
+      Gamma |- <{ t.snd }> \in T2
+
   (* let *)
-  (* FILL IN HERE *)
+  | T_Let : forall Gamma t1 T1 x t2 T2,
+      Gamma |- t1 \in T1 ->
+      (x |-> T1 ; Gamma) |- t2 \in T2 ->
+      Gamma |- <{let x = t1 in t2}> \in T2
   (* fix *)
   (* FILL IN HERE *)
 
@@ -1446,15 +1493,12 @@ Proof.
      to increase the max search depth of [auto] from the
      default 5 to 10. *)
   auto 10.
-(* FILL IN HERE *) Admitted.
+  Qed.
 
 Example numtest_reduces :
   test -->* 5.
 Proof.
-(* 
-  unfold test. normalize.
-*)
-(* FILL IN HERE *) Admitted.
+  unfold test. normalize. Qed.
 
 End Numtest.
 
@@ -1469,16 +1513,14 @@ Definition test :=
 
 Example typechecks :
   empty |- test \in Nat.
-Proof. unfold test. eauto 15. (* FILL IN HERE *) Admitted.
+Proof. unfold test. eauto 15. Qed.
 (* GRADE_THEOREM 0.25: typechecks *)
 
 Example reduces :
   test -->* 6.
 Proof.
-(* 
   unfold test. normalize.
-*)
-(* FILL IN HERE *) Admitted.
+  Qed.
 (* GRADE_THEOREM 0.25: reduces *)
 
 End Prodtest.
@@ -1495,16 +1537,13 @@ Definition test :=
 
 Example typechecks :
   empty |- test \in Nat.
-Proof. unfold test. eauto 15. (* FILL IN HERE *) Admitted.
+Proof. unfold test. eauto 15. Qed.
 (* GRADE_THEOREM 0.25: typechecks *)
 
 Example reduces :
   test -->* 6.
-Proof.
-(* 
-  unfold test. normalize.
-*)
-(* FILL IN HERE *) Admitted.
+Proof. 
+  unfold test. normalize. Qed.
 (* GRADE_THEOREM 0.25: reduces *)
 
 End LetTest.
@@ -1525,15 +1564,13 @@ Definition test :=
 
 Example typechecks :
   empty |- test \in Nat.
-Proof. unfold test. eauto 15. (* FILL IN HERE *) Admitted.
+Proof. unfold test. eauto 15. Qed.
 
 Example reduces :
   test -->* 5.
 Proof.
-(* 
   unfold test. normalize.
-*)
-(* FILL IN HERE *) Admitted.
+Qed.
 
 End Sumtest1.
 
@@ -1556,15 +1593,12 @@ Definition test :=
 
 Example typechecks :
   empty |- test \in (Nat * Nat).
-Proof. unfold test. eauto 15. (* FILL IN HERE *) Admitted.
+Proof. unfold test. eauto 15. Qed.
 
 Example reduces :
   test -->* <{(5, 0)}>.
 Proof.
-(* 
-  unfold test. normalize.
-*)
-(* FILL IN HERE *) Admitted.
+  unfold test. normalize. Qed.
 
 End Sumtest2.
 
@@ -1586,15 +1620,12 @@ Definition test :=
 
 Example typechecks :
   empty |- test \in Nat.
-Proof. unfold test. eauto 20. (* FILL IN HERE *) Admitted.
+Proof. unfold test. eauto 20. Qed.
 
 Example reduces :
   test -->* 25.
 Proof.
-(* 
-  unfold test. normalize.
-*)
-(* FILL IN HERE *) Admitted.
+  unfold test. normalize. Qed.
 
 End ListTest.
 
