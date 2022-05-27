@@ -1142,8 +1142,7 @@ Fixpoint subst (x : string) (s : tm) (t : tm) : tm :=
         <{ let y = ([x:=s]t1) in ([x:=s]t2) }>
   
   (* fix *)
-  (* FILL IN HERE *)
-  | _ => t  (* ... and delete this line when you finish the exercise *)
+  | <{ fix f }> => <{ fix ([x := s] f) }>
   end
 
 where "'[' x ':=' s ']' t" := (subst x s t) (in custom stlc).
@@ -1294,7 +1293,11 @@ Inductive step : tm -> tm -> Prop :=
        <{ let x = v1 in t2 }> --> <{ [x:=v1] t2 }>
   
   (* fix *)
-  (* FILL IN HERE *)
+  | ST_Fix1 : forall f f',
+       f --> f' ->
+       <{ fix f }> --> <{ fix f' }>
+  | ST_FixAbs : forall x t T,
+       <{ fix (\x:T, t) }> --> <{ [x := fix (\x:T, t)] t }>
 
   where "t '-->' t'" := (step t t').
 
@@ -1390,8 +1393,11 @@ Inductive has_type : context -> tm -> ty -> Prop :=
       Gamma |- t1 \in T1 ->
       (x |-> T1 ; Gamma) |- t2 \in T2 ->
       Gamma |- <{let x = t1 in t2}> \in T2
+      
   (* fix *)
-  (* FILL IN HERE *)
+  | T_Fix : forall Gamma t T,
+      Gamma |- t \in <{{T -> T}}> ->
+      Gamma |- <{ fix t }> \in T
 
 where "Gamma '|-' t '\in' T" := (has_type Gamma t T).
 
@@ -1649,16 +1655,14 @@ Definition fact :=
 
 Example typechecks :
   empty |- fact \in (Nat -> Nat).
-Proof. unfold fact. auto 10. (* FILL IN HERE *) Admitted.
+Proof. unfold fact. auto 10. Qed.
 (* GRADE_THEOREM 0.25: typechecks *)
 
 Example reduces :
   <{fact 4}> -->* 24.
 Proof.
-(* 
   unfold fact. normalize.
-*)
-(* FILL IN HERE *) Admitted.
+Qed.
 (* GRADE_THEOREM 0.25: reduces *)
 
 End FixTest1.
@@ -1685,17 +1689,15 @@ Definition map :=
 Example typechecks :
   empty |- map \in
     ((Nat -> Nat) -> ((List Nat) -> (List Nat))).
-Proof. unfold map. auto 10. (* FILL IN HERE *) Admitted.
+Proof. unfold map. auto 10. Qed.
 (* GRADE_THEOREM 0.25: typechecks *)
 
 Example reduces :
   <{map (\a:Nat, succ a) (1 :: 2 :: (nil Nat))}>
   -->* <{2 :: 3 :: (nil Nat)}>.
 Proof.
-(* 
   unfold map. normalize.
-*)
-(* FILL IN HERE *) Admitted.
+Qed.
 (* GRADE_THEOREM 0.25: reduces *)
 
 End FixTest2.
@@ -1721,25 +1723,19 @@ Definition equal :=
 
 Example typechecks :
   empty |- equal \in (Nat -> Nat -> Nat).
-Proof. unfold equal. auto 10. (* FILL IN HERE *) Admitted.
-(* GRADE_THEOREM 0.25: typechecks *)
+Proof. unfold equal. auto 10. Qed.
 
 Example reduces :
   <{equal 4 4}> -->* 1.
 Proof.
-(* 
   unfold equal. normalize.
-*)
-(* FILL IN HERE *) Admitted.
+Qed.
 (* GRADE_THEOREM 0.25: reduces *)
 
 Example reduces2 :
   <{equal 4 5}> -->* 0.
 Proof.
-(* 
-  unfold equal. normalize.
-*)
-(* FILL IN HERE *) Admitted.
+  unfold equal. normalize. Qed.
 
 End FixTest3.
 
@@ -1768,16 +1764,13 @@ Definition eotest :=
 
 Example typechecks :
   empty |- eotest \in (Nat * Nat).
-Proof. unfold eotest. eauto 30. (* FILL IN HERE *) Admitted.
+Proof. unfold eotest. eauto 30. Qed.
 (* GRADE_THEOREM 0.25: typechecks *)
 
 Example reduces :
   eotest -->* <{(0, 1)}>.
 Proof.
-(* 
-  unfold eotest. normalize.
-*)
-(* FILL IN HERE *) Admitted.
+  unfold eotest. normalize. Qed.
 (* GRADE_THEOREM 0.25: reduces *)
 
 End FixTest4.
