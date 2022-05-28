@@ -1941,12 +1941,18 @@ Proof with eauto.
   (* Complete the proof. *)
 
   (* pairs *)
-  (* FILL IN HERE *)
+  - destruct IHHt1 as [Hv1 | [t1' Hs1]]...
+    destruct IHHt2 as [Hv2 | [t2' Hs2]]...
+  - destruct IHHt as [Hv | [t' Hs]]...
+    inversion Hv; subst; try solve_by_invert...
+  - destruct IHHt as [Hv | [t' Hs]]...
+    inversion Hv; subst; try solve_by_invert...
   (* let *)
-  (* FILL IN HERE *)
+  - right. destruct IHHt1 as [Hv1 | [t1' Hs1]]...
   (* fix *)
-  (* FILL IN HERE *)
-(* FILL IN HERE *) Admitted.
+  - right. destruct IHHt as [Hv | [t' Hs]]...
+    inversion Hv; subst; try solve_by_invert...
+  Qed.
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_progress : option (nat*string) := None.
@@ -2060,8 +2066,11 @@ Proof with eauto.
         assumption.
 
   (* Complete the proof. *)
-
-  (* FILL IN HERE *) Admitted.
+  - rename s into y. destruct (eqb_stringP x y); subst...
+    + apply T_Let with T1... rewrite update_shadow in H6...
+    + apply T_Let with T1...
+      apply IHt2. rewrite update_permute in H6...
+  Qed.
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_substitution_preserves_typing : option (nat*string) := None.
@@ -2108,13 +2117,19 @@ Proof with eauto.
   (* Complete the proof. *)
 
   (* fst and snd *)
-  (* FILL IN HERE *)
+  - inversion HT; subst...
+  - inversion HT; subst...
+  
   (* let *)
-  (* FILL IN HERE *)
+  - eapply substitution_preserves_typing...
+  
   (* fix *)
-  (* FILL IN HERE *)
-(* FILL IN HERE *) Admitted.
-
+  - inversion HE; subst; clear HE.
+    + inversion H1.
+    + inversion HT; subst; clear HT.
+      clear IHHT.
+      eapply substitution_preserves_typing...
+  Qed.
 (* Do not modify the following line: *)
 Definition manual_grade_for_preservation : option (nat*string) := None.
 (** [] *)
