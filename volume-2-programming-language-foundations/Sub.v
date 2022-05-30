@@ -1033,7 +1033,9 @@ Lemma sub_inversion_Bool : forall U,
 Proof with auto.
   intros U Hs.
   remember <{Bool}> as V.
-  (* FILL IN HERE *) Admitted.
+  induction Hs; subst; try discriminate...
+  specialize (IHHs2 eq_refl); subst. apply IHHs1...
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (sub_inversion_arrow) *)
@@ -1045,7 +1047,15 @@ Proof with eauto.
   intros U V1 V2 Hs.
   remember <{V1->V2}> as V.
   generalize dependent V2. generalize dependent V1.
-  (* FILL IN HERE *) Admitted.
+  induction Hs; subst...
+  - intros V1 V2 HT; subst.
+    specialize (IHHs2 V1 V2 eq_refl). destruct IHHs2 as [U1 [U2 [HU [HV1U1 HU2V2]]]]; subst.
+    specialize (IHHs1 U1 U2 eq_refl). destruct IHHs1 as [U3 [U4 [HSU [HU1U3 HU4U2]]]]; subst.
+    eexists. eexists...
+  - discriminate. 
+  - intros V1 V2 HT. injection HT. intros ? ?; subst; clear HT.
+    exists S1,S2...
+  Qed.
 (** [] *)
 
 (* ================================================================= *)
