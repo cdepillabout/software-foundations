@@ -1085,6 +1085,100 @@ Proof with eauto.
     tells us the possible "canonical forms" (i.e., values) of function
     type. *)
 
+(*
+
+Inductive non_arr_val : tm -> Prop :=
+  | NAV_True : non_arr_val <{true}>
+  | NAV_False : non_arr_val <{false}>
+  | NAV_Unit : non_arr_val <{unit}>.
+  
+Lemma split_val : forall x, value x -> (exists y T t, x = <{\y:T, t}>) \/ non_arr_val x.
+Proof.
+  intros x Hv. inversion Hv; subst.
+  - left. eauto.
+  - right. eauto using non_arr_val.
+  - right. eauto using non_arr_val.
+  - right. eauto using non_arr_val.
+  Qed.
+
+Lemma canonical_forms_of_arrow_types_non_arr_val_sub : forall Gamma T0 T1 T2,
+  Gamma |- true \in T0 ->
+  T0 <: <{ T1 -> T2 }> ->
+  False.
+Proof.
+  intros Gamma T0 T1 T2 Hty Hv. generalize dependent Hty. generalize dependent T0. induction T2.
+  - admit.
+  - admit.
+  - admit.
+  - intros. inversion H; subst. inversion H2; subst. inversion H1; subst. inversion H4; subst.
+    
+  (*
+  intros Gamma T0 T1 T2 Hty Hsub. generalize dependent Hty.
+  remember <{T1 -> T2}> as Harr.
+  inversion Hsub; subst.
+  - 
+  *)
+  (*
+  intros Gamma T0. induction T0; intros.
+  -  admit.
+  - admit.
+  - admit.
+  - inversion H; inversion H0; subst.
+    + inversion H1; subst.
+      * admit.
+      * 
+  *)
+  (*
+  intros Gamma T0 T1 T2 H. generalize dependent T2. generalize dependent T1.
+  inversion H; subst.
+  - admit.
+  - 
+  induction T0.
+  - intros. inversion H0; subst. admit.
+  - admit.
+  - admit.
+  - intros. inversion H; subst. inversion H0.
+  
+   inversion H0; subst.
+    + inversion H; subst. clear H0. inversion H1; subst.
+      * admit.
+      * 
+  - admit.
+  *)
+  (*
+  intros Gamma T0 T1 T2 Hty. inversion Hty; subst.
+  - admit.
+  - 
+  *)
+  (*
+  intros Gamma T0 T1 T2 Hty Hsub. generalize dependent Hty.
+  (* remember <{T1->T2}> as Ht1t2. *)
+  inversion Hsub; subst.
+  - 
+  *)
+
+Lemma canonical_forms_of_arrow_types_non_arr_val : forall Gamma T1 T2,
+  Gamma |- true \in (T1->T2) ->
+  False.
+Proof with eauto.
+  intros Gamma T1 T2 H. remember <{T1 -> T2 }> as HTT. inversion H; subst.
+  - inversion H2.
+  - clear H. generalize dependent H1. inversion H0; subst; intros Hsub.
+    + admit. 
+    +  admit. (*apply sub_inversion_Bool in H1. inversion H1; subst. generalize dependent H0. remember <{ T1 -> T2 }> as HTT. induction H1. *)
+    + 
+  - 
+  induction T1.
+  intros Gamma s T1 T2 HG. induction HG; subst; intros; try solve_by_inverts 2.
+  - 
+  - inversion H.
+  - inversion H1.
+  - inversion H2.
+  - inversion H1; subst.
+    + invers  
+
+*)
+
 (** **** Exercise: 3 stars, standard, optional (canonical_forms_of_arrow_types) *)
 Lemma canonical_forms_of_arrow_types : forall Gamma s T1 T2,
   Gamma |- s \in (T1->T2) ->
@@ -1092,7 +1186,111 @@ Lemma canonical_forms_of_arrow_types : forall Gamma s T1 T2,
   exists x S1 s2,
      s = <{\x:S1,s2}>.
 Proof with eauto.
-  (* FILL IN HERE *) Admitted.
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  (*
+  (* intros Gamma s T1 T2 H Hv. induction H; try solve_by_invert... *)
+  
+  intros Gamma s T1 T2 H Hv. remember <{T1 -> T2}> as V.
+  generalize dependent T2. generalize dependent T1.
+  induction H; intros.
+  - admit.
+  - eauto.
+  - try solve_by_inverts 2.
+  - solve_by_inverts 2.
+  - solve_by_inverts 2.
+  - solve_by_inverts 2.
+  - solve_by_inverts 2.
+  - subst.
+  subst.
+
+  intros Gamma s T1 T2 H. induction H; subst; intros; try solve_by_inverts 2...
+  - 
+  *)
+  (*
+  intros Gamma s T1 T2. induction s; subst; intros Ht Hv;
+    try solve_by_inverts 2.
+  - eauto.
+  - clear Hv. exfalso. inversion Ht; subst. apply sub_inversion_arrow in H0.
+  *)
+  (*
+  intros Gamma s T1 T2 H Hv.
+  generalize dependent H. generalize dependent T2. generalize dependent T1. generalize dependent Gamma.
+  inversion Hv; subst.
+  - admit.
+  - clear Hv. intros Gamma T1 T2 H. exfalso. remember <{T1 -> T2}> as Harr. induction H; subst...
+    + inversion H2.
+    + 
+    + subst.
+    + inversion H; subst.
+    + 
+  *)
+  (*
+  intros Gamma s T1 T2 Ht Hv. 
+  remember (<{ T1->T2 }>) as HT1T2. induction Ht; subst; try solve_by_inverts 2...
+  apply sub_inversion_arrow in H as [U1 [U2 [HH [Hvv Hx]]]]; subst.
+  inversion Hv; subst...
+  - inversion Ht; subst. 
+    inversion H0; subst.
+  *)
+  (*
+  intros Gamma s. induction s; intros; subst; try solve_by_inverts 2.
+  - exists s,t,s0... 
+ generalize dependent H0. remember <{T1 -> T2}> as HTT. induction H; subst; try solve_by_inverts 2.
+    + intros. inversion H0.
+    +  
+  *)
+  (*
+  intros Gamma s T1 T2 Hty Hv. generalize dependent Hty. generalize dependent T2. generalize dependent T1.
+  induction Hv; subst.
+  - admit.
+  - intros T1 T2 H. inversion H; subst.
+  *)
+  (*
+  intros Gamma s T1 T2 Ht Hv. 
+  remember (<{ T1->T2 }>) as HT1T2. induction Ht; subst; try solve_by_inverts 2...
+  apply sub_inversion_arrow in H as [U1 [U2 [HH [Hvv Hx]]]]; subst.
+  inversion Hv; subst...
+  - clear Hv. inversion Ht; subst.
+  
+  
+  inversion Ht; subst; try solve_by_inverts 1...
+  apply sub_inversion_arrow in H0 as [U3 [U4 [HHH [Hvvv Hxx]]]]; subst.
+  inversion Hv; subst...
+  - 
+  inversion Hv; subst; try solve_by_inverts 3...
+  - inversion Ht; subst. inversion H; subst. inversion H0; subst.
+  - inversion Ht; subst. inversion H; subst.
+  inversion H; subst.
+  - specialize (IHHt eq_refl Hv). eauto.
+  - inversion 
+  
+  
+  
+  try solve_by_inverts 2...
+  - apply sub_inversion_arrow in H as [U1 [U2 [HH [Hv Hx]]]]; subst. inversion Ht; subst.
+  
+  inversion Ht; subst.
+    + apply sub_inversion_arrow in H as [U1 [U2 [HH]]]. discriminate.
+    + 
+  - eauto.
+  - 
+  *)
 (** [] *)
 
 (** Similarly, the canonical forms of type [Bool] are the constants
