@@ -1100,12 +1100,57 @@ Proof.
   - right. eauto using non_arr_val.
   - right. eauto using non_arr_val.
   Qed.
+  
+*)
 
+Example typing_with_top : empty |- true \in Top.
+Proof.
+  apply T_Sub with <{Bool}>; auto.
+Qed.
+  
+
+Lemma bool_not_subtype : forall T1 T2, <{ Bool }> <: <{ T1 -> T2 }> -> False.
+Proof.
+  intros. apply sub_inversion_arrow in H. destruct H. destruct H. destruct H. inversion H.
+  Qed. 
+  (*
+  intros T1 T2 H. remember <{ Bool }> as Hb. generalize dependent HeqHb.
+  remember <{ T1 -> T2 }> as Ht. generalize dependent T2. generalize dependent T1.
+  induction H.
+  - intros. subst. inversion HeqHb. 
+  - intros; subst. apply sub_inversion_arrow in H0.
+    destruct H0 as [U1 [U2 [HU [HT1]]]]. subst.
+    eapply IHsubtype1; eauto.
+  - intros; subst. inversion HeqHt.
+  - intros. inversion HeqHb.
+  Qed.
+  *)
+  (*
+  intros T1 T2 H. remember <{ T1 -> T2 }> as Hty.
+  generalize dependent T2. (* generalize dependent T1. *) induction Hty; intros; try solve_by_inverts 2.
+  - inversion HeqHty. subst. clear HeqHty.
+  *)
+  (*
+  intros T1 T2 H. remember <{ T1 -> T2 }> as Hty.
+  generalize dependent T1. generalize dependent T2. induction H as [T| S U T HS IHS HU IHU | | ].
+  - admit.
+  - intros. eapply IHU. eauto.
+  - intros. discriminate.
+  - intros. inversion HeqHty; subst; clear HeqHty.
+  *)
+  
 Lemma canonical_forms_of_arrow_types_non_arr_val_sub : forall Gamma T0 T1 T2,
   Gamma |- true \in T0 ->
   T0 <: <{ T1 -> T2 }> ->
   False.
 Proof.
+  intros Gamma T0 T1 T2 Hty Hsub. remember <{ T1 -> T2 }> as Harr.
+  generalize dependent T2. generalize dependent T1.
+  induction T0; intros.
+  - subst. admit.
+  - subst. clear Hty. 
+  
+(*
   intros Gamma T0 T1 T2 Hty Hv. generalize dependent Hty. generalize dependent T0. induction T2.
   - admit.
   - admit.
