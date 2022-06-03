@@ -1139,24 +1139,71 @@ Proof.
   - intros. inversion HeqHty; subst; clear HeqHty.
   *)
   
+  
+  
+Lemma reverse_weakening_empty_true : forall Gamma T,
+     Gamma |- true \in T  ->
+     empty |- true \in T.
+Proof.
+  intros Gamma T H.
+  remember <{ true }> as fff.
+  induction H; subst; try discriminate; eauto.
+  Qed.
+  
 Lemma canonical_forms_of_arrow_types_non_arr_val_sub : forall Gamma T0 T1 T2,
   Gamma |- true \in T0 ->
   T0 <: <{ T1 -> T2 }> ->
   False.
 Proof.
-  intros Gamma T0 T1 T2 Hty Hsub. remember <{ T1 -> T2 }> as Harr.
+  intros Gamma T0 T1 T2 Hty Hsub.
+  apply reverse_weakening_empty_true in Hty.
+  remember <{ true }> as HHH.
+  remember <{ T1 -> T2 }> as Harr.
   generalize dependent T2. generalize dependent T1.
-  induction T0; intros.
-  - subst. admit.
-  - subst. clear Hty. 
+  induction Hty; intros; subst; try discriminate.
+  - eapply bool_not_subtype. eauto.
+  - eapply IHHty; eauto.
+  Qed.
+  (*
+  intros Gamma T0 T1 T2 Hty Hsub.
+  apply sub_inversion_arrow in Hsub.
+  destruct Hsub as [U1 [U2 [Heq [HlT1 HlT2]]]]; subst.
+  apply reverse_weakening_empty_true in Hty.
+  remember <{ true }> as HHH.
+  remember <{ U1 -> U2 }> as Harr.
+  generalize dependent U2. generalize dependent U1.
+  generalize dependent T2. generalize dependent T1.
+  induction Hty; intros; subst; try discriminate.
   
-(*
+  - 
+  
+  remember <{ U1 -> U2 }> as Harr.
+  remember <{ true }> as HHH.
+  generalize dependent T2. generalize dependent T1.
+  generalize dependent U2. generalize dependent U1.
+  induction Hty; intros; subst; try discriminate.
+  specialize (IHHty eq_refl).
+  *)
+  (*
+  intros Gamma T0 T1 T2 Hty Hsub.
+  apply sub_inversion_arrow in Hsub. destruct Hsub as [U1 [U2 [Heq [HlT1 HlT2]]]].
+  subst.
+  apply reverse_weakening_empty_true in Hty.
+  remember <{ U1 -> U2 }> as Harr.
+  remember <{ true }> as HHH.
+  generalize dependent T2. generalize dependent T1.
+  generalize dependent U2. generalize dependent U1.
+  induction Hty; intros; subst; try discriminate.
+  specialize (IHHty eq_refl).
+  *)
+  
+  (*
   intros Gamma T0 T1 T2 Hty Hv. generalize dependent Hty. generalize dependent T0. induction T2.
   - admit.
   - admit.
   - admit.
   - intros. inversion H; subst. inversion H2; subst. inversion H1; subst. inversion H4; subst.
-    
+  *)
   (*
   intros Gamma T0 T1 T2 Hty Hsub. generalize dependent Hty.
   remember <{T1 -> T2}> as Harr.
@@ -1206,23 +1253,10 @@ Lemma canonical_forms_of_arrow_types_non_arr_val : forall Gamma T1 T2,
   Gamma |- true \in (T1->T2) ->
   False.
 Proof with eauto.
-  intros Gamma T1 T2 H. remember <{T1 -> T2 }> as HTT. inversion H; subst.
-  - inversion H2.
-  - clear H. generalize dependent H1. inversion H0; subst; intros Hsub.
-    + admit. 
-    +  admit. (*apply sub_inversion_Bool in H1. inversion H1; subst. generalize dependent H0. remember <{ T1 -> T2 }> as HTT. induction H1. *)
-    + 
-  - 
-  induction T1.
-  intros Gamma s T1 T2 HG. induction HG; subst; intros; try solve_by_inverts 2.
-  - 
-  - inversion H.
-  - inversion H1.
-  - inversion H2.
-  - inversion H1; subst.
-    + invers  
+  intros Gamma T1 T2 H. inversion H; subst.
+  eapply canonical_forms_of_arrow_types_non_arr_val_sub; eauto.
+  Qed.
 
-*)
 
 (** **** Exercise: 3 stars, standard, optional (canonical_forms_of_arrow_types) *)
 Lemma canonical_forms_of_arrow_types : forall Gamma s T1 T2,
@@ -1231,7 +1265,16 @@ Lemma canonical_forms_of_arrow_types : forall Gamma s T1 T2,
   exists x S1 s2,
      s = <{\x:S1,s2}>.
 Proof with eauto.
-  
+  intros Gamma s T1 T2 H Hval.
+  remember <{ T1 -> T2 }> as Harr.
+  generalize dependent T2. generalize dependent T1.
+  induction H; intros; subst; try solve_by_inverts 2...
+  apply sub_inversion_arrow in H0.
+  destruct H0 as [U1 [U2 [HT1 [HT0 HU2]]]]; subst.
+  specialize (IHhas_type Hval U1 U2 eq_refl).
+  apply IHhas_type.
+Qed.
+   
 
 
 
