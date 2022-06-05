@@ -1549,7 +1549,10 @@ Lemma typing_inversion_var : forall Gamma (x:string) T,
   exists S,
     Gamma x = Some S /\ S <: T.
 Proof with eauto.
-  (* FILL IN HERE *) Admitted.
+  intros Gamma x T H. remember (tm_var x) as t.
+  induction H; inversion Heqt; intros; subst...
+  specialize (IHhas_type eq_refl) as [S [HG HS]]...
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard, optional (typing_inversion_app) *)
@@ -1559,7 +1562,10 @@ Lemma typing_inversion_app : forall Gamma t1 t2 T2,
     Gamma |- t1 \in (T1->T2) /\
     Gamma |- t2 \in T1.
 Proof with eauto.
-  (* FILL IN HERE *) Admitted.
+  intros Gamma t1 t2 T2 H. remember <{ t1 t2 }> as t.
+  induction H; inversion Heqt; intros; subst...
+  specialize (IHhas_type eq_refl) as [TX [HG HS]]...
+  Qed.
 (** [] *)
 
 (** The inversion lemmas for typing and for subtyping between arrow
