@@ -345,9 +345,23 @@ Fixpoint type_check (Gamma : context) (t : tm) : option ty :=
   (* Complete the following cases. *)
   
   (* sums *)
-  (* FILL IN HERE *)
+  | <{ inl TR tl }> =>
+      TL <- type_check Gamma tl ;;
+      return <{{ TL + TR }}>
+  | <{ inr TL tr }> =>
+      TR <- type_check Gamma tr ;;
+      return <{{ TL + TR }}>
+  | <{ case t0 of | inl x1 => t1 | inr x2 => t2 }> =>
+      Tx <- type_check Gamma t0 ;;
+      match Tx with
+      | <{{T1 + T2}}> =>
+          TRes1 <- type_check (x1 |-> T1 ; Gamma) t1 ;;
+          TRes2 <- type_check (x2 |-> T2 ; Gamma) t2 ;;
+          if eqb_ty TRes1 TRes2 then return TRes1 else fail
+      | _ => fail
+      end
+  
   (* lists (the [tlcase] is given for free) *)
-  (* FILL IN HERE *)
   | <{ case t0 of | nil => t1 | x21 :: x22 => t2 }> =>
       match type_check Gamma t0 with
       | Some <{{List T}}> =>
@@ -359,15 +373,50 @@ Fixpoint type_check (Gamma : context) (t : tm) : option ty :=
           end
       | _ => None
       end
+  | <{ nil T }> => return T
+  | <{ h :: t }> => 
+      TH <- type_check Gamma h ;;
+      TT <- type_check Gamma t ;;
+      match TT with
+      | <{{ List TX }}> => 
+          if eqb_ty TH TX then return <{{ List TH }}> else fail
+      | _ => None
+      end
+      
   (* unit *)
-  (* FILL IN HERE *)
+  | <{ unit }> => return Ty_Unit
+  
   (* pairs *)
-  (* FILL IN HERE *)
+  | <{ (t1, t2) }> =>
+      T1 <- type_check Gamma t1 ;;
+      T2 <- type_check Gamma t2 ;;
+      return <{{ T1 * T2 }}>
+  | <{ t.fst }> =>
+      T <- type_check Gamma t ;;
+      match T with
+      | <{{ T1 * _ }}> => return T1
+      | _ => fail
+      end
+  | <{ t.snd }> =>
+      T <- type_check Gamma t ;;
+      match T with
+      | <{{ _ * T2 }}> => return T2
+      | _ => fail
+      end
+
   (* let *)
-  (* FILL IN HERE *)
+  | <{ let x = t1 in t2 }> =>
+    T1 <- type_check Gamma t1 ;;
+    type_check (x |-> T1 ; Gamma) t2
+    
   (* fix *)
-  (* FILL IN HERE *)
-  | _ => None  (* ... and delete this line when you complete the exercise. *)
+  | <{ fix f }> =>
+    T <- type_check Gamma f ;;
+    match T with
+    | <{{ T1 -> T2 }}> =>
+        if eqb_ty T1 T2 then return <{{ T1 -> T1 }}> else fail
+    | _ => None
+    end
   end.
 
 (** Just for fun, we'll do the soundness proof with just a bit more
