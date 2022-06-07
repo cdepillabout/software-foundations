@@ -414,8 +414,15 @@ Hint Constructors has_type : core.
 Lemma typing_example_2 :
   empty |- (\a : ( i1 : (A -> A) :: i2 : (B -> B) :: nil), a --> i2)
             ( i1 := (\a : A, a) :: i2 := (\a : B,a ) :: nil )  \in (B -> B).
-Proof.
-  (* FILL IN HERE *) Admitted.
+Proof with eauto using update_eq.
+  eapply T_App. 
+  2: { eapply T_RCons... }
+  eapply T_Abs...
+  eapply T_Proj...
+  - eapply T_Var...
+  - reflexivity.
+  Qed.
+   
 
 Example typing_nonexample :
   ~ exists T,
