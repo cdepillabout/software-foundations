@@ -503,7 +503,10 @@ Check app_comm_cons.
 Example permut_example: forall (a b: list nat),
   Permutation (5 :: 6 :: a ++ b) ((5 :: b) ++ (6 :: a ++ [])).
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros a b. rewrite <- app_comm_cons. apply perm_skip. rewrite app_nil_r.
+  change (6 :: a ++ b) with ((6 :: a) ++ b).
+  apply Permutation_app_comm.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard (not_a_permutation)
@@ -517,7 +520,10 @@ Check Permutation_length_1_inv.
 Example not_a_permutation:
   ~ Permutation [1;1] [1;2].
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros H. apply Permutation_cons_inv in H. inversion H; subst.
+  apply Permutation_length_1_inv in H0. apply Permutation_sym in H1.
+  apply Permutation_length_1_inv in H1; subst. discriminate.
+  Qed.
 (** [] *)
 
 (* ================================================================= *)
@@ -595,7 +601,18 @@ Theorem Forall_perm: forall {A} (f: A -> Prop) al bl,
   Permutation al bl ->
   Forall f al -> Forall f bl.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  (*
+  intros A f al bl Hp Hf. generalize dependent bl.
+  induction Hf; intros bl Hp.
+  - apply Permutation_nil in Hp; subst. auto.
+  - remember (x :: l). inv Hp; auto.
+    + injection H1; intros; subst. clear H1.
+      specialize (IHHf _ H0). apply Forall_cons; auto.
+    + injection H0; intros; subst. clear H0.
+  *)
+  intros A f al bl Hp. induction Hp; intros Hf; auto; inv Hf; auto.
+  - inv H2. auto.
+  Qed.
 (** [] *)
 
 (* 2021-08-11 15:15 *)
