@@ -144,10 +144,14 @@ Definition is_a_sorting_algorithm (f: list nat -> list nat) := forall al,
 
 Lemma insert_sorted:
   forall a l, sorted l -> sorted (insert a l).
-Proof.
-  intros a l S. induction S; simpl.
-  (* FILL IN HERE *) Admitted.
-
+Proof with auto.
+  intros a l S. induction S; simpl...
+  - bdestruct (x >=? a)...
+    apply sorted_cons... lia.
+  - bdestruct (x >=? a)...
+    unfold insert in IHS. fold insert in IHS.
+    bdestruct (y >=? a); apply sorted_cons... lia.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard (sort_sorted) *)
@@ -156,8 +160,10 @@ Proof.
     sorted. *)
 
 Theorem sort_sorted: forall l, sorted (sort l).
-Proof.
-  (* FILL IN HERE *) Admitted.
+Proof with auto.
+  induction l...
+  - unfold sort. fold sort. apply (insert_sorted a) in IHl...
+  Qed.
 
 (** [] *)
 
@@ -168,8 +174,13 @@ Proof.
 
 Lemma insert_perm: forall x l,
     Permutation (x :: l) (insert x l).
-Proof.
-  (* FILL IN HERE *) Admitted.
+Proof with auto.
+  intros x l. induction l; simpl...
+  - bdestruct (a >=? x)...
+    assert (Permutation (x :: a :: l) (a :: x :: l)).
+    { apply perm_swap. }
+    apply perm_trans with (a :: x :: l)...
+  Qed.
 
 (** [] *)
 
@@ -178,8 +189,14 @@ Proof.
 (** Prove that [sort] is a permutation, using [insert_perm]. *)
 
 Theorem sort_perm: forall l, Permutation l (sort l).
-Proof.
-(* FILL IN HERE *) Admitted.
+Proof with auto.
+  induction l...
+  unfold sort. fold sort.
+  assert (Permutation (a :: l) (a :: sort l)).
+  { apply perm_skip... }
+  apply perm_trans with (a :: sort l)...
+  apply insert_perm.
+  Qed.
 
 (** [] *)
 
@@ -190,7 +207,9 @@ Proof.
 Theorem insertion_sort_correct:
     is_a_sorting_algorithm sort.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold is_a_sorting_algorithm.
+  auto using sort_perm, sort_sorted.
+  Qed.
 
 (** [] *)
 
