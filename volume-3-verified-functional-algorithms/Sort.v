@@ -216,6 +216,19 @@ Proof.
 (* ################################################################# *)
 (** * Validating the Specification (Advanced) *)
 
+Theorem nth_error_succ:
+    forall A (x : A) l j jv, @nth_error A (x :: l) (S j) = Some jv -> @nth_error A l j = Some jv.
+Proof.
+  intros A x l j jv Hnth. unfold nth_error in Hnth. auto.
+  Qed.
+  
+Theorem nth_error_unsucc:
+    forall A (x : A) l j jv, @nth_error A l j = Some jv -> @nth_error A (x :: l) (S j) = Some jv.
+Proof.
+  intros A x l j jv Hnth. unfold nth_error. auto.
+  Qed.
+
+
 (** You can prove that a program satisfies a specification, but how
     can you prove you have the right specification?  Actually, you
     cannot.  The specification is an informal requirement in your
@@ -227,13 +240,33 @@ Proof.
 
 (** **** Exercise: 4 stars, advanced (sorted_sorted') *)
 Lemma sorted_sorted': forall al, sorted al -> sorted' al.
-
 (** Hint: Instead of doing induction on the list [al], do induction on
     the sortedness of [al]. This proof is a bit tricky, so you may
     have to think about how to approach it, and try out one or two
     different ideas.*)
 Proof.
-(* FILL IN HERE *) Admitted.
+  assert (nth_err_nil: forall A x, @nth_error A [] x = None).
+  { intros A x. induction x; simpl; auto. }
+  
+  intros a H. induction H; unfold sorted'; intros i j iv jv Hles Hi Hj.
+  - rewrite nth_err_nil in Hi. inversion Hi.
+  - destruct i,j; simpl in Hi, Hj.
+    + injection Hi. injection Hj. intros; subst. auto.
+    + rewrite nth_err_nil in Hj. inversion Hj.
+    + rewrite nth_err_nil in Hi. inversion Hi.
+    + rewrite nth_err_nil in Hi. inversion Hi.
+  - unfold sorted' in IHsorted.
+    destruct i eqn:Heqi; destruct j; try lia.
+    + simpl in Hi. injection Hi. intros. subst. clear Hi. clear Hles.
+      apply nth_error_succ in Hj.
+      apply le_trans with y; auto.
+      destruct j.
+      * simpl in Hj. inv Hj. auto.
+      * specialize (IHsorted 0 (S j) y jv).
+        apply IHsorted; auto. lia.
+    + apply nth_error_succ in Hi. apply nth_error_succ in Hj; subst.
+      apply lt_S_n in Hles. rename n into i. eapply IHsorted; eauto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced (sorted'_sorted) *)
@@ -242,7 +275,20 @@ Proof.
 (** Here, you can't do induction on the sortedness of the list,
     because [sorted'] is not an inductive predicate. But the proof
     is not hard. *)
-(* FILL IN HERE *) Admitted.
+  induction al; auto.
+  unfold sorted' in *. intros H.
+  destruct al; auto.
+  rename a into x, n into y, al into l.
+  apply sorted_cons.
+  - eapply H.
+    + assert (HH: 0 < 1) by lia. apply HH.
+    + auto.
+    + auto.
+  - apply IHal. intros.
+    apply (nth_error_unsucc _ x) in H1.
+    apply (nth_error_unsucc _ x) in H2.
+    apply H with (i := S i) (j := S j); try lia; auto.
+  Qed.
 (** [] *)
 
 (* ################################################################# *)
