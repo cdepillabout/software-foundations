@@ -1,6 +1,6 @@
 # software-foundations
 
-This is from https://softwarefoundations.cis.upenn.edu/.
+This is from <https://softwarefoundations.cis.upenn.edu/>.
 
 ## Building
 
