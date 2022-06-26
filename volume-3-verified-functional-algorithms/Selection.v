@@ -153,7 +153,18 @@ Qed.
 Lemma select_perm: forall x l y r,
     (y, r) = select x l -> Permutation (x :: l) (y :: r).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros x l. generalize dependent x. induction l; intros.
+  - unfold select in H. inv H. auto. 
+  - unfold select in H. fold select in H. bdestruct (a >=? x).
+    + destruct (select x l) eqn:E. inv H.
+      specialize (IHl x n l0). symmetry in E.
+      specialize (IHl E). eauto.
+    + destruct (select a l) eqn:E. inv H.
+      specialize (IHl a n l0).
+      symmetry in E.
+      specialize (IHl E).
+      eauto.
+  Qed.
 
 (** [] *)
 
@@ -165,7 +176,22 @@ Proof.
 Lemma selsort_perm: forall n l,
     length l = n -> Permutation l (selsort l n).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction n; intros.
+  - unfold selsort. destruct l.
+    + auto.
+    + discriminate.
+  - unfold selsort. fold selsort. destruct l; auto.
+    destruct (select n0 l) eqn:E.
+    rename n0 into x, n1 into y, l0 into l'.
+    simpl in H. inv H.
+    symmetry in E.
+    apply select_perm in E.
+    specialize (IHn l').
+    assert (length l' = length l).
+    { apply Permutation_length in E. simpl in E. inv E. eauto. }
+    specialize (IHn H).
+    apply perm_trans with (y :: l'); auto.
+  Qed.
 
 (** [] *)
 
@@ -176,7 +202,9 @@ Proof.
 Lemma selection_sort_perm: forall l,
     Permutation l (selection_sort l).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold selection_sort.
+  intros. now apply selsort_perm.
+  Qed.
 
 (** [] *)
 
