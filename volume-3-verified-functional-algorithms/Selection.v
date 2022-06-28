@@ -217,7 +217,9 @@ Proof.
 Lemma select_rest_length : forall x l y r,
     select x l = (y, r) -> length l = length r.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. symmetry in H. apply select_perm in H.
+  apply Permutation_length in H. auto.
+  Qed.
 
 (** [] *)
 
@@ -230,7 +232,15 @@ Lemma select_fst_leq: forall al bl x y,
     select x al = (y, bl) ->
     y <= x.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction al; simpl; intros.
+  - inv H. auto.
+  - bdestruct (a >=? x).
+    + destruct (select x al) eqn:E. inv H.
+      specialize (IHal _ _ _ E). auto.
+    + unfold ">" in H0. unfold "<" in H0.
+      destruct (select a al) eqn:E.
+      specialize (IHal _ _ _ E). inv H. lia.
+  Qed.
 
 (** [] *)
 
@@ -250,7 +260,17 @@ Lemma select_smallest: forall al bl x y,
     select x al = (y, bl) ->
     y <=* bl.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction al; intros; unfold "<=*", le_all in *; simpl in *.
+  - inv H. auto.
+  - bdestruct (a >=? x).
+    + destruct (select x al) eqn:E.
+      inv H. specialize (IHal _ _ _ E). apply Forall_cons; auto.
+      apply select_fst_leq in E. lia.
+    + destruct (select a al) eqn:E.
+      inv H. unfold ">" in H0. specialize (IHal _ _ _ E).
+      apply Forall_cons; auto. apply select_fst_leq in E. lia.
+  Qed.
+      
 
 (** [] *)
 
