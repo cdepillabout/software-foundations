@@ -283,7 +283,14 @@ Lemma select_in : forall al bl x y,
     select x al = (y, bl) ->
     In y (x :: al).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction al; simpl; intros.
+  - inv H. auto.
+  - bdestruct (a >=? x).
+    + destruct (select x al) eqn:E. inv H.
+      specialize (IHal _ _ _ E). destruct IHal; subst; auto.
+    + destruct (select a al) eqn:E. inv H.
+      specialize (IHal _ _ _ E). auto.
+  Qed.
 
 (** [] *)
 
@@ -299,7 +306,18 @@ Lemma cons_of_small_maintains_sort: forall bl y n,
     sorted (selsort bl n) ->
     sorted (y :: selsort bl n).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction bl; simpl; unfold "<=*" in *; intros.
+  - unfold selsort in *. simpl. subst. auto.
+  - subst. inv H0.
+    unfold selsort in H1. fold selsort in H1.
+    unfold selsort. fold selsort.
+    destruct (select a bl) eqn:E.
+    apply sorted_cons; auto.
+    apply select_in in E.
+    assert (Forall (fun y' : nat => y <= y') (a :: bl)) by auto.
+    rewrite Forall_forall in H; auto.
+    Qed.
+    
 
 (** [] *)
 
