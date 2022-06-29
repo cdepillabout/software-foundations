@@ -330,7 +330,19 @@ Proof.
 Lemma selsort_sorted : forall n al,
     length al = n -> sorted (selsort al n).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction n; simpl; intros.
+  - destruct al; auto.
+  - destruct al; auto.
+    rename n0 into x. simpl in H. injection H as H1.
+    destruct (select x al) eqn:E.
+    rename n0 into y.
+    assert (length al = length l) by (apply (select_rest_length _ _ _ _ E)).
+    assert (length l = n) by (now rewrite <- H).
+    specialize (IHn _ H0).
+    apply cons_of_small_maintains_sort; auto.
+    eapply select_smallest; eauto.
+  Qed.
+    
 
 (** [] *)
 
@@ -341,7 +353,9 @@ Proof.
 Lemma selection_sort_sorted : forall al,
     sorted (selection_sort al).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold selection_sort; intros.
+  now apply selsort_sorted.
+  Qed.
 
 (** [] *)
 
@@ -352,7 +366,9 @@ Proof.
 Theorem selection_sort_is_correct :
   is_a_sorting_algorithm selection_sort.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold is_a_sorting_algorithm.
+  auto using selection_sort_perm, selection_sort_sorted.
+  Qed.
 
 (** [] *)
 
