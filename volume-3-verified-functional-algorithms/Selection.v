@@ -458,7 +458,33 @@ Check selsort'_equation.
 Lemma selsort'_perm : forall n l,
     length l = n -> Permutation l (selsort' l).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  (*
+  intros n l. generalize dependent n. induction l; simpl; intros.
+  - rewrite selsort'_equation. auto.
+  - destruct n.
+    + inversion H.
+    + injection H as H. specialize (IHl n H).
+      rewrite selsort'_equation.
+      destruct (select a l) eqn:E.
+      rename n0 into b, l0 into l'.
+      symmetry in E. apply select_perm in E.
+      apply perm_trans with (b :: l'); auto.
+      apply perm_skip; auto.
+      inversion E.
+  *)
+  induction n; simpl; intros.
+  - destruct l; auto. inv H.
+  - destruct l; auto. rename n0 into x.
+    simpl in H. inv H.
+    rewrite selsort'_equation.
+    destruct (select x l) eqn:E.
+    rename n into y, l0 into l'.
+    symmetry in E. assert (F: Permutation (x :: l) (y :: l')) by (now apply select_perm).
+    apply perm_trans with (y :: l'); auto.
+    apply perm_skip. apply IHn.
+    symmetry.
+    eapply select_rest_length. symmetry. apply E.
+    Qed.
 
 (** [] *)
 
