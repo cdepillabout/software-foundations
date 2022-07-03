@@ -108,7 +108,7 @@ Proof.
   - inv H. simpl; lia.
   - inv H. destruct (split l) as [l1' l2']. inv H1. 
     simpl. 
-    destruct (IHl l1' l2') as [P1 P2]; auto; lia.
+    destruct (IHl l1' l2' eq_refl) as [P1 P2]. lia.
 Qed.
 
 (** We still need to prove [list_ind2_principle].  There are several
@@ -161,8 +161,15 @@ Qed.
 Lemma split_perm : forall {X:Type} (l l1 l2: list X),
     split l = (l1,l2) -> Permutation l (l1 ++ l2).
 Proof.
-  induction l as [| x | x1 x2 l1' IHl'] using list_ind2; intros.
-(* FILL IN HERE *) Admitted.
+  induction l as [| x | x1 x2 l1' IHl'] using list_ind2; intros; try (inv H; auto).
+  destruct (split l1') eqn:E. inv H1.
+  specialize (IHl' l l0 eq_refl).
+  Search (Permutation).
+  apply (Permutation_cons_app _ _ x2) in IHl'.
+  apply (@perm_skip _ x1) in IHl'.
+  apply perm_trans with (x1 :: l ++ x2 :: l0); auto.
+  Qed.
+  (* FILL IN HERE: TODO: Already DONE!  Start from here next time. *)
 (** [] *)
 
 (* ================================================================= *)
