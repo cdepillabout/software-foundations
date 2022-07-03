@@ -169,7 +169,6 @@ Proof.
   apply (@perm_skip _ x1) in IHl'.
   apply perm_trans with (x1 :: l ++ x2 :: l0); auto.
   Qed.
-  (* FILL IN HERE: TODO: Already DONE!  Start from here next time. *)
 (** [] *)
 
 (* ================================================================= *)
@@ -259,6 +258,7 @@ Print merge.
     ]]
 *)
 
+
 (** Let's prove the following simple lemmas about [merge]: 
 *)
 
@@ -268,7 +268,7 @@ Lemma merge2 : forall (x1 x2:nat) r1 r2,
     x1::merge r1 (x2::r2).
 Proof.
   intros.
-  simpl. (* This blows up in an unpleasant way, but we can
+  simpl.  (* This blows up in an unpleasant way, but we can
       still make some sense of it.  Look at the
       [(fix merge_aux ...)] term. It represents the
       the local function [merge_aux] after the value of the
@@ -403,6 +403,9 @@ Defined.
     unfolding of the function. *)
 
 Check mergesort_equation.
+
+Print mergesort.
+Print mergesort_terminate.
  
 (** ==> 
 
@@ -470,7 +473,10 @@ Lemma sorted_merge1 : forall x x1 l1 x2 l2,
     sorted (merge (x1::l1) (x2::l2)) ->
     sorted (x :: merge (x1::l1) (x2::l2)).
 Proof.
-(* FILL IN HERE *) Admitted.
+  simpl. intros. bdestruct (x1 <=? x2).
+  - inv H1; auto.
+  - destruct l2; auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars, standard (sorted_merge) *)
@@ -481,14 +487,55 @@ Proof.
   (* Hint: This is one unusual case where it is _much_ easier to do induction on 
      [l1] rather than on [sorted l1]. You will also need to do
      nested inductions on [l2]. *)
-  (* FILL IN HERE *) Admitted.
+  induction l1.
+  - intros. simpl. destruct l2; auto.
+  - intros Hsortl1.
+    assert (sorted l1).
+    { destruct l1; auto. inv Hsortl1; auto. }
+    specialize (IHl1 H).
+    induction l2.
+    + auto.
+    + rename a0 into b.
+      intros Hsortl2.
+      assert (sorted l2).
+      { destruct l2; auto. inv Hsortl2; auto. }
+      specialize (IHl2 H0).
+      bdestruct (a <=? b).
+      * simpl. 
+        assert (b >=? a = true).  { auto. apply leb_correct; auto. }
+        rewrite H2.
+        destruct l1. (* apply sorted_merge1. destruct l1. *)
+        -- simpl.  auto.
+        -- apply sorted_merge1; auto. inv Hsortl1; auto.
+      * 
+        destruct l2; auto.
+        -- clear H0  Hsortl2. simpl in IHl2. clear IHl2.
+           simpl.
+           assert (b >=? a = false). { auto. apply leb_correct_conv. auto. }
+           rewrite H0. apply sorted_cons. lia. auto.
+        -- assert (b >=? a = false). { auto. apply leb_correct_conv. auto. } 
+           simpl. rewrite H2. simpl in IHl2.
+           bdestruct (n >=? a).
+           ++ apply sorted_cons; auto. lia.
+           ++ apply sorted_cons; auto.
+              inv Hsortl2; auto.
+  Qed.
+           
+           
+      
+       
+    
+   
 (** [] *)
 
 (** **** Exercise: 2 stars, standard (mergesort_sorts) *)
 Lemma mergesort_sorts: forall l, sorted (mergesort l).
 Proof. 
-  apply mergesort_ind; intros. (* Note that we use the special induction principle. *)
-(* FILL IN HERE *) Admitted.
+  apply mergesort_ind; intros; auto. (* Note that we use the special induction principle. *)
+  apply sorted_merge; auto.
+  Qed.
+  
+  
 (** [] *)
 
 (* ================================================================= *)
