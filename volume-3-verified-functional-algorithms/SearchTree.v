@@ -205,8 +205,7 @@ Qed.
 
 Theorem empty_tree_BST : forall (V : Type),
     BST (@empty_tree V).
-Proof.
-  (* FILL IN HERE *) Admitted.
+Proof. auto. Qed.
 
 (** [] *)
 
@@ -221,7 +220,12 @@ Lemma ForallT_insert : forall (V : Type) (P : key -> V -> Prop) (t : tree V),
     ForallT P t -> forall (k : key) (v : V),
       P k v -> ForallT P (insert k v t).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros ? ? t. induction t; intros; simpl; auto.
+  rename k0 into k', v0 into v'.
+  inv H. inv H2. specialize (IHt1 H). specialize (IHt2 H3).
+  bdestruct (k >? k'); simpl; auto.
+  bdestruct (k' >? k); simpl; auto.
+  Qed.
 
 (** Now prove the main theorem. Proceed by induction on the evidence
     that [t] is a BST. *)
@@ -229,7 +233,17 @@ Proof.
 Theorem insert_BST : forall (V : Type) (k : key) (v : V) (t : tree V),
     BST t -> BST (insert k v t).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros V k v t H. induction H.
+  - simpl. apply BST_T; simpl; auto.
+  - rename x into k', v0 into v'.
+    simpl.
+    bdestruct (k' >? k).
+    { apply BST_T; auto. apply ForallT_insert; auto. }
+    bdestruct (k >? k').
+    { apply BST_T; auto. apply ForallT_insert; auto. }
+    assert (k = k'). { lia. }
+    clear H3  H4. subst. apply BST_T; auto.
+    Qed.
 
 (** [] *)
 
