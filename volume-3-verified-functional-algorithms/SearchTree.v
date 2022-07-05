@@ -644,7 +644,18 @@ Definition elements_complete_spec :=
 
 Theorem elements_complete : elements_complete_spec.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold elements_complete_spec. intros ? k v d. induction t; intros.
+  - discriminate.
+  - simpl. Print In. unfold bound in H. fold (@bound V) in H.
+    simpl in H0.
+    rename k0 into k'.
+    apply in_or_app.
+    bdestruct (k' >? k).
+    { left. apply IHt1; auto. }
+    right. simpl. bdestruct (k >? k').
+    { right. apply IHt2; auto. }
+    left. assert (k = k') by lia. subst; auto.
+  Qed.
 
 (** [] *)
 
@@ -690,8 +701,11 @@ Lemma elements_preserves_forall : forall (V : Type) (P : key -> V -> Prop) (t : 
     ForallT P t ->
     Forall (uncurry P) (elements t).
 Proof.
-  (* FILL IN HERE *) Admitted.
-
+  intros ? ?. induction t; intros; simpl; auto.
+  apply Forall_app.
+  destruct H as [ HPk [Ht1 Ht2]].
+  split; auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard (elements_preserves_relation) *)
@@ -713,7 +727,13 @@ Lemma elements_preserves_relation :
     -> In (k, v) (elements t)
     -> R k k'.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  apply elements_preserves_forall in H.
+  Check Forall_forall.
+  rewrite Forall_forall in H.
+  unfold uncurry in H.
+  specialize (H (k,v) H0). auto.
+  Qed.
 
 (** [] *)
 
