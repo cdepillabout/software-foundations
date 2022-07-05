@@ -362,7 +362,33 @@ Qed.
     you have the right theorem statements, the proofs should all be
     quite easy -- thanks to [bdall]. *)
 
-(* FILL IN HERE *)
+(* three theorems:
+   - bound k empty_tree = false
+   - bound k (insert k v t) = true
+   - bound k' (insert k v t) = bound k' t      if k <> k'
+*)
+
+About bound.
+
+Theorem bound_empty : forall (V : Type) (k : key),
+    @bound V k empty_tree = false.
+Proof.
+  auto.
+Qed.
+
+Theorem bound_insert_eq :
+  forall (V : Type) (t : tree V) (k : key) (v : V),
+    bound k (insert k v t) = true.
+Proof.
+  induction t; intros; bdall.
+Qed.
+
+Theorem bound_insert_neq :
+  forall (V : Type) (t : tree V) (k k' : key) (v : V),
+   k <> k' -> bound k' (insert k v t) = bound k' t.
+Proof.
+  induction t; intros; bdall.
+Qed.
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_bound_correct : option (nat*string) := None.
@@ -378,7 +404,11 @@ Theorem bound_default :
     bound k t = false ->
     lookup d k t = d.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros ? k d. induction t; intros.
+  - auto.
+  - rename k0 into k'.  simpl in *.
+    bdall. discriminate.
+  Qed.
 
 (** [] *)
 
@@ -445,8 +475,10 @@ Lemma lookup_insert_shadow :
   forall (V : Type) (t : tree V) (v v' d: V) (k k' : key),
     lookup d k' (insert k v (insert k v' t)) = lookup d k' (insert k v t).
 Proof.
-  intros. bdestruct (k =? k').
-  (* FILL IN HERE *) Admitted.
+  intros. bdestruct (k =? k'); subst.
+  - repeat (rewrite lookup_insert_eq; auto).
+  - repeat (rewrite lookup_insert_neq; auto).
+  Qed.
 
 (** [] *)
 
@@ -456,7 +488,10 @@ Lemma lookup_insert_same :
   forall (V : Type) (k k' : key) (d : V) (t : tree V),
     lookup d k' (insert k (lookup d k t) t) = lookup d k' t.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. bdestruct (k =? k'); subst.
+  - now rewrite lookup_insert_eq.
+  - now rewrite lookup_insert_neq.
+  Qed.
 
 (** [] *)
 
@@ -468,7 +503,15 @@ Lemma lookup_insert_permute :
     lookup d k' (insert k1 v1 (insert k2 v2 t))
     = lookup d k' (insert k2 v2 (insert k1 v1 t)).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. bdestruct (k' =? k1); bdestruct (k' =? k2); subst.
+  - unfold "<>" in H. exfalso. now apply H.
+  - rewrite lookup_insert_eq. rewrite lookup_insert_neq; auto.
+    now rewrite lookup_insert_eq.
+  - rewrite lookup_insert_neq; auto. rewrite lookup_insert_eq.
+    now rewrite lookup_insert_eq.
+  - rewrite lookup_insert_neq; auto. rewrite lookup_insert_neq; auto.
+    rewrite lookup_insert_neq; auto. rewrite lookup_insert_neq; auto.
+  Qed.
 
 (** [] *)
 
@@ -506,13 +549,16 @@ Lemma insert_same_equality_breaks :
   exists (V : Type) (d : V) (t : tree V) (k : key),
       insert k (lookup d k t) t <> t.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  exists nat, 1, empty_tree, 1. simpl. intro. discriminate.
+  Qed.
 
 Lemma insert_permute_equality_breaks :
   exists (V : Type) (v1 v2 : V) (k1 k2 : key) (t : tree V),
     k1 <> k2 /\ insert k1 v1 (insert k2 v2 t) <> insert k2 v2 (insert k1 v1 t).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  exists nat, 1, 2, 1, 2, empty_tree. simpl. split; auto.
+  - intro. discriminate.
+  Qed.
 
 (** [] *)
 
