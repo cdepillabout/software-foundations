@@ -744,8 +744,34 @@ Proof.
 
 Theorem elements_correct : elements_correct_spec.
 Proof.
-  (* FILL IN HERE *) Admitted.
-
+  unfold elements_correct_spec.
+  intros ? k v d t H. induction H; intros.
+  - simpl in *. inv H.
+  - simpl in H3.
+    rename x into k', v0 into v'.
+    assert (In (k,v) (elements l) \/ In (k,v) (elements r) \/ (k = k' /\ v = v')).
+    { apply in_app_or in H3. destruct H3.
+      - left; auto.
+      - right. apply in_inv in H3. destruct H3.
+        + inv H3. right; auto.
+        + left; auto.
+    }
+    simpl.
+    destruct H4 as [ | [|]]; bdestruct (k' >? k); bdestruct (k >? k'); auto; try discriminate; try lia.
+    + assert (k < k').
+      { apply elements_preserves_relation with V v l; auto. }
+      lia.
+    + assert (k < k').
+      { apply elements_preserves_relation with V v l; auto. }
+      lia.
+    + assert (k > k').
+      { apply elements_preserves_relation with V v r; auto. }
+      lia.
+    + assert (k > k').
+      { apply elements_preserves_relation with V v r; auto. }
+      lia.
+    + destruct H4; auto.
+  Qed.
 (** [] *)
 
 (** The inverses of completeness and correctness also should hold:
