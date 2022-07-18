@@ -23,3 +23,4 @@ Then you should be able to open any `*.v` Coq file in `coqide`.  For example:
 ```console
 $ coqide Sub.v
 ```
+
