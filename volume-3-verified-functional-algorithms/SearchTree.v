@@ -855,7 +855,14 @@ Lemma sorted_app: forall l1 l2 x,
   Forall (fun n => n < x) l1 -> Forall (fun n => n > x) l2 ->
   Sort.sorted (l1 ++ x :: l2).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros l1 l2 x Hl1sorted. generalize dependent l2. induction Hl1sorted; intros l2 Hl2sorted Hforl1 Hforl2.
+  - simpl in Hforl1. inv Hforl1. rewrite app_nil_l. inv Hforl2; auto.
+    Print sorted. apply sorted_cons; auto. lia.
+  - inv Hforl1. inv H2. unfold "++". apply sorted_cons; try lia.
+    inv Hforl2; auto. apply sorted_cons; auto; lia.
+  - Search ((_ :: _) ++ _). rewrite <- app_comm_cons. apply sorted_cons; auto.
+    inv Hforl1. apply IHHl1sorted; auto. 
+  Qed.
 
 (** [] *)
 
@@ -870,10 +877,32 @@ Definition list_keys {V : Type} (lst : list (key * V)) :=
 (** Prove that [elements t] is sorted by keys. Proceed by induction
     on the evidence that [t] is a BST. *)
 
+Print Forall.
+Theorem forall_fst : forall K V (P : K -> Prop) (l : list (K * V)),
+  Forall (fun '(a, _) => P a) l ->
+  Forall P (map fst l).
+Proof.
+  intros K V P. induction l; intros.
+  - simpl. auto.
+  - inv H. specialize (IHl H3). simpl. apply Forall_cons.
+    * destruct a. auto.
+    * auto.
+  Qed.
+
 Theorem sorted_elements : forall (V : Type) (t : tree V),
     BST t -> Sort.sorted (list_keys (elements t)).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros V t H. induction H; auto.
+  Search ForallT. simpl. unfold list_keys. simpl.
+  Search map.
+  Search (map _ (_ ++ _) = map _ _ ++ map _ _).
+  rewrite map_app. simpl. unfold list_keys in *.
+  apply sorted_app; auto.
+  - apply elements_preserves_forall in H. unfold uncurry in H.
+    apply forall_fst; auto.
+  - apply elements_preserves_forall in H0. unfold uncurry in H0.
+    apply forall_fst; auto.
+  Qed. 
 
 (** [] *)
 
