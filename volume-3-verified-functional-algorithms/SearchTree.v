@@ -795,7 +795,11 @@ Theorem elements_complete_inverse :
     bound k t = false ->
     ~ In (k, v) (elements t).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. intros Contra. Check elements_correct. Print elements_correct_spec.
+  set (HH := elements_correct V k v v t H Contra).
+  destruct HH.
+  rewrite H1 in H0. discriminate.
+  Qed.
 
 (** [] *)
 
@@ -807,7 +811,15 @@ Proof.
 Lemma bound_value : forall (V : Type) (k : key) (t : tree V),
     bound k t = true -> exists v, forall d, lookup d k t = v.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros V k t. induction t; intros.
+  - simpl in *. discriminate.
+  - simpl in *.
+    bdestruct (k0 >? k).
+    + destruct (IHt1 H). exists x; auto.
+    + bdestruct (k >? k0).
+      * destruct (IHt2 H). exists x; auto.
+      * exists v. reflexivity.
+  Qed. 
 
 (** Prove the main result.  You don't need induction. *)
 
@@ -816,8 +828,14 @@ Theorem elements_correct_inverse :
     (forall v, ~ In (k, v) (elements t)) ->
     bound k t = false.
 Proof.
-  (* FILL IN HERE *) Admitted.
-
+  intros. unfold "~" in H.
+  Print elements_correct_spec.
+  destruct (bound k t) eqn:E; auto.
+  destruct (bound_value V k t E).
+  specialize (H x).
+  exfalso. apply H. assert elements_complete_spec by apply elements_complete.
+  unfold elements_complete_spec in H1. apply H1 with (d := x); auto.
+  Qed.
 (** [] *)
 
 (* ================================================================= *)
