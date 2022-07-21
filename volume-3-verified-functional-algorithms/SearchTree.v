@@ -934,7 +934,17 @@ Lemma NoDup_append : forall (X:Type) (l1 l2: list X),
   NoDup l1 -> NoDup l2 -> disjoint l1 l2 ->
   NoDup (l1 ++ l2).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X l1 l2 Hdupl1. generalize dependent l2. induction Hdupl1; intros; auto.
+  unfold disjoint in H1. rewrite <- app_comm_cons.
+  apply NoDup_cons.
+  - intros HInapp. specialize (H1 x). assert (In x (x :: l)). left. reflexivity.
+    specialize (H1 H2). apply in_app_or in HInapp. destruct HInapp.
+    * contradiction.
+    * contradiction.
+  - unfold disjoint in IHHdupl1.
+    apply IHHdupl1; auto. intros x0 HIn. apply H1.
+    simpl. right. auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced, optional (elements_nodup_keys) *)
@@ -947,7 +957,44 @@ Theorem elements_nodup_keys : forall (V : Type) (t : tree V),
     BST t ->
     NoDup (list_keys (elements t)).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros V T Hbst. induction Hbst.
+  - simpl. apply NoDup_nil.
+  - simpl. unfold list_keys in *. simpl. rewrite map_app. simpl.
+    apply NoDup_append; auto.
+    * apply NoDup_cons; auto.
+      intros Hin. 
+      assert (x > x).
+      { apply elements_preserves_forall in H0. 
+        unfold uncurry in H0. apply forall_fst in H0.
+        rewrite Forall_forall in H0.
+        specialize (H0 x Hin). auto.
+      }
+      lia.
+    * unfold disjoint.
+      intros x' Hinl Hinxr.
+      simpl in Hinxr. destruct Hinxr.
+      + subst. 
+        assert (x' < x').
+        { apply elements_preserves_forall in H. 
+          unfold uncurry in H. apply forall_fst in H.
+          rewrite Forall_forall in H.
+          specialize (H x' Hinl). auto.
+        }
+        lia.
+      + assert (x' < x).
+        { apply elements_preserves_forall in H. 
+          unfold uncurry in H. apply forall_fst in H.
+          rewrite Forall_forall in H.
+          specialize (H x' Hinl). auto.
+        }
+        assert (x' > x).
+        { apply elements_preserves_forall in H0. 
+          unfold uncurry in H0. apply forall_fst in H0.
+          rewrite Forall_forall in H0.
+          specialize (H0 x' H1). auto.
+        }
+        lia.
+  Qed.
 
 (** [] *)
 
