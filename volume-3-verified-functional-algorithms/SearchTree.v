@@ -1120,8 +1120,41 @@ Lemma kvs_insert_split :
          else
            e1 ++ (k,v)::e2.
 Proof.
-(* FILL IN HERE *) Admitted.
-(** [] *)
+  (*
+  intros.
+  bdestruct (k0 >? k).
+  - simpl. destruct e1.
+    + simpl.
+      assert (k0 >? k = true).
+      { rewrite Nat.ltb_lt. auto. }
+      rewrite H2. eauto.
+    + 
+  *)
+  intros V v v0 e1. generalize dependent v0. generalize dependent v.
+  induction e1; intros.
+  - inv H. simpl. auto.
+  - inv H. specialize (IHe1 v v0 e2 k k0 H4 H0).
+    bdestruct (k0 >? k).
+    * destruct a. rewrite <- app_comm_cons.
+      simpl. bdestruct (k1 >? k).
+      + auto.
+      + bdestruct (k >? k1).
+        -- rewrite IHe1. auto.
+        -- auto.
+    * bdestruct (k >? k0).
+      + destruct a. rewrite <- app_comm_cons.
+        simpl. bdestruct (k1 >? k).
+        -- lia.
+        -- bdestruct (k >? k1).
+          ** rewrite IHe1. auto.
+          ** lia.
+      + assert (k = k0) by lia. subst. clear H1 H.
+        rewrite <- app_comm_cons. simpl. destruct a. bdestruct (k >? k0).
+        -- lia.
+        -- bdestruct (k0 >? k).
+          ** rewrite IHe1. auto.
+          ** lia.
+  Qed.
 
 (** **** Exercise: 3 stars, standard, optional (kvs_insert_elements) *)
 Lemma kvs_insert_elements : forall (V : Type) (t : tree V),
