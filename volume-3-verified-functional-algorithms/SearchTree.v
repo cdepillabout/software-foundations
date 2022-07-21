@@ -1029,12 +1029,22 @@ Lemma fast_elements_tr_helper :
   forall (V : Type) (t : tree V) (lst : list (key * V)),
     fast_elements_tr t lst = elements t ++ lst.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros V. induction t; intros; auto.
+  simpl. rewrite app_assoc_reverse.
+  assert ((k, v) :: fast_elements_tr t2 lst = ((k, v) :: elements t2) ++ lst).
+  { rewrite <- app_comm_cons. f_equal. apply IHt2. }
+  rewrite H. apply IHt1.
+  Qed.
 
 Lemma fast_elements_eq_elements : forall (V : Type) (t : tree V),
     fast_elements t = elements t.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold fast_elements.
+  intros V t.
+  assert (elements t = elements t ++ []).
+  { now rewrite app_nil_r.  }
+  rewrite H. apply fast_elements_tr_helper.
+  Qed.
 
 (** [] *)
 
