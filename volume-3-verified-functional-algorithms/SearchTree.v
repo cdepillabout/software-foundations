@@ -1120,16 +1120,6 @@ Lemma kvs_insert_split :
          else
            e1 ++ (k,v)::e2.
 Proof.
-  (*
-  intros.
-  bdestruct (k0 >? k).
-  - simpl. destruct e1.
-    + simpl.
-      assert (k0 >? k = true).
-      { rewrite Nat.ltb_lt. auto. }
-      rewrite H2. eauto.
-    + 
-  *)
   intros V v v0 e1. generalize dependent v0. generalize dependent v.
   induction e1; intros.
   - inv H. simpl. auto.
@@ -1162,7 +1152,16 @@ Lemma kvs_insert_elements : forall (V : Type) (t : tree V),
     forall (k : key) (v : V),
       elements (insert k v t) = kvs_insert k v (elements t).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros V t H. induction H; intros; auto.
+  simpl. rewrite kvs_insert_split.
+  - bdestruct (x >? k); bdestruct (k >? x).
+    +  lia.
+    + simpl. now rewrite IHBST1.
+    + simpl. rewrite IHBST2. auto.
+    + assert (k = x) by lia. subst. clear H4 H3. auto.
+  - apply elements_preserves_forall in H. unfold uncurry in H. apply H.
+  - apply elements_preserves_forall in H0. unfold uncurry in H0. apply H0.
+  Qed.
 (** [] *)
 
 (* ################################################################# *)
