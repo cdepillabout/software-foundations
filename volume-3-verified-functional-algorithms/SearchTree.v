@@ -1449,6 +1449,32 @@ Proof.
     rewrite Nat.eqb_refl. simpl. now rewrite orb_true_r.
   Qed.
 
+Theorem map_of_list_first : forall V l1 l2 k, 
+  ((In k (map fst l2)) -> False) ->
+  @map_of_list V (l1 ++ l2) k = map_of_list l1 k.
+Proof.
+  intros V. induction l1; intros.
+  - simpl in *. rewrite not_in_map_of_list; auto.
+  - rewrite <- app_comm_cons. simpl.
+    destruct a. unfold update. unfold t_update.
+    rewrite IHl1; auto.
+  Qed.
+
+Theorem map_of_list_second : forall V l1 l2 k, 
+  ~ In k (map fst l1) ->
+  @map_of_list V (l1 ++ l2) k = map_of_list l2 k.
+Proof.
+  unfold not.
+  intros V. induction l1; intros.
+  - simpl in *. auto. 
+  - assert (In k (map fst l1) -> False). { intros. apply H. simpl. now right. }
+    specialize (IHl1 l2 k H0). rewrite <- app_comm_cons.
+    simpl. destruct a. unfold update, t_update.
+    rewrite IHl1.
+    bdestruct (k0 =? k); auto.
+    subst. simpl in H. exfalso. apply H. left. auto.
+  Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, standard, optional (lookup_relate) *)
@@ -1456,7 +1482,34 @@ Proof.
 Lemma lookup_relate : forall (V : Type) (t : tree V) (d : V) (k : key),
     BST t -> find d k (Abs t) = lookup d k t.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros V t d k H. generalize dependent k. generalize dependent d.
+  unfold Abs.
+  induction H; intros.
+  - simpl. unfold find. unfold empty, t_empty. auto.
+  - simpl.
+    apply elements_preserves_forall in H. unfold uncurry in H.
+    apply forall_fst in H. rewrite Forall_forall in H. 
+    apply elements_preserves_forall in H0. unfold uncurry in H0.
+    apply forall_fst in H0. rewrite Forall_forall in H0.
+    bdestruct (x >? k).
+    { rewrite <- IHBST1. unfold find. rewrite map_of_list_first; auto.
+      intros. simpl in H4. destruct H4.
+      + subst. lia.
+      + specialize (H0 _ H4). lia.
+    }
+    bdestruct (k >? x).
+    * rewrite <- IHBST2. unfold find. rewrite map_of_list_second.
+      simpl. unfold update, t_update. assert (x <> k) by lia.
+      rewrite not_refl; auto.
+      intros HH.
+      specialize (H _ HH). lia.
+    * assert (k = x) by lia; subst.
+      unfold find.
+      rewrite map_of_list_second.
+      + simpl. unfold update, t_update.
+        now rewrite Nat.eqb_refl.
+      + intro HH. specialize (H _ HH). lia.
+    Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard, optional (insert_relate) *)
