@@ -1318,13 +1318,136 @@ Proof.
   reflexivity.
 Qed.
 
+Theorem not_sym : forall A (n : A) m, n <> m -> m <> n.
+Proof. unfold not. intros. symmetry in H0. auto. Qed.
+
+Theorem map_bound_update_diff : forall V k k' (v : V) l1 l2,
+  k <> k' ->
+  map_bound k (update (map_of_list (l1 ++ l2)) k' v) = true ->
+  map_bound k (map_of_list (l1 ++ l2)) = true.
+Proof.
+  intros.
+  unfold update in H0. unfold t_update in H0. unfold map_bound in H0.
+  apply not_sym in H.
+  assert ((k' =? k) = false). { rewrite <- Nat.eqb_neq in H. auto. }
+  rewrite H1 in H0.
+  unfold map_bound. auto.
+  Qed.
+
+Theorem not_refl : forall n m, n <> m -> n =? m = false.
+Proof. unfold not. intros. bdestruct (n =? m); auto. exfalso. auto. Qed.
+
+Theorem map_bound_app : forall V k l1 l2, 
+  @map_bound V k (map_of_list (l1 ++ l2)) = true ->
+  @map_bound V k (map_of_list l1) = true \/ @map_bound V k (map_of_list l2) = true.
+Proof.
+  intros V k. induction l1; simpl; intros; auto.
+  destruct a.
+  bdestruct (k =? k0).
+  - subst. unfold map_bound. unfold update. unfold t_update.
+    rewrite (Nat.eqb_refl). left. auto.
+  - apply (map_bound_update_diff) in H; auto.
+    specialize (IHl1 _ H). destruct IHl1.
+    + left. unfold update, t_update. unfold map_bound.
+      apply not_sym in H0. rewrite (not_refl); auto.
+    + right. auto.
+  Qed.
+  
+Theorem map_of_list_other :
+  forall V k' k (v : V) l, k' <> k -> map_of_list ((k', v) :: l) k = map_of_list l k.
+Proof.
+  intros V k' k v l Hnot.
+  simpl. unfold update. unfold t_update. rewrite not_refl; auto.
+  Qed.  
+ 
+Theorem map_bound_or : forall V k l1 l2, 
+  @map_bound V k (map_of_list (l1 ++ l2)) =
+    orb
+      (@map_bound V k (map_of_list l1))
+      (@map_bound V k (map_of_list l2)).
+Proof.
+  intros V k l1. generalize dependent k. induction l1; auto; intros.
+  unfold map_of_list. fold (@map_of_list V). destruct a.
+  unfold update. unfold t_update.
+  unfold map_bound.
+  bdestruct (k0 =? k); subst.
+  - rewrite orb_true_l. simpl. unfold update. unfold t_update.
+    rewrite Nat.eqb_refl. auto.
+  - rewrite <- app_comm_cons. rewrite map_of_list_other; auto.
+    fold (@map_bound V k (map_of_list (l1 ++ l2))).
+    fold (@map_bound V k (map_of_list l1)).
+    fold (@map_bound V k (map_of_list l2)).
+    apply IHl1.
+  Qed.
+
+Theorem not_implies_false : forall k k', k <> k' -> k =? k' = false.
+Proof.
+  unfold not. induction k; intros.
+  - destruct k'; auto. exfalso. apply H. auto.
+  - destruct k'; auto.
+    simpl. assert (k = k' -> False). { intros. apply H. f_equal. auto. }
+    apply IHk. apply H0.
+  Qed.
+
+Theorem map_bound_head : forall V k k0 (v : V) l, 
+  @map_bound V k (map_of_list ((k0, v) :: l)) =
+    orb
+      (k =? k0)
+      (@map_bound V k (map_of_list l)).
+Proof.
+  intros V k k0 v l.
+  generalize dependent v.  generalize dependent k0. generalize dependent k.
+  induction l; simpl; auto; intros.
+  - unfold update.  unfold t_update.  unfold map_bound.
+    bdestruct (k0 =? k); subst.
+    + rewrite Nat.eqb_refl. auto.
+    + unfold empty. unfold t_empty. apply not_sym in H. rewrite not_implies_false; auto. 
+  - destruct a. rename v0 into v1. rename v into v0.
+    unfold update. unfold t_update. unfold map_bound.
+    bdestruct (k0 =? k); subst.
+    +  rewrite Nat.eqb_refl. auto.
+    + apply not_sym in H. assert (k =? k0 = false). { rewrite not_implies_false; auto. }
+      rewrite H0. auto.
+  Qed.
+
 (** **** Exercise: 3 stars, standard, optional (bound_relate) *)
 
 Theorem bound_relate : forall (V : Type) (t : tree V) (k : key),
     BST t ->
     map_bound k (Abs t) = bound k t.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros V. induction t; auto; intros.
+  inv H. unfold Abs in *. simpl.
+  rewrite map_bound_or.
+  rewrite IHt1; auto.
+  rewrite map_bound_head.
+  rewrite IHt2; auto.
+  bdestruct (k >? k0); bdestruct (k0 >? k); try lia.
+  - assert (k0 =? k = false).
+    { apply not_implies_false. lia. }
+    rewrite H1. simpl.
+    assert (bound k0 t2 = false).
+    { apply elements_correct_inverse. unfold not.
+      intros. apply elements_preserves_forall in H5.
+      unfold uncurry in H5.
+      rewrite Forall_forall in H5.
+      specialize (H5 _ H2). simpl in H5. lia.
+    } 
+    rewrite H2. now rewrite orb_false_r.
+  - assert (k0 =? k = false).
+    { apply not_implies_false. lia. }
+    rewrite H1. simpl.
+    assert (bound k0 t1 = false).
+    { apply elements_correct_inverse. unfold not.
+      intros. apply elements_preserves_forall in H4.
+      unfold uncurry in H4.
+      rewrite Forall_forall in H4.
+      specialize (H4 _ H2). simpl in H4. lia.
+    } 
+    now rewrite H2.
+  - assert (k0 = k) by lia; subst.
+    rewrite Nat.eqb_refl. simpl. now rewrite orb_true_r.
+  Qed.
 
 (** [] *)
 
