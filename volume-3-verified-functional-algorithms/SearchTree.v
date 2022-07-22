@@ -1277,7 +1277,12 @@ Definition map_bound {V : Type} (k : key) (m : partial_map V) : bool :=
 Lemma in_fst : forall (X Y : Type) (lst : list (X * Y)) (x : X) (y : Y),
     In (x, y) lst -> In x (map fst lst).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X Y. induction lst.
+  - simpl. intros. auto.
+  - simpl. intros. destruct a. simpl. destruct H.
+    * inv H. left. auto.
+    * right. eauto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (in_map_of_list) *)
@@ -1285,14 +1290,26 @@ Lemma in_map_of_list : forall (V : Type) (el : list (key * V)) (k : key) (v : V)
     NoDup (map fst el) ->
     In (k,v) el -> (map_of_list el) k = Some v.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros V. induction el; simpl; intros.
+  - destruct H0.
+  - destruct a. simpl in *. inv H. destruct H0.
+    * inv H. unfold update. unfold t_update. rewrite Nat.eqb_refl. auto. 
+    * unfold update. unfold t_update.
+      bdestruct (k0 =? k).
+      + subst. exfalso. apply H3. eapply in_fst. apply H.
+      + apply IHel; auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (not_in_map_of_list) *)
 Lemma not_in_map_of_list : forall (V : Type) (el : list (key * V)) (k : key),
     ~ In k (map fst el) -> (map_of_list el) k = None.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros V. induction el; simpl; intros; auto.
+  destruct a. unfold not in *. simpl in *. unfold update. unfold t_update.
+  bdestruct (k0 =? k); eauto.
+  exfalso. apply H. auto.
+  Qed.
 (** [] *)
 
 Lemma empty_relate : forall (V : Type),
