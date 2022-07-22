@@ -1517,13 +1517,67 @@ Lemma insert_relate : forall (V : Type) (t : tree V) (k : key) (v : V),
   BST t -> Abs (insert k v t) = update (Abs t) k v.
 Proof.
   (* TODO: find a direct proof that doesn't rely on [kvs_insert_elements] *)
-    unfold Abs.
+  unfold Abs.
   intros.
   rewrite kvs_insert_elements; auto.
   remember (elements t) as l.
   clear -l. (* clear everything not about [l] *)
   (* Hint: proceed by induction on [l]. *)
-    (* FILL IN HERE *) Admitted.
+  induction l; auto.
+  destruct a.
+  unfold kvs_insert. fold (@kvs_insert V).
+  bdestruct (k0 >? k); bdestruct (k >? k0); try lia; auto.
+  - simpl. rewrite IHl. 
+    rewrite update_permute; auto; lia.
+  - assert (k = k0) by lia. subst.
+    simpl. rewrite update_shadow. auto.
+  Qed.
+  
+Lemma insert_relate' : forall (V : Type) (t : tree V) (k : key) (v : V),
+  BST t -> Abs (insert k v t) = update (Abs t) k v.
+Proof.
+  (* TODO: find a direct proof that doesn't rely on [kvs_insert_elements] *)
+  intros V t k v H. extensionality i. unfold Abs. generalize dependent i.
+  generalize dependent v. generalize dependent k. induction H; intros; auto.
+  simpl. unfold update, t_update in *.
+  bdestruct (x >? k).
+  - bdestruct (k =? i); subst.
+    + simpl. rewrite map_of_list_first.
+      * rewrite IHBST1. rewrite Nat.eqb_refl. auto.
+      * intros. simpl in H4. destruct H4.
+        -- simpl. lia.
+        -- apply elements_preserves_forall in H0. unfold uncurry in H0.
+           apply forall_fst in H0. rewrite Forall_forall in H0.
+           apply H0 in H4. lia.
+     + simpl.
+ Admitted.
+  
+  (* intros V t k v H. generalize dependent v. generalize dependent k. induction H; intros.
+  - unfold Abs. simpl. auto.
+  - unfold Abs in *.
+    rename x into k', v into v', v0 into v.
+    simpl.
+    bdestruct (k' >? k).
+    * simpl. 
+  *)
+    
+    (*
+    unfold update, t_update in *.
+    apply elements_preserves_forall in H. unfold uncurry in H.
+    apply forall_fst in H. rewrite Forall_forall in H. 
+    apply elements_preserves_forall in H0. unfold uncurry in H0.
+    apply forall_fst in H0. rewrite Forall_forall in H0.
+    bdestruct (k' >? k); bdestruct (k >? k'); try lia.
+    + simpl.
+      extensionality i.
+      rewrite map_of_list_first.
+      * rewrite map_of_list_first.
+        -- rewrite IHBST1. auto.
+        -- intros. simpl in H5. destruct H5.
+          ++ subst.
+    *)
+    
+  
 (** [] *)
 
 (** The previous three lemmas are in essence saying that the following
