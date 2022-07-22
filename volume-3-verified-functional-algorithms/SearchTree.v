@@ -1536,20 +1536,99 @@ Proof.
 Lemma insert_relate' : forall (V : Type) (t : tree V) (k : key) (v : V),
   BST t -> Abs (insert k v t) = update (Abs t) k v.
 Proof.
-  (* TODO: find a direct proof that doesn't rely on [kvs_insert_elements] *)
+  (* This is a direct proof that doesn't rely on [kvs_insert_elements] *)
   intros V t k v H. extensionality i. unfold Abs. generalize dependent i.
   generalize dependent v. generalize dependent k. induction H; intros; auto.
   simpl. unfold update, t_update in *.
-  bdestruct (x >? k).
-  - bdestruct (k =? i); subst.
-    + simpl. rewrite map_of_list_first.
-      * rewrite IHBST1. rewrite Nat.eqb_refl. auto.
-      * intros. simpl in H4. destruct H4.
-        -- simpl. lia.
-        -- apply elements_preserves_forall in H0. unfold uncurry in H0.
-           apply forall_fst in H0. rewrite Forall_forall in H0.
-           apply H0 in H4. lia.
-     + simpl.
+  bdestruct (x >? k);
+    bdestruct (k >? x);
+    bdestruct (k >? i);
+    bdestruct (i >? k);
+    bdestruct (x >? i);
+    bdestruct (i >? x); try lia.
+  - assert (k <> i) by lia.  rewrite not_refl; auto. simpl.
+    assert (i < x) by lia.
+    rewrite map_of_list_first.
+    * rewrite IHBST1. rewrite not_refl; auto. rewrite map_of_list_first; auto.
+      intros. simpl in H11. destruct H11; try lia.
+      apply elements_preserves_forall in H0. unfold uncurry in H0.
+      apply forall_fst in H0. rewrite Forall_forall in H0.
+      apply H0 in H11. lia.
+    * intros. simpl in H11. destruct H11; try lia.
+      apply elements_preserves_forall in H0. unfold uncurry in H0.
+      apply forall_fst in H0. rewrite Forall_forall in H0.
+      apply H0 in H11. lia.
+  - assert (k <> i) by lia.  rewrite not_refl; auto. simpl.
+    repeat rewrite map_of_list_first.
+    * rewrite IHBST1. rewrite not_refl; auto.
+    * intros. simpl in H10. destruct H10; try lia.
+      apply elements_preserves_forall in H0. unfold uncurry in H0.
+      apply forall_fst in H0. rewrite Forall_forall in H0.
+      apply H0 in H10. lia.
+    * intros. simpl in H10. destruct H10; try lia.
+      apply elements_preserves_forall in H0. unfold uncurry in H0.
+      apply forall_fst in H0. rewrite Forall_forall in H0.
+      apply H0 in H10. lia.
+  - assert (k <> i) by lia.  rewrite not_refl; auto. simpl.
+    repeat rewrite map_of_list_second; auto.
+    * unfold not. intros. 
+      apply elements_preserves_forall in H. unfold uncurry in H.
+      apply forall_fst in H. rewrite Forall_forall in H.
+      apply H in H10. lia.
+    * unfold not. intros. simpl in H10. 
+      apply elements_preserves_forall in H. unfold uncurry in H.
+      apply forall_fst in H. rewrite Forall_forall in H.
+      admit.
+  - assert (i = x) by lia. subst. clear H7. clear H6. clear H8. clear H4. clear H5.
+    assert (k <> x) by lia.  rewrite not_refl; auto. simpl.
+    repeat rewrite map_of_list_second; auto.
+    * unfold not. intros. 
+      apply elements_preserves_forall in H. unfold uncurry in H.
+      apply forall_fst in H. rewrite Forall_forall in H.
+      apply H in H5. lia.
+    * admit.
+  - assert (i = k) by lia. subst. clear H6 H4 H5 H8 H7. rewrite Nat.eqb_refl.
+    simpl.
+    repeat rewrite map_of_list_first; auto.
+    * rewrite IHBST1. rewrite Nat.eqb_refl. auto.
+    * admit. 
+  - simpl. assert (k <> i) by lia.  rewrite not_refl; auto.
+    repeat rewrite map_of_list_first; auto; simpl; intros.
+    * destruct H10; subst; try lia.
+      apply elements_preserves_forall in H0. unfold uncurry in H0.
+      apply forall_fst in H0. rewrite Forall_forall in H0.
+      apply H0 in H10. lia.
+    * destruct H10; subst; try lia.
+      admit.
+  - assert (k <> i) by lia; rewrite not_refl; auto; simpl.
+    admit.
+  - assert (i = x) by lia; subst.
+    assert (k <> x) by lia; rewrite not_refl; auto; simpl.
+    admit.
+  - assert (k <> i) by lia; rewrite not_refl; auto; simpl.
+    repeat rewrite map_of_list_second; auto; simpl; intros.
+    * unfold update, t_update.
+      assert (x <> i) by lia; rewrite not_refl; auto; simpl.
+      rewrite IHBST2. rewrite not_refl; auto; simpl.
+    * admit.
+    * admit.
+  - admit.
+  - assert (k = x) by lia; subst.
+    assert (x <> i) by lia; rewrite not_refl; auto; simpl.
+    repeat rewrite map_of_list_first; auto; simpl; intros.
+    * admit.
+    * admit.
+  - assert (k = x) by lia; subst.
+    assert (x <> i) by lia; rewrite not_refl; auto; simpl.
+    repeat rewrite map_of_list_second; auto; simpl; unfold not; intros.
+    * unfold update, t_update. rewrite not_refl; auto; simpl.
+    * admit.
+    * admit.
+  - assert (k = x) by lia; subst. assert (x = i) by lia; subst.
+    rewrite (Nat.eqb_refl). simpl.
+    rewrite map_of_list_second.
+    * simpl. rewrite update_eq. auto.
+    * unfold not. intros. admit.
  Admitted.
   
   (* intros V t k v H. generalize dependent v. generalize dependent k. induction H; intros.
