@@ -900,64 +900,89 @@ Module ListETableAbs (VT : ValType) <: ETableAbs.
   Definition key := nat.
   Definition table := list (key * V).
 
-  Definition empty : table
-    (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+  Definition empty : table := [].
 
-  Fixpoint get (k : key) (t : table) : V
-    (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+  Fixpoint get (k : key) (t : table) : V :=
+    match t with
+    | [] => default
+    | (hk, hv) :: t' => 
+      if k =? hk then hv else get k t'
+    end.
 
-  Definition set (k : key) (v : V) (t : table) : table
-    (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+  Definition set (k : key) (v : V) (t : table) : table := (k, v) :: t.
 
-  Fixpoint bound (k : key) (t : table) : bool
-    (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+  Fixpoint bound (k : key) (t : table) : bool :=
+    match t with
+    | [] => false
+    | (hk, _) :: t' => if k =? hk then true else bound k t'
+    end.
 
-  Definition elements (t : table) : list (key * V)
-    (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+  Definition elements (t : table) : list (key * V) := t.
 
-  Definition Abs (t : table) : partial_map V
-    (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+  Definition Abs (t : table) : partial_map V := fun n => if bound n t then Some (get n t) else None.
 
-  Definition rep_ok (t : table) : Prop
-    (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+  Definition rep_ok (t : table) : Prop := True.
 
   Theorem empty_ok : rep_ok empty.
-  Proof.
-    (* FILL IN HERE *) Admitted.
+  Proof. reflexivity. Qed.
 
   Theorem set_ok : forall (k : key) (v : V) (t : table),
       rep_ok t -> rep_ok (set k v t).
-  Proof.
-    (* FILL IN HERE *) Admitted.
+  Proof. auto. Qed.
 
   Theorem empty_relate :
     Abs empty = empty_map.
   Proof.
-    (* FILL IN HERE *) Admitted.
+    simpl. unfold Abs, empty_map. unfold Maps.empty. unfold t_empty.
+    Import Logic.FunctionalExtensionality.
+    extensionality x. auto.
+    Qed.
 
   Theorem bound_relate : forall (t : table) (k : key),
       rep_ok t ->
       map_bound k (Abs t) = bound k t.
   Proof.
-    (* FILL IN HERE *) Admitted.
+    intros. inv H. unfold map_bound. revert k. induction t; intros; simpl; auto.
+    destruct a. unfold Abs. bdestruct (k =? k0); subst.
+    - simpl. rewrite Nat.eqb_refl. auto.
+    - simpl. rewrite <- Nat.eqb_neq in H. rewrite H.
+      destruct (bound k t); auto.
+    Qed.
 
   Theorem lookup_relate : forall (t : table) (k : key),
       rep_ok t ->
       map_find default k (Abs t) = get k t.
   Proof.
-    (* FILL IN HERE *) Admitted.
+    unfold map_find. induction t; simpl; intros; auto.
+    clear H. destruct a. bdall; subst.
+    - unfold find. simpl. unfold Abs. simpl. rewrite Nat.eqb_refl. auto.
+    - simpl. unfold rep_ok in *. rewrite <- IHt; auto.
+      simpl. unfold find.
+      assert (Abs ((k0, v) :: t) k = Abs t k).
+      { unfold Abs. simpl. rewrite <- Nat.eqb_neq in H. rewrite H. auto. }
+      rewrite H0. auto.
+    Qed.
 
   Theorem insert_relate : forall (t : table) (k : key) (v : V),
       rep_ok t ->
       map_update k v (Abs t) = Abs (set k v t).
   Proof.
-    (* FILL IN HERE *) Admitted.
+    induction t; simpl; intros; extensionality x.
+    - unfold map_update, update, Abs, t_update. bdall.
+    - unfold map_update, update, Abs, t_update. simpl. destruct a. bdall.
+  Qed.
 
   Theorem elements_relate : forall (t : table),
       rep_ok t ->
       Abs t = map_of_list (elements t).
   Proof.
-    (* FILL IN HERE *) Admitted.
+    unfold elements.
+    induction t; intros; auto.
+    destruct a. specialize (IHt I). simpl. extensionality x.
+    simpl. 
+    unfold update, t_update, Abs. simpl. bdall.
+    rewrite <- IHt. unfold Abs. auto.
+  Qed.
 
 End ListETableAbs.
 
@@ -1044,50 +1069,38 @@ Module ListQueue <: Queue.
   Definition V := nat. (* for simplicity *)
   Definition queue := list V.
 
-  Definition empty : queue
-    (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+  Definition empty : queue := [].
 
-  Definition is_empty (q : queue) : bool
-    (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+  Definition is_empty : queue -> bool := fold_right (fun _ _ => false) true.
 
-  Definition enq (q : queue) (v : V) : queue
-    (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+  Definition enq (q : queue) (v : V) : queue := fold_right cons [v] q.
 
-  Definition deq (q : queue) : queue
-    (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+  Definition deq : queue -> queue := @tl V.
 
-  Definition peek (default : V) (q : queue) : V
-    (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+  Definition peek: V -> queue -> V := @hd V.
 
   Theorem is_empty_empty : is_empty empty = true.
-  Proof.
-    (* FILL IN HERE *) Admitted.
+  Proof. auto. Qed.
 
   Theorem is_empty_nonempty : forall q v,
       is_empty (enq q v) = false.
-  Proof.
-    (* FILL IN HERE *) Admitted.
+  Proof. destruct q; simpl; intros; auto. Qed.
 
   Theorem peek_empty : forall d,
       peek d empty = d.
-  Proof.
-    (* FILL IN HERE *) Admitted.
+  Proof. auto. Qed.
 
   Theorem peek_nonempty : forall d q v,
       peek d (enq q v) = peek v q.
-  Proof.
-    (* FILL IN HERE *) Admitted.
+  Proof. destruct q; simpl; intros; auto. Qed.
 
   Theorem deq_empty :
     deq empty = empty.
-  Proof.
-    (* FILL IN HERE *) Admitted.
+  Proof. auto. Qed.
 
   Theorem deq_nonempty : forall q v,
       deq (enq q v) = if is_empty q then q else enq (deq q) v.
-  Proof.
-    (* FILL IN HERE *) Admitted.
-
+  Proof. destruct q; simpl; intros; auto. Qed.
 End ListQueue.
 
 (** [] *)
@@ -1138,6 +1151,32 @@ Module TwoListQueueAbs <: QueueAbs.
 
   Definition enq '((f, b) : queue) (v : V) :=
     (f, v :: b).
+
+  Theorem rev_app_other : forall A l (a : A), rev l ++ [a] = rev (a :: l).
+  Proof. reflexivity. Qed.
+
+  Theorem rev_exists : forall (x : V) y, { a & { b | rev (x :: y) = a :: b } }.
+  Proof.
+    intros x y. revert x. induction y; simpl; intros.
+    - exists x, []; auto.
+    - rewrite rev_app_other. specialize (IHy a).
+      destruct IHy as [c [l HH]].
+      rewrite HH. rewrite <- app_comm_cons.
+      exists c. exists (l ++ [x]). auto.
+  Qed.
+
+  Definition deq' (q : queue) : queue.
+  Proof.
+    destruct q as [f b].
+    - destruct f.
+      + destruct b.
+        * apply ([], []).
+        * destruct (rev_exists v b) as [_ [f _]].
+          apply (f, []).
+      + apply (f, b).
+  Qed.
+  
+  Print deq'.
 
   Definition deq (q : queue) :=
     match q with
