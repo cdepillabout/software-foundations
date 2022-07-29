@@ -532,8 +532,6 @@ Module StringTreeETableExample.
 
 End StringTreeETableExample.
 
-(* FILL (I've read to here...) *)
-
 (* ################################################################# *)
 (** * Encapsulation with the Coq Module System (Advanced) *)
 
@@ -638,6 +636,9 @@ Module OverlyEncapsulatedExample.
   Fail Example ex1 : get 0 empty = "".
   (* fails with an error about [""] not having type [V] *)
 
+  Example example1example : StringTreeETableExample.StringTreeETable.V := "hello".
+  Fail Example example2example : V := "hello".
+
 End OverlyEncapsulatedExample.
 
 (** The problem is that the module now hides not only the internal
@@ -650,6 +651,7 @@ End OverlyEncapsulatedExample.
     implementation: *)
 
 Print OverlyEncapsulatedExample.StringTreeETableFullyEncapsulated.V.
+Print StringTreeETableExample.StringTreeETable.V.
 
 (** We need to selectively expose certain implementation details.
     We've just seen that [V] should be exposed.  Along with it, we'll
@@ -709,7 +711,10 @@ Print SimpleStringTable3.default.
 (** Putting sharing constraints to use, let's expose [V] and [default]
     in our implementation of tree-based tables. *)
 
-Module TreeETableEncapsulated (VT : ValType) : (ETable with Definition V := VT.V with Definition default := VT.default).
+Module TreeETableEncapsulated (VT : ValType) : 
+    (ETable
+      with Definition V := VT.V 
+      with Definition default := VT.default).
 
   Include TreeTable VT.
 
