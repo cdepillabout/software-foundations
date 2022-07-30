@@ -1201,23 +1201,28 @@ Module TwoListQueueAbs <: QueueAbs.
     end.
 
   Theorem empty_relate : Abs empty = [].
-  Proof.
-    (* FILL IN HERE *) Admitted.
+  Proof. auto. Qed.
 
   Theorem enq_relate : forall q v,
       Abs (enq q v) = (Abs q) ++ [v].
   Proof.
-    (* FILL IN HERE *) Admitted.
+    unfold Abs. unfold enq. intro. destruct q.
+    intro v. rewrite <- app_assoc. auto.
+    Qed.
 
   Theorem peek_relate : forall d q,
       peek d q = hd d (Abs q).
   Proof.
-    (* FILL IN HERE *) Admitted.
-
+    intros ?. destruct q as [ [|] [|] ]; auto.
+  Qed.
+  
   Theorem deq_relate : forall q,
       Abs (deq q) = tl (Abs q).
   Proof.
-    (* FILL IN HERE *) Admitted.
+    unfold Abs. destruct q as [ [|] [|] ]; auto; simpl.
+    unfold tl. destruct (rev l ++ [v]); auto. unfold rev.
+    rewrite app_nil_end. auto.
+  Qed.
 
 End TwoListQueueAbs.
 
@@ -1369,8 +1374,7 @@ Definition vector (X : Type) :=
 (** Construct any vector of your choice. *)
 
 Example a_vector : vector nat.
-Proof.
-  (* FILL IN HERE *) Admitted.
+Proof. exists ([1;2;3], 3). auto. Qed.
 
 (** [] *)
 
@@ -1381,7 +1385,9 @@ Proof.
 
 Definition vector_cons {X : Type} (x : X) (v : vector X) : vector X.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  destruct v as [ [v len] P ].
+  exists (x :: v, S len). simpl. auto.
+  Defined.
 
 (** Prove the correctness of your cons operation. *)
 
@@ -1391,7 +1397,8 @@ Definition list_of_vector {X : Type} (v : vector X) : list X :=
 Theorem vector_cons_correct : forall (X : Type) (x : X) (v : vector X),
     list_of_vector (vector_cons x v) = x :: (list_of_vector v).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. destruct v as [ [v len] P]. auto.
+  Qed.
 
 (** [] *)
 
@@ -1401,7 +1408,10 @@ Proof.
 
 Definition vector_app {X : Type} (v1 v2 : vector X) : vector X.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  destruct v1 as [ [v1 v1len] Pv1 ]; destruct v2 as [ [v2 v2len] Pv2 ].
+  exists (v1 ++ v2, v1len + v2len).
+  rewrite app_length. auto.
+  Defined.
 
 (** Prove the correctness of your append operation. *)
 
@@ -1409,7 +1419,9 @@ Theorem vector_app_correct : forall (X : Type) (v1 v2 : vector X),
     list_of_vector (vector_app v1 v2) =
     list_of_vector v1 ++ list_of_vector v2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X [ [v1 v1len] P ] [ [v2 v2len] Pv2 ]. unfold list_of_vector.
+  auto.
+  Qed.
 
 (** [] *)
 
@@ -1557,6 +1569,11 @@ Module TreeETableSubset (VT : ValType) <: ETableSubset.
 
 End TreeETableSubset.
 
+Module MyTestMod := TreeETableSubset StringVal.
+
+Print Module MyTestMod.
+
+  
 (** **** Exercise: 4 stars, advanced (ListsETable) *)
 
 (** Implement [ETableSubset] using association lists that are not
