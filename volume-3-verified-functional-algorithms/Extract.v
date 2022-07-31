@@ -285,66 +285,33 @@ Proof.
   apply H.
 Qed.
 
-  (*
-  induction al; auto.
-  destruct al; auto.
-  - simpl. auto.
-  - simpl. simpl in IHal.
-    inv IHal.
-    + simpl. auto.
-    + simpl. bdall. apply sorted_cons; auto. lia.
-    + simpl. bdall.
-      * apply sorted_cons; auto. lia.
-      * apply sorted_cons; auto.
-  *)
+Theorem ins_int_perm : forall al a, Permutation (a :: al) (ins_int a al).
+Proof with auto.
+  induction al; simpl; intros; auto.
+  bdall.
+  apply perm_trans with (a :: a0 :: al); auto.
+  apply perm_swap.
+Qed.
 
-(* Theorem ins_int_same : forall l l' x, x :: l' = ins_int x (sort_int l) -> l' = sort_int l.
-Proof.
-  (*
-  induction l; simpl; intros; auto.
-  - inv H. auto.
-  - (* assert (x :: l' = ins_int x (sort_int (a :: l))). { apply H. } *)
-  *)
-  (*
-  intros l l'. revert l. induction l'; simpl; intros; auto.
-  - destruct l; auto.
-    simpl in *.
-  *)
-  induction l; simpl; intros; auto.
-  - inv H. auto.
-  - 
- *)
- 
 Theorem perm_sort_ins : forall al a, Permutation (a :: sort_int al) (ins_int a (sort_int al)).
 Proof.
-  induction al; simpl; intros; auto.
-  (* assert (forall y l, sort_int (y :: l) = ins_int y (sort_int l)). { reflexivity. }
-  rewrite <- H. rewrite <- in IHal. *)
-  rename a0 into x.
-  assert (Permutation (a :: sort_int al) (ins_int a (sort_int al))). { apply IHal. }
-  inv H.
-  + bdall.
-   
-    
+  intros al a. apply ins_int_perm.
+  Qed.
+
 Theorem sort_int_perm : forall al, Permutation al (sort_int al).
 Proof with auto.
   induction al...
-  unfold sort_int. fold sort_int.
-  assert (Permutation (a :: al) (a :: sort_int al)) by (apply perm_skip; auto).
-  apply perm_trans with (a :: sort_int al); auto.
-  
-  
-  
+  simpl. 
+  apply perm_trans with (a :: sort_int al).
+  - apply perm_skip; auto.
+  - apply perm_sort_ins.
+  Qed.
+
 Theorem sort_int_correct : forall (al : list int),
     Permutation al (sort_int al) /\ sorted (sort_int al).
 Proof.
-  split.
-  - induction al; simpl; intros; auto.
-    inv IHal; auto.
-    * simpl. rewrite <- H. simpl. bdestruct (leb a x).
-      + auto.
-      + apply Permutation_trans with (x :: a :: l); try apply perm_swap.
-        apply perm_skip. unfold ins_int.
+  intros; auto using sort_int_perm, sort_int_is_sorted.
+  Qed.
 
 (** [] *)
 
@@ -399,7 +366,8 @@ Theorem lookup_insert_eq :
   forall (V : Type) (default : V) (t : tree V) (k : key) (v : V),
     lookup default k (insert k v t) = v.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros V d. induction t; simpl; intros; auto; bdall.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (lookup_insert_neq) *)
@@ -407,7 +375,17 @@ Theorem lookup_insert_neq :
   forall (V : Type) (default : V) (t : tree V) (k k' : key) (v : V),
     k <> k' -> lookup default k' (insert k v t) = lookup default k' t.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros V d. induction t; simpl; intros; auto; bdall.
+  - exfalso. unfold not in *.
+    assert (Abs k = Abs k') by lia.
+    apply Abs_inj in H2. subst.
+    apply H; auto.
+  - assert (Hk'k: Abs k' = Abs k) by lia.
+    apply Abs_inj in Hk'k; subst. clear H5 H4.
+    assert (Hkk0: Abs k = Abs k0) by lia.
+    apply Abs_inj in Hkk0; subst. clear H2 H3 H1 H0.
+    exfalso. unfold "<>" in H. apply H; auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 5 stars, standard, optional (int_elements) *)
