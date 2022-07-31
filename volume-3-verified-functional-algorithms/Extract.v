@@ -263,10 +263,88 @@ Hint Constructors sorted.
 (** Prove the correctness of [sort_int] by adapting your solution to
     [insertion_sort_correct] from [Sort]. *)
 
+Theorem sorted_ins_int : forall l a, sorted l -> sorted (ins_int a l).
+Proof.
+  induction l; simpl; intros.
+  - auto.
+  - destruct l.
+    * bdall. apply sorted_cons; auto; lia.
+    * bdall.
+      + inv H. apply sorted_cons; auto. lia.
+      + inv H. apply sorted_cons; auto.
+        assert (sorted (ins_int a0 (i :: l)) -> sorted (i :: ins_int a0 l)).
+        { simpl. bdall. }
+        apply H. clear H.
+        apply IHl. auto.
+  Qed.
+
+Theorem sort_int_is_sorted : forall al, sorted (sort_int al).
+Proof.
+  induction al; auto.
+  assert (sorted (ins_int a (sort_int al))). { apply sorted_ins_int. auto. }
+  apply H.
+Qed.
+
+  (*
+  induction al; auto.
+  destruct al; auto.
+  - simpl. auto.
+  - simpl. simpl in IHal.
+    inv IHal.
+    + simpl. auto.
+    + simpl. bdall. apply sorted_cons; auto. lia.
+    + simpl. bdall.
+      * apply sorted_cons; auto. lia.
+      * apply sorted_cons; auto.
+  *)
+
+(* Theorem ins_int_same : forall l l' x, x :: l' = ins_int x (sort_int l) -> l' = sort_int l.
+Proof.
+  (*
+  induction l; simpl; intros; auto.
+  - inv H. auto.
+  - (* assert (x :: l' = ins_int x (sort_int (a :: l))). { apply H. } *)
+  *)
+  (*
+  intros l l'. revert l. induction l'; simpl; intros; auto.
+  - destruct l; auto.
+    simpl in *.
+  *)
+  induction l; simpl; intros; auto.
+  - inv H. auto.
+  - 
+ *)
+ 
+Theorem perm_sort_ins : forall al a, Permutation (a :: sort_int al) (ins_int a (sort_int al)).
+Proof.
+  induction al; simpl; intros; auto.
+  (* assert (forall y l, sort_int (y :: l) = ins_int y (sort_int l)). { reflexivity. }
+  rewrite <- H. rewrite <- in IHal. *)
+  rename a0 into x.
+  assert (Permutation (a :: sort_int al) (ins_int a (sort_int al))). { apply IHal. }
+  inv H.
+  + bdall.
+   
+    
+Theorem sort_int_perm : forall al, Permutation al (sort_int al).
+Proof with auto.
+  induction al...
+  unfold sort_int. fold sort_int.
+  assert (Permutation (a :: al) (a :: sort_int al)) by (apply perm_skip; auto).
+  apply perm_trans with (a :: sort_int al); auto.
+  
+  
+  
 Theorem sort_int_correct : forall (al : list int),
     Permutation al (sort_int al) /\ sorted (sort_int al).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  split.
+  - induction al; simpl; intros; auto.
+    inv IHal; auto.
+    * simpl. rewrite <- H. simpl. bdestruct (leb a x).
+      + auto.
+      + apply Permutation_trans with (x :: a :: l); try apply perm_swap.
+        apply perm_skip. unfold ins_int.
 
 (** [] *)
 
