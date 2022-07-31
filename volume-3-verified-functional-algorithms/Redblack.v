@@ -241,6 +241,8 @@ Section ValueType.
     | T c l k v r => P k v /\ ForallT P l /\ ForallT P r
     end.
 
+
+
   Inductive BST : tree -> Prop :=
   | ST_E : BST E
   | ST_T : forall (c : color) (l : tree) (k : key) (v : V) (r : tree),
@@ -430,7 +432,19 @@ Section ValueType.
       P k v ->
       ForallT P (balance c l k v r).
   Proof.
-    (* FILL IN HERE *) Admitted.
+    intros. unfold balance.
+    
+    repeat
+      (match goal with
+       |  |- ForallT P  (match ?c with Red => _ | Black => _ end)  => destruct c
+       |  |- ForallT P  (match ?s with E => _ | T _ _ _ _ _ => _ end)  => destruct s
+       |  |- ForallT _ (T _ _ _ _ _) => repeat split
+       |  H: ForallT _ (T _ _ _ _ _) |- _ => destruct H as [? [? ?] ]
+       |  H: BST (T _ _ _ _ _) |- _ => inv H
+       end;
+       (try constructor; auto; try lia)).
+   Qed.
+    
 
   (** [] *)
 
@@ -438,15 +452,21 @@ Section ValueType.
 
   (** Prove that [ins] preserves [ForallT P]. Hint: proceed by induction on [t].
       Use the previous lemma. There's no need for automated case analysis. *)
-
-
-
   Lemma insP : forall (P : key -> V -> Prop) (t : tree) (k : key) (v : V),
       ForallT P t ->
       P k v ->
       ForallT P (ins k v t).
   Proof.
-    (* FILL IN HERE *) Admitted.
+    intros P. induction t; intros.
+    - repeat (split; auto).
+    - simpl in H. destruct H as [H1 [H2 H3]]. simpl.
+      bdestruct (ltb k0 k).
+      + apply balanceP; auto.
+      + bdestruct (ltb k k0).
+        * apply balanceP; auto.
+        * assert (Abs k0 = Abs k) by lia. apply Abs_inj in H5; subst. 
+          clear H4 H. simpl. auto.
+    Qed.
 
   (** [] *)
 
@@ -459,7 +479,13 @@ Section ValueType.
       BST t ->
       BST (ins k v t).
   Proof.
-    (* FILL IN HERE *) Admitted.
+    intros t k v H. induction H.
+    - simpl. constructor; auto using BST; simpl; auto.
+    - simpl. bdall.
+      * apply balance_BST; try apply insP; auto.
+      * apply balance_BST; try apply insP; auto. lia.
+      * assert (Abs k0 = Abs k) by lia. apply Abs_inj in H5; subst. apply ST_T; auto.
+  Qed.
 
   (** [] *)
 
@@ -775,6 +801,10 @@ Definition manual_grade_for_redblack_bound : option (nat*string) := None.
 
   
 End ValueType.
+
+Print color.
+Print tree.
+Print lookup.
 
 (* ################################################################# *)
 (** * Performance of Extracted Code *)
