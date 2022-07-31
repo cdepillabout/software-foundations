@@ -571,7 +571,41 @@ Section ValueType.
       BST t ->
       lookup k (ins k v t) = v.
   Proof.
-    (* FILL IN HERE *) Admitted.
+  intros t k v H. induction H.
+  - simpl. bdall.
+  - simpl. bdall.
+    + rename k into k', k0 into k, v into some, v0 into v.
+      assert (
+        lookup k' (balance c (ins k' some l) k v r) =
+        if Abs k' <? Abs k
+        then lookup k' (ins k' some l)
+        else if Abs k' >? Abs k
+             then lookup k' r
+             else v).
+      { apply balance_lookup; auto.
+        - apply ins_BST. auto.
+        - apply insP; auto.
+      }
+      rewrite H4.
+      bdall.
+    + rename k into k', k0 into k, v into some, v0 into v.
+      assert (
+        lookup k' (balance c l k v (ins k' some r)) =
+        if Abs k' <? Abs k
+        then lookup k' l
+        else if Abs k' >? Abs k
+             then lookup k' (ins k' some r)
+             else v).
+      { apply balance_lookup; auto.
+        - apply ins_BST. auto.
+        - apply insP; auto.
+          lia.
+      }
+      rewrite H5.
+      bdall.
+  Qed.
+    
+    
 
   (** [] *)
 
