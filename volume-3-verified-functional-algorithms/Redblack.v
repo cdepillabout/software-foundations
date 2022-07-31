@@ -489,7 +489,10 @@ Section ValueType.
 
   (** [] *)
 
-  
+  Lemma make_black_BST : forall t, BST t -> BST (make_black t).
+  Proof.
+    intros t H. induction H; simpl; auto using BST.
+  Qed.
   
   (** **** Exercise: 2 stars, standard (insert_BST) *)
 
@@ -499,7 +502,8 @@ Section ValueType.
       BST t ->
       BST (insert k v t).
   Proof.
-    (* FILL IN HERE *) Admitted.
+    unfold insert. intros t v k H. apply make_black_BST. apply ins_BST. auto.
+  Qed.
   (** [] *)
 
   (* ###################################################################### *)
@@ -537,8 +541,20 @@ Section ValueType.
            then lookup k' r
            else v.
   Proof.
-    (* FILL IN HERE *) Admitted.
+    intros. (* bdestruct (Abs k' <? Abs k).
+    - simpl. unfold balance. *)
+    unfold balance.
 
+    repeat
+      (match goal with
+       |  |- lookup _ (match ?c with Red => _ | Black => _ end) = _ => destruct c
+       |  |- lookup _ (match ?s with E => _ | T _ _ _ _ _ => _ end) = _ => destruct s
+       |  |- ForallT _ (T _ _ _ _ _) => repeat split
+       |  H: ForallT _ (T _ _ _ _ _) |- _ => destruct H as [? [? ?] ]
+       |  H: BST (T _ _ _ _ _) |- _ => inv H
+       end;
+       (try constructor; bdall; auto; try lia)).
+  Qed.
   (** [] *)
 
   (** **** Exercise: 3 stars, standard (lookup_ins_eq) *)
