@@ -227,7 +227,9 @@ Definition add (x y: positive) : positive := addc false x y.
 Lemma succ_correct: forall p,
    positive2nat (succ p) = S (positive2nat p).
 Proof.
-(* FILL IN HERE *) Admitted.
+  induction p; simpl; auto.
+  rewrite IHp. repeat rewrite <- plus_n_O. simpl. auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (addc_correct)
@@ -244,7 +246,10 @@ Lemma addc_correct: forall (c: bool) (p q: positive),
    positive2nat (addc c p q) =
         (if c then 1 else 0) + positive2nat p + positive2nat q.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros c p. revert c. induction p; simpl; intros; destruct c; simpl in *; destruct q; simpl;
+    try repeat rewrite IHp; try lia; try repeat rewrite <- plus_n_O; simpl;
+    try repeat rewrite succ_correct; try lia.
+  Qed.
 
 Theorem add_correct: forall (p q: positive),
    positive2nat (add p q) = positive2nat p + positive2nat q.
@@ -283,7 +288,13 @@ Fixpoint compare x y {struct x}:=
     | p~1, xH => Gt
 
   (* DELETE THIS CASE!  Replace it with cases that actually work. *)
-    | _, _ => Lt
+    | p~0, q~1 => match compare p q with Gt => Gt | _ => Lt end
+    | p~0, q~0 => compare p q
+    | p~0, xH => Gt
+    
+    | xH, q~1 => Lt
+    | xH, q~0 => Lt
+    | xH, XH => Eq
   end.
 
 Lemma positive2nat_pos:
@@ -301,8 +312,10 @@ Theorem compare_correct:
   | Gt => positive2nat x > positive2nat y
  end.
 Proof.
-induction x; destruct y; simpl.
-(* FILL IN HERE *) Admitted.
+  induction x; destruct y; simpl; try repeat rewrite <- plus_n_O; try lia;
+    try (specialize (IHx y); destruct (compare x y) eqn:E; subst; lia);
+    try (pose proof (positive2nat_pos y); lia);
+    try (pose proof (positive2nat_pos x); lia).
 (** [] *)
 
 (** Claim: [compare x y] takes time proportional to the log base 2 of [x].
