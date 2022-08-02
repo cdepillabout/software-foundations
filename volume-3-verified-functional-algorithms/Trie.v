@@ -316,6 +316,7 @@ Proof.
     try (specialize (IHx y); destruct (compare x y) eqn:E; subst; lia);
     try (pose proof (positive2nat_pos y); lia);
     try (pose proof (positive2nat_pos x); lia).
+  Qed.
 (** [] *)
 
 (** Claim: [compare x y] takes time proportional to the log base 2 of [x].
@@ -556,7 +557,9 @@ Definition manual_grade_for_successor_of_Z_constant_time : option (nat*string) :
 (** **** Exercise: 1 star, standard (look_leaf) *)
 Lemma look_leaf:
  forall A (a:A) j, look a j Leaf = a.
-(* FILL IN HERE *) Admitted.
+Proof.
+  intros. destruct j; auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard (look_ins_same)
