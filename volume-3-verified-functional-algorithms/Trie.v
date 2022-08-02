@@ -567,7 +567,9 @@ Proof.
     This is a rather simple induction. *)
 
 Lemma look_ins_same: forall {A} a k (v:A) t, look a k (ins a k v t) = v.
-(* FILL IN HERE *) Admitted.
+Proof.
+  intros A def. induction k; intros; destruct t; simpl; auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (look_ins_same)
@@ -576,7 +578,27 @@ Lemma look_ins_same: forall {A} a k (v:A) t, look a k (ins a k v t) = v.
 
 Lemma look_ins_other: forall {A} a j k (v:A) t,
    j <> k -> look a j (ins a k v t) = look a j t.
-(* FILL IN HERE *) Admitted.
+Proof.
+  intros A a j k; revert j; induction k; intros; simpl; auto.
+  - destruct t.
+    + simpl. destruct j; auto.
+      * simpl. assert (j <> k) by lia. rewrite (IHk j v Leaf); auto. destruct j; auto.
+      * simpl. destruct j; auto.
+    + destruct j; auto; simpl.
+      apply IHk. lia.
+  - destruct j; simpl; auto.
+    + destruct t; simpl; auto. destruct j; auto.
+    + destruct t; simpl; auto.
+      * rewrite IHk; try lia. destruct j; auto.
+      * apply IHk; try lia.
+    + destruct t; auto.
+  - destruct t; simpl; auto.
+    + destruct j; simpl; auto.
+      * destruct j; auto.
+      * destruct j; auto.
+      * lia.
+    + destruct j; simpl; auto. lia.
+  Qed.
 (** [] *)
 
 (* ================================================================= *)
@@ -591,12 +613,12 @@ Definition pos2nat (n: positive) : nat := pred (Pos.to_nat n).
 
 Lemma pos2nat2pos: forall p, nat2pos (pos2nat p) = p.
 Proof. (* You don't need to read this proof! *)
-intro. unfold nat2pos, pos2nat.
-rewrite <- (Pos2Nat.id p) at 2.
-destruct (Pos.to_nat p) eqn:?.
-pose proof (Pos2Nat.is_pos p). lia.
-rewrite <- Pos.of_nat_succ.
-reflexivity.
+ intro. unfold nat2pos, pos2nat.
+ rewrite <- (Pos2Nat.id p) at 2.
+ destruct (Pos.to_nat p) eqn:?.
+ pose proof (Pos2Nat.is_pos p). lia.
+ rewrite <- Pos.of_nat_succ.
+ reflexivity.
 Qed.
 
 Lemma nat2pos2nat: forall i, pos2nat (nat2pos i) = i.
@@ -610,10 +632,14 @@ Qed.
 
 (** **** Exercise: 2 stars, standard (pos2nat_bijective) *)
 Lemma pos2nat_injective: forall p q, pos2nat p = pos2nat q -> p=q.
-(* FILL IN HERE *) Admitted.
+Proof.
+  intros. rewrite <- pos2nat2pos. rewrite <- H. rewrite  pos2nat2pos. auto.
+Qed.
 
 Lemma nat2pos_injective: forall i j, nat2pos i = nat2pos j -> i=j.
-(* FILL IN HERE *) Admitted.
+Proof.
+  intros. rewrite <- nat2pos2nat. rewrite <- H. rewrite nat2pos2nat. auto.
+Qed.
 (** [] *)
 
 (* ================================================================= *)
