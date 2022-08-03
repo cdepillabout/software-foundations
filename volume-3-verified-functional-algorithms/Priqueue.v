@@ -140,9 +140,21 @@ Lemma select_perm: forall i l,
   let (j,r) := select i l in
    Permutation (i::l) (j::r).
 Proof. (* Copy your proof from Selection.v, and change one character. *)
-intros i l; revert i.
-induction l; intros; simpl in *.
-(* FILL IN HERE *) Admitted.
+  intros i l; revert i.
+  induction l; intros; simpl in *; auto.
+  bdestruct (i >=? a).
+  - simpl. destruct (select i l) eqn:?.
+    specialize (IHl i). rewrite Heqp in IHl.
+    apply perm_trans with (a :: i :: l). { apply perm_swap. }
+    apply perm_trans with (a :: n :: l0).
+    2: { apply perm_swap. }
+    apply perm_skip. auto.
+  - simpl. destruct (select a l) eqn:?.
+    specialize (IHl a). rewrite Heqp in IHl.
+    apply perm_trans with (i :: n :: l0).
+    2: { apply perm_swap. }
+    apply perm_skip. apply IHl.
+  Qed.
 
 Lemma select_biggest_aux:
   forall i al j bl,
