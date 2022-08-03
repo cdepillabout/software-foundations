@@ -649,8 +649,8 @@ Qed.
     well-formed?  Fill in the simplest thing you can, to start; then
     correct it later as necessary. *)
 
-Definition is_trie {A: Type} (t: trie_table A) : Prop
-(* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Print trie_table.
+Definition is_trie {A: Type} (t: trie_table A) : Prop := True.
 
 (** Abstraction relation.  This is what we mean by, "what you get is
     what you get."  That is, the abstraction of a [trie_table] is the
@@ -672,11 +672,15 @@ Definition Abs {A: Type} (t: trie_table A) (m: total_map A) :=
     get the [_relate] proofs to work, then you'll need to fix these proofs. *)
 
 Theorem empty_is_trie: forall {A} (default: A), is_trie (empty default).
-(* FILL IN HERE *) Admitted.
+Proof.
+  intros. apply I.
+  Qed.
 
 Theorem insert_is_trie: forall {A} i x (t: trie_table A),
    is_trie t -> is_trie (insert i x t).
-(* FILL IN HERE *) Admitted.
+Proof.
+  intros. apply I.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard (empty_relate)
@@ -688,7 +692,9 @@ Theorem insert_is_trie: forall {A} i x (t: trie_table A),
 Theorem empty_relate: forall {A} (default: A),
     Abs (empty default) (t_empty default).
 Proof.
-(* FILL IN HERE *) Admitted.
+  unfold Abs. unfold abstract. intros. extensionality x. simpl.
+  unfold lookup. simpl. rewrite look_leaf. auto.
+  Qed. 
 (** [] *)
 
 (** **** Exercise: 2 stars, standard (lookup_relate)
@@ -697,7 +703,10 @@ Proof.
 
 Theorem lookup_relate: forall {A} i (t: trie_table A) m,
     is_trie t -> Abs t m -> lookup i t = m (pos2nat i).
-(* FILL IN HERE *) Admitted.
+Proof.
+  intros. destruct H. unfold Abs in H0. unfold abstract in H0.
+  rewrite <- H0. rewrite pos2nat2pos. auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (insert_relate)
@@ -713,7 +722,16 @@ Theorem insert_relate: forall {A} k (v: A) t cts,
     is_trie t ->
     Abs t cts ->
     Abs (insert k v t) (t_update cts (pos2nat k) v).
-(* FILL IN HERE *) Admitted.
+Proof.
+  intros. inv H. unfold Abs in *. unfold abstract in *.
+  extensionality x. unfold t_update. unfold lookup in *. destruct t. simpl in *.
+  bdestruct (pos2nat k =? x).
+  - rewrite <- H. rewrite pos2nat2pos. apply look_ins_same.
+  - rewrite look_ins_other.
+    * rewrite <- H0. auto.
+    * intros Contra. unfold not in H. apply H. rewrite <- Contra. apply nat2pos2nat.
+  Qed.
+
 (** [] *)
 
 (* ================================================================= *)
@@ -728,7 +746,7 @@ try (apply insert_relate; [hnf; auto | ]).
 try (apply insert_relate; [hnf; auto | ]).
 try (apply empty_relate).
 (* Change this to Qed once you have [is_trie] defined and working. *)
-(* FILL IN HERE *) Admitted.
+Qed.
 
 (* ################################################################# *)
 (** * Conclusion
