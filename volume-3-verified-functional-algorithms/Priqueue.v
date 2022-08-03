@@ -162,18 +162,40 @@ Lemma select_biggest_aux:
     select i al = (j,bl) ->
     j >= i.
 Proof. (* Copy your proof of [select_smallest_aux] from Selection.v, and edit. *)
-(* FILL IN HERE *) Admitted.
+  intros i al. revert i. induction al; simpl; intros; auto.
+  - inv H0. auto.
+  - bdestruct (i >=? a).
+    * destruct (select i al) eqn:E. inv H0.
+      eapply IHal.
+      + inv H. apply H4.
+      + auto.
+    * destruct (select a al) eqn:E. inv H0. inv H. auto. 
+  Qed.
 
 Theorem select_biggest:
   forall i al j bl, select i al = (j,bl) ->
      Forall (fun x => j >= x) bl.
 Proof. (* Copy your proof of [select_smallest] from Selection.v, and edit. *)
-intros i al; revert i; induction al; intros; simpl in *.
-(* FILL IN HERE *) admit.
-bdestruct (i >=? a).
-*
-destruct (select i al) eqn:?H.
-(* FILL IN HERE *) Admitted.
+  intros i al; revert i; induction al; intros; simpl in *.
+  - inv H. auto.
+  - bdestruct (i >=? a).
+    * destruct (select i al) eqn:?H. inv H.
+      assert (j >= i).
+      { eapply select_biggest_aux.
+        2: { apply H1. }
+        eapply IHal. apply H1.
+      } 
+      assert (j >= a) by lia.
+      apply Forall_cons; auto.
+      eapply IHal. apply H1.
+    * destruct (select a al) eqn:?H. inv H.
+      assert (j >= a).
+      { eapply select_biggest_aux. 2: apply H1.
+        eapply IHal. apply H1.
+      } 
+      apply Forall_cons; try lia.
+      eapply IHal. apply H1.
+  Qed.
 (** [] *)
 
 (* ================================================================= *)
