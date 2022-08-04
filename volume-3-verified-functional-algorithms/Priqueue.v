@@ -278,7 +278,11 @@ Lemma delete_max_None_relate:
   forall p, priq p -> 
       (Abs p nil <-> delete_max p = None).
 Proof.
-(* FILL IN HERE *) Admitted.
+  split; intros.
+  - inv H0. auto.
+  - unfold Abs. unfold delete_max in H0. destruct p; try constructor.
+    inv H0.
+  Qed.
 
 Lemma delete_max_Some_relate:
   forall (p q: priqueue) k (pl ql: list key), priq p ->
@@ -287,7 +291,21 @@ Lemma delete_max_Some_relate:
    Abs q ql ->
    Permutation pl (k::ql) /\ Forall (ge k) ql.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros. inv H0. inv H2.
+  unfold delete_max in H1.
+  inv H. split.
+  - destruct pl.
+    * inv H1.
+    * inv H1.
+      assert (let (k,ql) := select k0 pl in Permutation (k0::pl) (k::ql))
+        by (apply (select_perm k0 pl)).
+      rewrite H0 in H. auto.
+  - destruct pl.
+    * inv H1.
+    * inv H1.
+      apply select_biggest with (i := k0) (al := pl).
+      auto.
+  Qed.
 
 Lemma merge_priq:
   forall p q, priq p -> priq q -> priq (merge p q).
@@ -299,7 +317,8 @@ Lemma merge_relate:
        Abs p pl -> Abs q ql -> Abs (merge p q) al ->
        Permutation al (pl++ql).
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros. inv H. inv H0. inv H1. inv H2. inv H3. unfold merge. auto.
+  Qed.
 (** [] *)
 
 End List_Priqueue.
