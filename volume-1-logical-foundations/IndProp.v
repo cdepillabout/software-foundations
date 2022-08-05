@@ -606,6 +606,26 @@ Proof.
   rewrite H1. rewrite <- H. rewrite <- H0.
   lia. 
   Qed.
+  
+Fixpoint nat_double_induction (P : nat -> Prop) (P0: P 0) (P1: P 1)
+    (F : forall (m : nat), P m -> P (S (S m))) (n: nat): P n :=
+  match n with
+  | 0 => P0
+  | 1 => P1
+  | (S (S o)) => F o (nat_double_induction P P0 P1 F o)
+  end.
+
+Theorem ev_excluded_middle : forall (n: nat), ev n \/ ~ ev n.
+Proof.
+  induction n using nat_double_induction.
+  - auto using ev.
+  - right. intros Contra. inversion Contra.
+  - destruct IHn.
+    * left. auto using ev.
+    * right. unfold not in *. intros. inversion H0. auto.
+  Qed.
+  
+  
 (** [] *)
 
 (* ################################################################# *)
