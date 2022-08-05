@@ -596,7 +596,16 @@ Proof.
 Theorem ev_plus_plus : forall n m p,
   ev (n+m) -> ev (n+p) -> ev (m+p).
 Proof.
-  (* IN HERE *) Admitted.
+  intros.
+  rewrite ev_Even_iff in *. unfold Even in *.
+  destruct H as [q H]. destruct H0 as [r H0].
+  rewrite double_plus in *. 
+  exists (q + r - n). rewrite double_plus.
+  assert (q + r - n + (q + r - n) = (q + q) + (r + r) - n - n).
+  { lia. }
+  rewrite H1. rewrite <- H. rewrite <- H0.
+  lia. 
+  Qed.
 (** [] *)
 
 (* ################################################################# *)
