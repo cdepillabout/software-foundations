@@ -25,6 +25,8 @@ Print reflect.
 
 Check ltb_reflect.  (* : forall x y, reflect (x<y) (x <? y) *)
 
+Print bdestruct.
+
 (** The name [reflect] for this type is a reference to _computational
    reflection_,  a technique in logic.  One takes a logical formula, or 
    proposition, or predicate,  and designs a syntactic embedding of 
@@ -81,6 +83,15 @@ apply P.
 compute in Heqb.
 inversion Heqb.
 Qed.
+
+(* Theorem three_less_seven_1': 3<7.
+Proof.
+remember (3 <? 7).
+destruct (ltb_reflect 3 7) as [P|Q] eqn:?.
+* (* Case 1: H = ReflectT (3<7) P *)
+apply P.
+* 
+Qed. *)
 
 (** Here is another proof that uses [inversion] instead of [destruct].
    The [ReflectF] case is eliminated automatically by [inversion]
