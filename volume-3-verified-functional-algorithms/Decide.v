@@ -291,8 +291,17 @@ Proof.
       [destruct (le_dec a x)].  Now, the rest of the proof can proceed
       as it did in [Sort.v], but using [destruct (le_dec _ _)] instead of
       [bdestruct (_ <=? _)]. *)
-
-(* FILL IN HERE *) Admitted.
+    * apply sorted_cons; auto using sorted.
+    * apply sorted_cons; try lia; auto using sorted.
+  - simpl.
+    destruct (le_dec a x).
+    * auto using sorted.
+    * simpl in *. destruct (le_dec a y).
+      + apply sorted_cons. lia. auto.
+      + auto using sorted.
+  Qed.
+  
+  Print le_dec.
 (** [] *)
 
 (* ################################################################# *)
@@ -338,12 +347,15 @@ Proof.
 
 Axiom lt_dec_axiom_1:  forall i j: nat, i<j \/ ~(i<j).
 
+Check lt_dec_axiom_1.
+Check forall i j : nat, i < j \/ ~ i < j.
+
 (** Now, can we use this axiom to compute with?  *)
 
-(* Uncomment and try this: 
-Definition max (i j: nat) : nat :=
-   if lt_dec_axiom_1 i j then j else i.
-*)
+(* Uncomment and try this: *)
+(* Definition max (i j: nat) : nat :=
+   if lt_dec_axiom_1 i j then j else i. *)
+(**)
 
 (** That doesn't work, because an [if] statement requires an [Inductive]
   data type with exactly two constructors; but [lt_dec_axiom_1 i j] has
@@ -399,9 +411,9 @@ End ScratchPad2.
 Lemma compute_with_lt_dec:  (if ScratchPad2.lt_dec 3 7 then 7 else 3) = 7.
 Proof.
 compute.
-(* uncomment this line and try it:
-   unfold ltb_reflect.
-*)
+(* uncomment this line and try it: *)
+   (* unfold ltb_reflect. *)
+
 Abort.
 
 (** Unfortunately, even though [ltb_reflect] was proved without any axioms, it
@@ -460,7 +472,7 @@ Z_ge_dec: forall x y : Z, {(x >= y)%Z} + {~ (x >= y)%Z}
 
 Definition list_nat_eq_dec: 
     (forall al bl : list nat, {al=bl}+{al<>bl}) :=
-  list_eq_dec eq_nat_dec.
+  list_eq_dec eq_nat_dec. 
 
 Eval compute in if list_nat_eq_dec [1;3;4] [1;4;3] then true else false.
  (* = false : bool *)
@@ -472,14 +484,14 @@ Eval compute in if list_nat_eq_dec [1;3;4] [1;3;4] then true else false.
 
     Use [in_dec] to build this function. *)
 
-Definition list_nat_in: forall (i: nat) (al: list nat), {In i al}+{~ In i al}
- (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition list_nat_in: forall (i: nat) (al: list nat), {In i al}+{~ In i al} :=
+  in_dec eq_nat_dec.
 
 Example in_4_pi:  (if list_nat_in 4  [3;1;4;1;5;9;2;6] then true else false) = true.
 Proof.
 simpl.
-(* reflexivity. *)
-(* FILL IN HERE *) Admitted.
+reflexivity.
+Qed.
 (** [] *)
 
 (** In general, beyond [list_eq_dec] and [in_dec], one can construct a
