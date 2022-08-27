@@ -1533,7 +1533,7 @@ Proof.
     simpl. rewrite update_shadow. auto.
   Qed.
   
-Lemma insert_relate' : forall (V : Type) (t : tree V) (k : key) (v : V),
+Lemma insert_relate'' : forall (V : Type) (t : tree V) (k : key) (v : V),
   BST t -> Abs (insert k v t) = update (Abs t) k v.
 Proof.
   (* This is a direct proof that doesn't rely on [kvs_insert_elements] *)
