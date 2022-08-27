@@ -40,8 +40,8 @@
         };
       in
       {
-        package.QuickChick = pkgs.QuickChick;
-        package.coq = pkgs.coq_8_15;
+        packages.QuickChick = pkgs.QuickChick;
+        packages.coq = pkgs.coq_8_15;
         devShell = pkgs.software-foundations-shell;
       }
     );
