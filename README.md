@@ -4,17 +4,17 @@ This is from <https://softwarefoundations.cis.upenn.edu/>.
 
 ## Building
 
-First get into the Nix shell:
+Each directory contains a different book of Software Foundations.  Change into
+the directory you want to work with and get into a Nix shell:
 
 ```console
+$ cd volume-3-verified-functional-algorithms/
 $ nix develop
 ```
 
-Then, change into every one of the child directories and run.  For example, for
-`volume-2-programming-language-foundations/`:
+From the Nix shell, you should be able to build the source code:
 
 ```console
-$ cd volume-2-programming-language-foundations/
 $ make
 ```
 
@@ -23,4 +23,3 @@ Then you should be able to open any `*.v` Coq file in `coqide`.  For example:
 ```console
 $ coqide Sub.v
 ```
-
