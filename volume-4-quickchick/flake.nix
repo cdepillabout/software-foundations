@@ -7,16 +7,11 @@
   outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        overlay = self: _: {
+        overlay = final: prev: {
 
-          # QuickChick = (self.coqPackages_8_15.QuickChick.override (oldAttrs: {
-          #   version = ".2.0+beta";
-          # })).overrideAttrs (oldAttrs: {
-          #   release.".2.0+beta".sha256 = "sha256-rw9C23QpOWJlGADW1GseObZSWtpaQt/IcTZc1EANi+4=";
-          # });
-          QuickChick = (self.coqPackages_8_15.QuickChick.overrideAttrs (oldAttrs: {
+          QuickChick = (final.mycoqPackages.QuickChick.overrideAttrs (oldAttrs: {
             # release = {".2.0+beta".sha256 = "sha256-rw9C23QpOWJlGADW1GseObZSWtpaQt/IcTZc1EANi+4=";};
-            src = self.fetchFromGitHub {
+            src = final.fetchFromGitHub {
               owner = "QuickChick";
               repo = "QuickChick";
               rev = ".2.0+beta";
@@ -27,10 +22,13 @@
             version = ".2.0+beta";
           });
 
-          software-foundations-shell = self.stdenv.mkDerivation {
+          mycoqPackages = final.coqPackages_8_15;
+          mycoq = final.coq_8_15;
+
+          software-foundations-shell = final.stdenv.mkDerivation {
             name = "software-foundations-shell";
             dontUnpack = true;
-            nativeBuildInputs = [ self.coq_8_15 self.coq_8_15.ocaml self.QuickChick ];
+            nativeBuildInputs = [ final.mycoq final.mycoq.ocaml final.mycoqPackages.coqide final.QuickChick ];
             installPhase = "touch $out";
           };
         };
