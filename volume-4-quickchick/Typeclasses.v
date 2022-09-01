@@ -108,7 +108,7 @@ Inductive primary := Red | Green | Blue.
 #[export] Instance showPrimary : Show primary :=
   {
     show :=
-      fun c:primary =>
+      fun c =>
         match c with
         | Red => "Red"
         | Green => "Green"
@@ -117,6 +117,8 @@ Inductive primary := Red | Green | Blue.
   }.
 
 Compute (show Green).
+
+(* Compute (@show nat showNat 3). *)
 
 (** The [show] function is sometimes said to be _overloaded_, since it
     can be applied to arguments of many types, with potentially
@@ -148,16 +150,26 @@ Definition string_of_nat (n : nat) : string :=
   {
     show := string_of_nat
   }.
+  
+
+(*
+#[export] Instance showNat2 : Show nat :=
+  {
+    show := fun n => ""
+  }.
 
 Compute (show 42).
+*)
 
 (** **** Exercise: 1 star, standard (showNatBool)
 
     Write a [Show] instance for pairs of a nat and a bool. *)
 
-(* FILL IN HERE
+#[export] Instance showNatBool : Show (nat * bool) :=
+  {
+    show := fun p => let (n,b) := p in "(" ++ show n ++ ", " ++ show b ++ ")"
+  }.
 
-    [] *)
 
 (** Next, we can define functions that use the overloaded function
     [show] like this: *)
@@ -167,6 +179,15 @@ Definition showOne {A : Type} `{Show A} (a : A) : string :=
 
 Compute (showOne true).
 Compute (showOne 42).
+
+Check show.
+
+
+Definition showOne2 {A : Type} (x : Show A) (a : A) : string :=
+  "The value is " ++ show a.
+  
+Compute (showOne2 showNat 3).
+
 
 (** The parameter [`{Show A}] is a _class constraint_, which states
     that the function [showOne] is expected to be applied only to
@@ -187,6 +208,13 @@ Definition showTwo {A B : Type}
 
 Compute (showTwo true 42).
 Compute (showTwo Red Green).
+
+
+Definition showTwo2 {A : Type}
+           (x : Show A) (y : Show A) (a : A) (b : A) : string :=
+  "First is " ++ @show _ x a ++ " and second is " ++ show b.
+
+Compute (showTwo2 showBool ({|show := fun b => "lalala"|}) true false).
 
 (** In the body of [showTwo], the type of the argument to each
     instance of [show] determines which of the implicitly supplied
@@ -249,9 +277,22 @@ Notation "x =? y" := (eqb x y) (at level 70).
     checking equality makes perfect sense.  Write an [Eq] instance for
     this type. *)
 
-(* FILL IN HERE
-
-    [] *)
+#[export] Instance eqBoolArrBool : Eq (bool -> bool) :=
+  {
+    eqb := fun (f1 f2 : bool -> bool) =>
+      match f1 true, f2 true with
+      | true, false => false
+      | false, true => false
+      | _, _ =>
+        match f1 false, f2 false with
+        | true, false => false
+        | false, true => false
+        | _, _ => true
+        end
+      end
+  }.
+  
+Compute (eqb id negb).
 
 (* ================================================================= *)
 (** ** Parameterized Instances: New Typeclasses from Old *)
@@ -300,9 +341,42 @@ Fixpoint showListAux {A : Type} (s : A -> string) (l : list A) : string :=
     Write an [Eq] instance for lists and [Show] and [Eq] instances for
     the [option] type constructor. *)
 
-(* FILL IN HERE
-
-    [] *)
+#[export] Instance eqList {A : Type} `{Eq A} : Eq (list A) :=
+  {
+  (*
+    eqb l1 l2 :=
+      match l1, l2 with
+      | [], [] => true
+      | (h1 :: t1), (h2 :: t2) => eqb h1 h2 && eqb t1 t2
+      | _, _ => false
+      end
+    *)
+    eqb := fix f l1 := fun l2 =>
+      match l1, l2 with
+      | [], [] => true
+      | (h1 :: t1), (h2 :: t2) => eqb h1 h2 && f t1 t2
+      | _, _ => false
+      end
+  }.
+  
+#[export] Instance showOption {A : Type} `{Show A} : Show (option A) :=
+  {
+    show o :=
+      match o with
+      | Some a => "Some " ++ show a
+      | None => "None"
+      end
+  }.
+  
+#[export] Instance eqOption {A : Type} `{Eq A} : Eq (option A) :=
+  {
+    eqb oa ob :=
+      match oa, ob with
+      | None, None => true
+      | Some a, Some b => a =? b
+      | _, _ => false
+      end
+  }.
 
 (** **** Exercise: 3 stars, standard, optional (boolArrowA)
 
@@ -310,9 +384,14 @@ Fixpoint showListAux {A : Type} (s : A -> string) (l : list A) : string :=
     an equality instance for any type of the form [bool->A], where [A]
     itself is an [Eq] type.  Show that it works for [bool->bool->nat]. *)
 
-(* FILL IN HERE
-
-    [] *)
+    
+#[export] Instance eqBoolArrowA {A : Type} `{Eq A} : Eq (bool -> A) :=
+  {
+    eqb := fun (f1 f2 : bool -> A) =>
+      eqb (f1 true) (f2 true) && eqb (f1 false) (f2 false)
+  }.
+  
+Compute (eqb (fun (b b' : bool) => 3) (fun (b b': bool) => 3)).
 
 (* ================================================================= *)
 (** ** Class Hierarchies *)
