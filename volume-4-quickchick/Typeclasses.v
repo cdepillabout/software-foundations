@@ -440,6 +440,8 @@ Check Ord.
   {
     le := Nat.leb
   }.
+  
+About le.
 
 (** Functions expecting to be instantiated with an instance of [Ord]
     now have two class constraints, one witnessing that they have an
@@ -447,6 +449,11 @@ Check Ord.
 
 Definition max {A: Type} `{Eq A} `{Ord A} (x y : A) : A :=
   if le x y then y else x.
+  
+Definition max2 {A: Type} `{Ord A} (x y : A) : A :=
+  if le x y && negb (eqb y x) then y else x.
+  
+Compute (max2 3 4).
 
 (** **** Exercise: 1 star, standard (missingConstraintAgain)
 
@@ -458,18 +465,37 @@ Definition max {A: Type} `{Eq A} `{Ord A} (x y : A) : A :=
 (** **** Exercise: 3 stars, standard (ordMisc)
 
     Define [Ord] instances for options and pairs. *)
-
-(* FILL IN HERE
-
-    [] *)
+    
+#[export] Instance ordOption {A} `{Ord A} : Ord (option A) :=
+  {
+    le oa ob :=
+      match oa, ob with
+      | None, _ => true
+      | _, None => false
+      | Some a, Some b => le a b
+      end
+  }.
+  
+#[export] Instance ordPair {A B} `{Ord A} `{Ord B} : Ord (A * B) :=
+  {
+    le p1 p2 := let (a1, b1) := p1 in let (a2, b2) := p2 in
+      if a1 =? a2 then le b1 b2 else le a1 a2
+  }. 
 
 (** **** Exercise: 3 stars, standard (ordList)
 
     For a little more practice, define an [Ord] instance for lists. *)
 
-(* FILL IN HERE
-
-    [] *)
+#[export] Instance ordList {A} `{Ord A} : Ord (list A) :=
+  {
+    le := fix f l1 := fun l2 =>
+      match l1, l2 with
+      | [], _ => true
+      | _, [] => false
+      | (h1 :: t1), (h2 :: t2) =>
+        if h1 =? h2 then f t1 t2 else le h1 h2
+      end
+  }.
 
 (* ################################################################# *)
 (** * How It Works *)
