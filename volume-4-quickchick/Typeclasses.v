@@ -183,10 +183,10 @@ Compute (showOne 42).
 Check show.
 
 
-Definition showOne2 {A : Type} (x : Show A) (a : A) : string :=
+Definition showOne2' {A : Type} (x : Show A) (a : A) : string :=
   "The value is " ++ show a.
   
-Compute (showOne2 showNat 3).
+Compute (showOne2' showNat 3).
 
 
 (** The parameter [`{Show A}] is a _class constraint_, which states
@@ -538,6 +538,10 @@ Generalizable Variables A.
 Definition showOne1 `{Show A} (a : A) : string :=
   "The value is " ++ show a.
 
+About showOne1.
+
+Print ordList.
+
 (** Coq will notice that the occurrence of [A] inside the [`{...}] is
     unbound and automatically insert the binding that we wrote
     explicitly before. *)
@@ -606,6 +610,7 @@ Print showOne4.
       : forall A : Type, Show A -> A -> string
 *)
 Unset Printing Implicit.
+Print showOne.
 
 (** The examples we've seen so far illustrate how implicit
     generalization works, but you may not be convinced yet that it is
@@ -748,6 +753,8 @@ Check {| lx:=2; ly:=4; label:="hello" |}.
         : LabeledPoint string
 *)
 
+Check fun (l : LabeledPoint bool) => let (_,_,lb) := l in lb.
+
 (** **** Exercise: 1 star, standard (rcdParens)
 
     Note that the [A] parameter in the definition of [LabeledPoint] is
@@ -846,9 +853,7 @@ Unset Printing Implicit.
     Show" in the output and have a look at the entries for [showNat]
     and [showPair]. *)
 
-(* Print HintDb typeclass_instances.
-
-    [] *)
+Print HintDb typeclass_instances.
 
 (** We can see what's happening during the instance inference process
     if we issue the [Set Typeclasses Debug] command. *)
@@ -1062,9 +1067,13 @@ Defined.
     Give instance declarations showing that, if [P] and [Q] are
     decidable propositions, then so are [~P] and [P\/Q]. *)
 
-(* FILL IN HERE
-
-    [] *)
+#[export] Instance Dec_not {P} {H : Dec P} : Dec (~ P).
+Proof.
+  constructor. unfold decidable. 
+  destruct H. destruct dec0.
+  - right. unfold not. intros. apply H. apply p.
+  - auto.
+  Qed.
 
 (** **** Exercise: 4 stars, standard (Dec_All)
 
