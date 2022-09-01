@@ -23,6 +23,7 @@ Fixpoint remove (x : nat) (l : list nat) : list nat :=
 
 Conjecture removeP : forall x l,  ~ (In x (remove x l)).
 
+
 (** ...which says that [x] never occurs in the result of [remove x l]
     for any [x] and [l].  ([Conjecture foo...] means the same as
     [Theorem foo... Admitted.]  Formally, [foo] is treated as an
@@ -74,9 +75,9 @@ Fixpoint insert x l :=
     always yields a list containing [x]."  Make sure QuickChick finds
     a counterexample. *)
 
-(* FILL IN HERE
+Conjecture insertP : forall x l l', insert x l = l' -> In x l'.
 
-    [] *)
+(* QuickChick insertP. *)
 
 (** **** Exercise: 2 stars, standard (insertP2)
 
@@ -86,9 +87,10 @@ Fixpoint insert x l :=
     inserting [x] into [l]" (i.e., [insert] preserves all the elements
     already in [l]). Make sure QuickChick finds a counterexample. *)
 
-(* FILL IN HERE
+Conjecture insertP2 : forall x y l, In y l -> In y (insert x l).
 
-    [] *)
+(* QuickChick insertP2. *)
+
 
 (* ################################################################# *)
 (** * Overview *)
