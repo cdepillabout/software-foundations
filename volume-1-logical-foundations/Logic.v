@@ -813,6 +813,34 @@ Proof.
     * exists x. left. assumption.
     * exists x. right. assumption.
   Qed.
+  
+Theorem leb_plus_exists_test : forall n m, n <=? m = true -> exists x, m = n+x.
+Proof.
+  (*
+  intros n m. generalize dependent n. induction m.
+  - intros. exists 0. Search ((_ <=? 0) = true).
+  - intros.
+  *)
+  induction n.
+  - intros. exists m. reflexivity.
+  - intros.
+    destruct m.
+    + simpl in H. inversion H.
+    + simpl in H.
+      specialize (IHn _ H).
+      destruct IHn. exists x. simpl. rewrite H0. auto.
+  Qed.
+
+Theorem plus_exists_leb_test : forall n m, (exists x, m = n+x) -> n <=? m = true.
+Proof.
+  intros n m; generalize dependent n. induction m; intros; auto.
+  - destruct H. destruct n,x; auto.
+    + simpl in *. inversion H.
+    + simpl in *. inversion H.
+  - destruct H. destruct n; auto.
+    simpl in H. inversion H. simpl in *. clear H. subst.
+    apply IHm. exists x. auto.
+  Qed.
 (* ################################################################# *)
 (** * Programming with Propositions *)
 
