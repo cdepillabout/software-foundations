@@ -814,6 +814,34 @@ Proof.
     * exists x. right. assumption.
   Qed.
   
+Lemma leb_sn_leb_test : forall (n m: nat), (S n <=? m) = true -> (n <=? m) = true.
+Proof.
+  intros n. induction n as [|n' IHn'].
+  - (* n = 0 *)
+    intros m H. simpl. reflexivity.
+  - (* n = S n' *)
+    intros m. destruct m as [|m'].
+    + (* m = 0 *)
+      intros H. inversion H.
+    + (* m = S m' *)
+      intros H. apply IHn' in H. simpl. apply H.
+Qed.
+
+(*
+Theorem leb_plus_exists_test_2 : forall n m, n <=? m = true -> exists x, m = n+x.
+Proof.
+  intros n. induction n as [|n' IHn'].
+  - simpl. intros m H. exists m. reflexivity.
+  - intros m H. apply leb_sn_leb_test in H. apply IHn' in H.
+    destruct H. subst. 
+    assert ((n' <=? S n') = true).
+    { clear IHn' x. induction n'; auto. }
+    assert (exists x : nat, S n' = n' + x).
+    { apply IHn'; auto. }
+    destruct H0. simpl.
+Abort.
+*)
+  
 Theorem leb_plus_exists_test : forall n m, n <=? m = true -> exists x, m = n+x.
 Proof.
   (*
