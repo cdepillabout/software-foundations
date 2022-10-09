@@ -10,16 +10,15 @@
         overlay = final: prev: {
 
           QuickChick = (final.mycoqPackages.QuickChick.overrideAttrs (oldAttrs: {
-            # release = {".2.0+beta".sha256 = "sha256-rw9C23QpOWJlGADW1GseObZSWtpaQt/IcTZc1EANi+4=";};
             src = final.fetchFromGitHub {
               owner = "QuickChick";
               repo = "QuickChick";
-              rev = ".2.0+beta";
+              rev = "v.2.0+beta";
               sha256 = "sha256-rw9C23QpOWJlGADW1GseObZSWtpaQt/IcTZc1EANi+5=";
             };
-            version = ".2.0+beta";
+            version = "v.2.0+beta";
           })).override (oldAttrs: {
-            version = ".2.0+beta";
+            version = "v.2.0+beta";
           });
 
           mycoqPackages = final.coqPackages_8_15;
