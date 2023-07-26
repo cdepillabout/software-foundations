@@ -17,7 +17,7 @@
           software-foundations-shell = final.stdenv.mkDerivation {
             name = "software-foundations-shell";
             dontUnpack = true;
-            nativeBuildInputs = [ final.coq_8_17 fina.my-vscode-with-coq ];
+            nativeBuildInputs = [ final.coq_8_17 final.my-vscode-with-coq ];
             installPhase = "touch $out";
           };
         };
