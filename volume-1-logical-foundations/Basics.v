@@ -1056,7 +1056,9 @@ Proof.
 Theorem plus_id_exercise : forall n m o : nat,
   n = m -> m = o -> n + m = m + o.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  subst. auto.
+  Qed.
 (** [] *)
 
 (** The [Admitted] command tells Coq that we want to skip trying
