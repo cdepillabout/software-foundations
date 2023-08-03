@@ -500,8 +500,11 @@ Definition manual_grade_for_eqb_refl_informal : option (nat*string) := None.
 Theorem add_shuffle3 : forall n m p : nat,
   n + (m + p) = m + (n + p).
 Proof.
-  (* FILL IN HERE *) Admitted.
-
+  intros. rewrite add_comm. rewrite <- add_assoc.
+  assert (p + n = n + p) by (now rewrite add_comm).
+  auto.
+  Qed.
+  
 (** Now prove commutativity of multiplication.  You will probably want
     to look for (or define and prove) a "helper" theorem to be used in
     the proof of this one. Hint: what is [n * (1 + k)]? *)
@@ -509,7 +512,14 @@ Proof.
 Theorem mul_comm : forall m n : nat,
   m * n = n * m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction m; auto. simpl. intros. rewrite IHm.
+  assert (forall a b, a + a * b = a * S b).
+  { induction a; simpl; auto. clear IHm m n.
+    intros. rewrite add_shuffle3. rewrite IHa. auto.
+  }
+  auto.
+  Qed.
+
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (plus_leb_compat_l)
@@ -523,8 +533,8 @@ Check leb.
 Theorem plus_leb_compat_l : forall n m p : nat,
   n <=? m = true -> (p + n) <=? (p + m) = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
-
+  intros n m. induction p; simpl. intros. auto. intros. apply IHp. apply H.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard, optional (more_exercises)
@@ -540,26 +550,29 @@ Proof.
 Theorem leb_refl : forall n:nat,
   (n <=? n) = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction n; auto.
+  Qed.
 
 Theorem zero_neqb_S : forall n:nat,
   0 =? (S n) = false.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  simpl. auto. Qed.
 
 Theorem andb_false_r : forall b : bool,
   andb b false = false.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold andb. destruct b; auto.
+  Qed.
 
 Theorem S_neqb_0 : forall n:nat,
   (S n) =? 0 = false.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  simpl. auto. Qed.
 
 Theorem mult_1_l : forall n:nat, 1 * n = n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  simpl. intros. rewrite add_0_r. auto.
+  Qed. 
 
 Theorem all3_spec : forall b c : bool,
   orb
@@ -568,17 +581,20 @@ Theorem all3_spec : forall b c : bool,
          (negb c))
   = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  destruct b,c; auto. Qed.
 
 Theorem mult_plus_distr_r : forall n m p : nat,
   (n + m) * p = (n * p) + (m * p).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction n; simpl; auto; intros.
+  rewrite IHn. now rewrite add_assoc. Qed.
 
 Theorem mult_assoc : forall n m p : nat,
   n * (m * p) = (n * m) * p.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction n. auto. simpl. intros. rewrite IHn.
+  rewrite <- mult_plus_distr_r. reflexivity. Qed.
+  
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (add_shuffle3')
@@ -595,7 +611,10 @@ Proof.
 Theorem add_shuffle3' : forall n m p : nat,
   n + (m + p) = m + (n + p).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction n; simpl; auto.
+  Search (_ + S _). intros. rewrite <- plus_n_Sm.
+  rewrite <- IHn. auto.
+  Qed.
 (** [] *)
 
 (* ################################################################# *)
@@ -613,11 +632,20 @@ Inductive bin : Type :=
     from [Basics].  That will make it possible for this file to
     be graded on its own. *)
 
-Fixpoint incr (m:bin) : bin
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
 
-Fixpoint bin_to_nat (m:bin) : nat
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint incr (m:bin) : bin :=
+    match m with
+    | Z => B1 Z
+    | B0 m' => B1 m'
+    | B1 m' => B0 (incr m')
+    end.
+  
+Fixpoint bin_to_nat (m:bin) : nat :=
+    match m with
+    | Z => 0
+    | B0 m' => 2 * bin_to_nat m'
+    | B1 m' => 2 * bin_to_nat m' + 1
+    end.
 
 (** In [Basics], we did some unit testing of [bin_to_nat], but we
     didn't prove its correctness. Now we'll do so. *)
@@ -645,8 +673,13 @@ Fixpoint bin_to_nat (m:bin) : nat
 Theorem bin_to_nat_pres_incr : forall b : bin,
   bin_to_nat (incr b) = 1 + bin_to_nat b.
 Proof.
-  (* FILL IN HERE *) Admitted.
-
+  induction b; simpl; auto.
+  - rewrite add_0_r. rewrite PeanoNat.Nat.add_1_r. auto.
+  - simpl in IHb. repeat rewrite add_0_r. repeat rewrite IHb. simpl.
+    f_equal. Search (_ + S _). rewrite <- PeanoNat.Nat.add_1_r.
+    rewrite add_assoc. auto.
+  Qed.
+    
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (nat_bin_nat) *)
