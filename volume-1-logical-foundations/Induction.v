@@ -204,22 +204,22 @@ Proof.
 Theorem mul_0_r : forall n:nat,
   n * 0 = 0.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction n. auto. simpl. auto. Qed.
 
 Theorem plus_n_Sm : forall n m : nat,
   S (n + m) = n + (S m).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction n; intros; auto. Qed.
 
 Theorem add_comm : forall n m : nat,
   n + m = m + n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction n; intros; simpl; auto. rewrite <- plus_n_Sm. now rewrite IHn. Qed.
 
 Theorem add_assoc : forall n m p : nat,
   n + (m + p) = (n + m) + p.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction n; auto. simpl. intros. now rewrite IHn. Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard (double_plus)
@@ -236,7 +236,7 @@ Fixpoint double (n:nat) :=
 
 Lemma double_plus : forall n, double n = n + n .
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction n; auto. simpl. rewrite <- plus_n_Sm. auto. Qed. 
 (** [] *)
 
 (** **** Exercise: 2 stars, standard (eqb_refl)
@@ -246,7 +246,7 @@ Proof.
 Theorem eqb_refl : forall n : nat,
   (n =? n) = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. induction n; auto. Qed. 
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (even_S)
@@ -261,7 +261,8 @@ Proof.
 Theorem even_S : forall n : nat,
   even (S n) = negb (even n).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction  n; auto. rewrite IHn. rewrite negb_involutive. auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 1 star, standard, optional (destruct_induction)
