@@ -686,8 +686,11 @@ Proof.
 
 (** Write a function to convert natural numbers to binary numbers. *)
 
-Fixpoint nat_to_bin (n:nat) : bin
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint nat_to_bin (n:nat) : bin :=
+  match n with
+  | O => Z
+  | S n' => incr (nat_to_bin n')
+  end.
 
 (** Prove that, if we start with any [nat], convert it to [bin], and
     convert it back, we get the same [nat] which we started with.
@@ -701,8 +704,9 @@ Fixpoint nat_to_bin (n:nat) : bin
 
 Theorem nat_bin_nat : forall n, bin_to_nat (nat_to_bin n) = n.
 Proof.
-  (* FILL IN HERE *) Admitted.
-
+  induction n; auto.
+  simpl. rewrite bin_to_nat_pres_incr. simpl. auto.
+  Qed.
 (** [] *)
 
 (* ################################################################# *)
@@ -726,24 +730,26 @@ Abort.
 
 Lemma double_incr : forall n : nat, double (S n) = S (S (double n)).
 Proof.
-  (* FILL IN HERE *) Admitted.
-
+  auto.
+  Qed.
 (** Now define a similar doubling function for [bin]. *)
 
-Definition double_bin (b:bin) : bin
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition double_bin (b:bin) : bin := 
+  match b with
+  | Z => Z
+  | b' => B0 b'
+  end.
 
 (** Check that your function correctly doubles zero. *)
 
-Example double_bin_zero : double_bin Z = Z.
-(* FILL IN HERE *) Admitted.
+Example double_bin_zero : double_bin Z = Z. Proof. auto. Qed.
 
 (** Prove this lemma, which corresponds to [double_incr]. *)
 
 Lemma double_incr_bin : forall b,
     double_bin (incr b) = incr (incr (double_bin b)).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction b; auto. Qed.
 
 (** [] *)
 
@@ -781,14 +787,26 @@ Abort.
     end of the [bin] and process each bit only once. Do not try to
     "look ahead" at future bits. *)
 
-Fixpoint normalize (b:bin) : bin
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint normalize (b:bin) : bin :=
+  match b with
+  | Z => Z
+  | B0 b' => 
+    match normalize b' with
+    | Z => Z
+    | b'' => B0 b''
+    end
+  | B1 b' => B1 (normalize b')
+  end.
 
 (** It would be wise to do some [Example] proofs to check that your definition of
     [normalize] works the way you intend before you proceed. They won't be graded,
     but fill them in below. *)
 
-(* FILL IN HERE *)
+Example normalize_Z_is_Z: normalize Z = Z. Proof. auto. Qed.
+Example normalize_B0_Z_is_Z: normalize (B0 Z) = Z. Proof. auto. Qed.
+Example normalize_B0_B0_Z_is_Z: normalize (B0 (B0 Z)) = Z. Proof. auto. Qed.
+Example normalize_B1_B0_B0_Z_is_B1_Z: normalize (B1 (B0 (B0 Z))) = B1 Z. Proof. auto. Qed.
+Example normalize_B0_B1_B0_B0_Z_is_B0_B1_Z: normalize (B0 (B1 (B0 (B0 Z)))) = B0 (B1 Z). Proof. auto. Qed.
 
 (** Finally, prove the main theorem. The inductive cases could be a
     bit tricky.
@@ -799,10 +817,62 @@ Fixpoint normalize (b:bin) : bin
     progress. We have one lemma for the [B0] case (which also makes 
     use of [double_incr_bin]) and another for the [B1] case. *)
 
+Theorem double_bin_to_nat : forall b, bin_to_nat (B0 b) = double (bin_to_nat b).
+Proof.
+  simpl. intros. rewrite add_0_r. now rewrite double_plus.
+Qed.
+
+Theorem nat_to_bin_double : forall n, nat_to_bin (double n) = double_bin (nat_to_bin n).
+Proof.
+  induction n; auto.
+  simpl. rewrite IHn. now rewrite double_incr_bin.
+  Qed.
+
+Theorem double_normalize : forall b, double_bin (normalize b) = normalize (B0 b).
+Proof.
+  induction b; auto. simpl in *. rewrite <- IHb. unfold double_bin in *. subst.
+  destruct (normalize b) eqn:E; auto.
+Qed.
+
+Lemma bin_to_nat_B1 : forall b, bin_to_nat (B1 b) = S (bin_to_nat b).
+Proof.
+  simpl. intros. rewrite add_0_r. rewrite add_comm. rewrite plus_1_l.
+  Abort.
+
+Lemma double_double : forall x, double x + double x = double (double x).
+Proof.
+    induction x; auto; simpl in *. rewrite add_comm. simpl. rewrite IHx. auto.
+Qed.
+
+Lemma nat_to_double_bin : forall b,  bin_to_nat b + bin_to_nat b = double (bin_to_nat b).
+Proof.
+  induction b; auto; simpl; repeat rewrite add_0_r.
+  - rewrite IHb. rewrite double_double. auto.
+  - assert (bin_to_nat b + bin_to_nat b + 1 = 1 + bin_to_nat b + bin_to_nat b) by (rewrite add_comm; auto).
+    rewrite H.
+    assert (forall x, 1 + x + x + (1 + x + x) = 2 + x + x + (x + x)).
+    { simpl. Search (_ + S _). intros. rewrite <- plus_n_Sm. auto. }
+    rewrite H0.
+    simpl. rewrite IHb. f_equal. f_equal. apply double_double.
+Qed. 
+
+Theorem incr_double_bin_is_b1 : forall b, incr (double_bin b) = B1 b.
+Proof.
+  induction b; auto; simpl.
+Qed.
+
 Theorem bin_nat_bin : forall b, nat_to_bin (bin_to_nat b) = normalize b.
 Proof.
-  (* FILL IN HERE *) Admitted.
-
+  induction b; auto.
+  - rewrite double_bin_to_nat. rewrite nat_to_bin_double. rewrite IHb.
+    rewrite double_normalize. auto.
+  - simpl. rewrite add_0_r. rewrite add_comm. rewrite plus_1_l. simpl.
+    rewrite <- IHb.
+    rewrite nat_to_double_bin.
+    rewrite nat_to_bin_double.
+    apply incr_double_bin_is_b1.
+Qed.
+    
 (** [] *)
 
 (* 2023-03-25 11:11 *)
