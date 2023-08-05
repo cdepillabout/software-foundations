@@ -824,14 +824,40 @@ Proof.
   induction l1; auto; intros; simpl.
   - symmetry. apply app_nil_r.
   - rewrite IHl1. apply app_assoc.
+  Qed.
+
+Module MyOptionTest.
+
+  Inductive Option : Set :=
+  | Fail : Option
+  | Ok : bool -> Option.
+
+  Definition get: forall (x:Option), (x <> Fail) -> bool.
+    refine
+    (fun x:Option =>
+      match x return x <> Fail -> bool with
+      | Fail => _
+      | Ok b => fun _ => b
+      end).
+    intros. absurd (Fail = Fail); trivial.
+    Qed.
+
+  Print get.
+  About False_rec.
+  Locate "<>".
+  About not.
+  Print not.
+  Print eq_refl.
+End MyOptionTest.
 
 (** An _involution_ is a function that is its own inverse. That is,
     applying the function twice yield the original input. *)
 Theorem rev_involutive : forall l : natlist,
   rev (rev l) = l.
 Proof.
-  (* FILL IN HERE *) Admitted.
-
+  induction l; auto; simpl. rewrite rev_app_distr. simpl. subst.
+  now f_equal.
+  Qed.
 (** There is a short solution to the next one.  If you find yourself
     getting tangled up, step back and try to look for a simpler
     way. *)
@@ -839,14 +865,17 @@ Proof.
 Theorem app_assoc4 : forall l1 l2 l3 l4 : natlist,
   l1 ++ (l2 ++ (l3 ++ l4)) = ((l1 ++ l2) ++ l3) ++ l4.
 Proof.
-  (* FILL IN HERE *) Admitted.
-
+  intros; now repeat rewrite app_assoc.
+  Qed.
 (** An exercise about your implementation of [nonzeros]: *)
 
 Lemma nonzeros_app : forall l1 l2 : natlist,
   nonzeros (l1 ++ l2) = (nonzeros l1) ++ (nonzeros l2).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction l1; auto; intros.
+  simpl. destruct n; auto.
+  simpl. now f_equal.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard (eqblist)
