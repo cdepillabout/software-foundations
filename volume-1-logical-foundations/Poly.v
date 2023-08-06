@@ -68,6 +68,8 @@ Check list : Type -> Type.
     they are building. For example, [nil nat] constructs the empty
     list of type [nat]. *)
 
+Check nil.
+
 Check (nil nat) : list nat.
 
 (** Similarly, [cons nat] adds an element of type [nat] to a list of
@@ -355,6 +357,8 @@ Definition mynil : list nat := nil.
 (** Alternatively, we can force the implicit arguments to be explicit by
     prefixing the function name with [@]. *)
 
+Check nil.
+
 Check @nil : forall X : Type, list X.
 
 Definition mynil' := @nil nat.
@@ -387,17 +391,21 @@ Definition list123''' := [1; 2; 3].
 Theorem app_nil_r : forall (X:Type), forall l:list X,
   l ++ [] = l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. induction l; auto; simpl. f_equal. auto.
+  Qed.
 
 Theorem app_assoc : forall A (l m n:list A),
   l ++ m ++ n = (l ++ m) ++ n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intro A. induction l; simpl; auto; intros.
+  - f_equal. apply IHl.
+  Qed.
 
 Lemma app_length : forall (X:Type) (l1 l2 : list X),
   length (l1 ++ l2) = length l1 + length l2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intro X. induction l1; simpl; auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard (more_poly_exercises)
@@ -407,12 +415,16 @@ Proof.
 Theorem rev_app_distr: forall X (l1 l2 : list X),
   rev (l1 ++ l2) = rev l2 ++ rev l1.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intro X. intros l1. induction l1; simpl; intros; auto using app_nil_r,app_assoc.
+  - rewrite IHl1. auto using app_assoc.
+  Qed.  
 
 Theorem rev_involutive : forall X : Type, forall l : list X,
   rev (rev l) = l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X l. induction l; auto; simpl.
+  rewrite rev_app_distr; simpl. f_equal. auto.
+  Qed.
 (** [] *)
 
 (* ================================================================= *)
@@ -496,13 +508,16 @@ Fixpoint combine {X Y : Type} (lx : list X) (ly : list Y)
     Fill in the definition of [split] below.  Make sure it passes the
     given unit test. *)
 
-Fixpoint split {X Y : Type} (l : list (X*Y)) : (list X) * (list Y)
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint split {X Y : Type} (l : list (X*Y)) : (list X) * (list Y) :=
+  match l with
+  | [] => ([],[])
+  | (x, y) :: t =>
+    let (tx, ty) := split t in (x :: tx, y :: ty)
+  end.
 
 Example test_split:
   split [(1,false);(2,false)] = ([1;2],[false;false]).
-Proof.
-(* FILL IN HERE *) Admitted.
+Proof. auto. Qed.
 (** [] *)
 
 (* ================================================================= *)
@@ -551,18 +566,21 @@ Proof. reflexivity. Qed.
     [hd_error] function from the last chapter. Be sure that it
     passes the unit tests below. *)
 
-Definition hd_error {X : Type} (l : list X) : option X
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition hd_error {X : Type} (l : list X) : option X :=
+  match l with
+  | [] => None
+  | h :: _ => Some h
+  end.
 
 (** Once again, to force the implicit arguments to be explicit,
     we can use [@] before the name of the function. *)
 
 Check @hd_error : forall X : Type, list X -> option X.
 
-Example test_hd_error1 : hd_error [1;2] = Some 1.
- (* FILL IN HERE *) Admitted.
-Example test_hd_error2 : hd_error  [[1];[2]]  = Some [1].
- (* FILL IN HERE *) Admitted.
+Example test_hd_error1 : hd_error [1;2] = Some 1.  Proof. auto. Qed.
+ 
+Example test_hd_error2 : hd_error  [[1];[2]]  = Some [1]. Proof. auto. Qed.
+
 (** [] *)
 
 (* ################################################################# *)
@@ -679,12 +697,42 @@ Proof. reflexivity. Qed.
     and returns a list of just those that are even and greater than
     7. *)
 
-Definition filter_even_gt7 (l : list nat) : list nat
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+About "<?".
+
+About ltb.
+Print ltb.
+
+Transparent ltb.
+Print ltb.
+
+Print Module Basics.
+
+Print exp.
+Print odd.
+
+About "<=?".
+About "<?".
+Print "<=?".
+Print ltb.
+
+Definition filter_even_gt7 (l : list nat) : list nat :=
+  filter (fun n => (7 <? n) && even n) l.
+
+Compute filter_even_gt7 [1;2;6;9;10;3;12;8].
 
 Example test_filter_even_gt7_1 :
-  filter_even_gt7 [1;2;6;9;10;3;12;8] = [10;12;8].
- (* FILL IN HERE *) Admitted.
+  filter_even_gt7 [1;2;6;9;10;3;12;8] = [10;12;8]. Proof. vm_compute.
+  Print "<?".
+  Print Opaque Dependencies "<?".
+  Print Transparent Dependencies "<?".
+  Print Opaque Dependencies "<=?".
+  Print Transparent Dependencies "<=?".
+    Qed.
+
+About "<=?".
+About "<?".
+Print "<=?".
+Print ltb.
 
 Example test_filter_even_gt7_2 :
   filter_even_gt7 [5;2;6;19;129] = [].

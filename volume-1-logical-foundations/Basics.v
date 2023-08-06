@@ -896,6 +896,10 @@ Definition ltb (n m : nat) : bool :=
   | S m' => n <=? m'
   end.
 
+About ltb.
+
+Definition blahblah n : bool := n <=? n.
+
 Notation "x <? y" := (ltb x y) (at level 70) : nat_scope.
 
 Example test_ltb1:             (ltb 2 2) = false. auto. Qed.

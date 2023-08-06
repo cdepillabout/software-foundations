@@ -8,6 +8,20 @@
 
 From LF Require Export Basics.
 
+Print blahblah.
+
+Print "<?".
+
+
+Print ltb.
+
+About LF.Basics.ltb.
+
+Print exp.
+Print negb.
+
+Print Basics.ltb.
+
 (** For this [Require Export] command to work, Coq needs to be
     able to find a compiled version of [Basics.v], called [Basics.vo],
     in a directory associated with the prefix [LF].  This file is
