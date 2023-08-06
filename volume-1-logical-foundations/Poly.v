@@ -697,23 +697,6 @@ Proof. reflexivity. Qed.
     and returns a list of just those that are even and greater than
     7. *)
 
-About "<?".
-
-About ltb.
-Print ltb.
-
-Transparent ltb.
-Print ltb.
-
-Print Module Basics.
-
-Print exp.
-Print odd.
-
-About "<=?".
-About "<?".
-Print "<=?".
-Print ltb.
 
 Definition filter_even_gt7 (l : list nat) : list nat :=
   filter (fun n => (7 <? n) && even n) l.
@@ -721,22 +704,10 @@ Definition filter_even_gt7 (l : list nat) : list nat :=
 Compute filter_even_gt7 [1;2;6;9;10;3;12;8].
 
 Example test_filter_even_gt7_1 :
-  filter_even_gt7 [1;2;6;9;10;3;12;8] = [10;12;8]. Proof. vm_compute.
-  Print "<?".
-  Print Opaque Dependencies "<?".
-  Print Transparent Dependencies "<?".
-  Print Opaque Dependencies "<=?".
-  Print Transparent Dependencies "<=?".
-    Qed.
-
-About "<=?".
-About "<?".
-Print "<=?".
-Print ltb.
+  filter_even_gt7 [1;2;6;9;10;3;12;8] = [10;12;8]. Proof. auto. Qed.
 
 Example test_filter_even_gt7_2 :
-  filter_even_gt7 [5;2;6;19;129] = [].
- (* FILL IN HERE *) Admitted.
+  filter_even_gt7 [5;2;6;19;129] = []. auto. Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (partition)
