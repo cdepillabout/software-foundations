@@ -1156,18 +1156,16 @@ Proof. reflexivity. Qed.
     its function argument once more than [n]. That is, given [fun X f x
     => f^n x] as input, [scc] should produce [fun X f x => f^(n+1) x] as
     output. In other words, do it [n] times, then do it once more. *)
+Print cnat.
+Definition scc (n : cnat) : cnat := fun X f x => f (n X f x).
 
-Definition scc (n : cnat) : cnat
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Example scc_1 : scc zero = one. auto. Qed.
 
-Example scc_1 : scc zero = one.
-Proof. (* FILL IN HERE *) Admitted.
 
-Example scc_2 : scc one = two.
-Proof. (* FILL IN HERE *) Admitted.
+Example scc_2 : scc one = two. auto. Qed.
 
-Example scc_3 : scc two = three.
-Proof. (* FILL IN HERE *) Admitted.
+
+Example scc_3 : scc two = three. auto. Qed.
 
 (** [] *)
 
@@ -1181,18 +1179,33 @@ Proof. (* FILL IN HERE *) Admitted.
     Hint: the "zero" argument to a Church numeral need not be just
     [x]. *)
 
-Definition plus (n m : cnat) : cnat
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition plus (n m : cnat) : cnat := fun _ f x => m _ f (n _ f x).
 
-Example plus_1 : plus zero one = one.
-Proof. (* FILL IN HERE *) Admitted.
+Definition plus' (n m : cnat) : cnat.
+  unfold cnat in *.
+  intros X f x.
+  set (g := scc). unfold scc in g.
+  apply m.
+  - apply f.
+  - apply n.
+    + apply f.
+    + apply x.
+  Defined.
 
-Example plus_2 : plus two three = plus three two.
-Proof. (* FILL IN HERE *) Admitted.
+Example plus_1 : plus zero one = one. auto. Qed.
+
+Example plus_2 : plus two three = plus three two. auto. Qed.
 
 Example plus_3 :
-  plus (plus two two) three = plus one (plus three three).
-Proof. (* FILL IN HERE *) Admitted.
+  plus (plus two two) three = plus one (plus three three). auto. Qed.
+
+Example plus_1' : plus' zero one = one. auto. Qed.
+
+Example plus_2' : plus' two three = plus three two. auto. Qed.
+
+Example plus_3' :
+  plus' (plus' two two) three = scc(plus' three three). auto. Qed.
+
 
 (** [] *)
 
@@ -1210,17 +1223,16 @@ Proof. (* FILL IN HERE *) Admitted.
     which a type contains itself. So leave the type argument
     unchanged. *)
 
-Definition mult (n m : cnat) : cnat
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+(* Definition mult (n m : cnat) : cnat := fun _ f x => n _ (m _ f) x. *)
+Definition mult (n m : cnat) : cnat := fun _ f x => n _ (m _ f) x.
 
-Example mult_1 : mult one one = one.
-Proof. (* FILL IN HERE *) Admitted.
+Example mult_1 : mult one one = one. auto. Qed.
 
-Example mult_2 : mult zero (plus three three) = zero.
-Proof. (* FILL IN HERE *) Admitted.
 
-Example mult_3 : mult two three = plus three three.
-Proof. (* FILL IN HERE *) Admitted.
+Example mult_2 : mult zero (plus three three) = zero. auto. Qed.
+
+
+Example mult_3 : mult two three = plus three three. auto. Qed.
 
 (** [] *)
 
@@ -1235,17 +1247,24 @@ Proof. (* FILL IN HERE *) Admitted.
     But again, you cannot pass [cnat] itself as the type argument.
     Finding the right type can be tricky. *)
 
-Definition exp (n m : cnat) : cnat
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+(* Definition exp (n m : cnat) : cnat :=
+   m _ (fun _ g y => n _ g y). *)
 
-Example exp_1 : exp two two = plus two two.
-Proof. (* FILL IN HERE *) Admitted.
+Definition exp (n m : cnat) : cnat.
+  unfold cnat in *.
+  intros X.
+  apply (m _ (n _)).
+  Defined.
 
-Example exp_2 : exp three zero = one.
-Proof. (* FILL IN HERE *) Admitted.
+Print exp.
+
+Example exp_1 : exp two two = plus two two. Proof. auto. Qed.
+
+
+Example exp_2 : exp three zero = one. Proof. auto. Qed.
 
 Example exp_3 : exp three two = plus (mult two (mult two two)) one.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. auto. Qed.
 
 (** [] *)
 
