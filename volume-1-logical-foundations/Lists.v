@@ -884,26 +884,30 @@ Proof.
     lists of numbers for equality.  Prove that [eqblist l l]
     yields [true] for every list [l]. *)
 
-Fixpoint eqblist (l1 l2 : natlist) : bool
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint eqblist (l1 l2 : natlist) : bool :=
+  match l1,l2 with
+  | [], [] => true
+  | h1 :: t1, h2 :: t2 => (h1 =? h2) && eqblist t1 t2
+  | _, _ => false
+  end.
 
 Example test_eqblist1 :
   (eqblist nil nil = true).
- (* FILL IN HERE *) Admitted.
+Proof. auto. Qed.
 
 Example test_eqblist2 :
-  eqblist [1;2;3] [1;2;3] = true.
-(* FILL IN HERE *) Admitted.
+  eqblist [1;2;3] [1;2;3] = true. Proof. auto. Qed.
+
 
 Example test_eqblist3 :
-  eqblist [1;2;3] [1;2;4] = false.
- (* FILL IN HERE *) Admitted.
+  eqblist [1;2;3] [1;2;4] = false. Proof. auto. Qed.
+
 
 Theorem eqblist_refl : forall l:natlist,
   true = eqblist l l.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  induction l; simpl; auto. rewrite eqb_refl; auto.
+  Qed.
 
 (* ================================================================= *)
 (** ** List Exercises, Part 2 *)
@@ -915,7 +919,8 @@ Proof.
 Theorem count_member_nonzero : forall (s : bag),
   1 <=? (count 1 (1 :: s)) = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  simpl. auto.
+  Qed.
 (** [] *)
 
 (** The following lemma about [leb] might help you in the next
@@ -936,7 +941,10 @@ Proof.
 Theorem remove_does_not_increase_count: forall (s : bag),
   (count 0 (remove_one 0 s)) <=? (count 0 s) = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction s; auto.
+  destruct n; simpl; auto.
+  apply leb_n_Sn.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard, optional (bag_count_sum)
@@ -960,10 +968,10 @@ Proof.
     collisions. *)
 
 Theorem involution_injective : forall (f : nat -> nat),
-    (forall n : nat, n = f (f n)) -> (forall n1 n2 : nat, f n1 = f n2 -> n1 = n2).
+    (forall n : nat, n = f (f n)) ->
+    (forall n1 n2 : nat, f n1 = f n2 -> n1 = n2).
 Proof.
-  (* FILL IN HERE *) Admitted.
-
+  intros. rewrite H. rewrite <- H0. now rewrite <- H. Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, advanced (rev_injective)
@@ -976,7 +984,35 @@ Proof.
 Theorem rev_injective : forall (l1 l2 : natlist),
   rev l1 = rev l2 -> l1 = l2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. rewrite <- rev_involutive. rewrite <- H. now rewrite rev_involutive.
+  Qed.
+
+Lemma non_empty_app : forall x l, [ ] = l ++ [x] -> False.
+Proof.
+  intro x. induction l; simpl; intros; auto; discriminate.
+  Qed.
+
+Lemma app_single_equal : forall x y l1 l2, l1 ++ [x] = l2 ++ [y] -> l1 = l2 /\ x = y.
+Proof.
+  intros x y. induction l1; simpl; auto.
+  - destruct l2; simpl; auto; intros.
+    + inversion H. subst. auto.
+    + exfalso. inversion H. now apply (non_empty_app y l2). 
+  - destruct l2; simpl; auto; intros; inversion H; subst.
+    + symmetry in H2. apply non_empty_app in H2. inversion H2.
+    + specialize (IHl1 _ H2). inversion IHl1; subst. auto.
+  Qed.
+
+Theorem rev_injective_induction : forall (l1 l2 : natlist),
+  rev l1 = rev l2 -> l1 = l2.
+Proof.
+  induction l1; simpl; auto.
+  - destruct l2; auto; simpl; intros. apply non_empty_app in H. inversion H.
+  - destruct l2; simpl; auto; intros.
+    + symmetry in H. apply non_empty_app in H. inversion H.
+    + apply app_single_equal in H. inversion H; subst. f_equal.
+      apply IHl1. auto.  
+  Qed.
 (** [] *)
 
 (* ################################################################# *)
@@ -1047,17 +1083,17 @@ Definition option_elim (d : nat) (o : natoption) : nat :=
     Using the same idea, fix the [hd] function from earlier so we don't
     have to pass a default element for the [nil] case.  *)
 
-Definition hd_error (l : natlist) : natoption
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition hd_error (l : natlist) : natoption :=
+  match l with
+  | [] => None
+  | h :: _ => Some h
+  end.
 
-Example test_hd_error1 : hd_error [] = None.
- (* FILL IN HERE *) Admitted.
+Example test_hd_error1 : hd_error [] = None. Proof. auto. Qed.
 
-Example test_hd_error2 : hd_error [1] = Some 1.
- (* FILL IN HERE *) Admitted.
+Example test_hd_error2 : hd_error [1] = Some 1. Proof. auto. Qed.
 
-Example test_hd_error3 : hd_error [5;6] = Some 5.
- (* FILL IN HERE *) Admitted.
+Example test_hd_error3 : hd_error [5;6] = Some 5. Proof. auto. Qed.
 
 (** [] *)
 
@@ -1068,7 +1104,8 @@ Example test_hd_error3 : hd_error [5;6] = Some 5.
 Theorem option_elim_hd : forall (l:natlist) (default:nat),
   hd default l = option_elim default (hd_error l).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  destruct l; auto.
+  Qed.
 (** [] *)
 
 End NatList.
@@ -1102,7 +1139,8 @@ Definition eqb_id (x1 x2 : id) :=
 (** **** Exercise: 1 star, standard (eqb_id_refl) *)
 Theorem eqb_id_refl : forall x, eqb_id x x = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros []. simpl. apply eqb_refl.
+  Qed.
 (** [] *)
 
 (** Now we define the type of partial maps: *)
@@ -1148,15 +1186,14 @@ Theorem update_eq :
   forall (d : partial_map) (x : id) (v: nat),
     find x (update d x v) = Some v.
 Proof.
- (* FILL IN HERE *) Admitted.
-(** [] *)
+  intros. simpl. now rewrite eqb_id_refl. Qed.
 
 (** **** Exercise: 1 star, standard (update_neq) *)
 Theorem update_neq :
   forall (d : partial_map) (x y : id) (o: nat),
     eqb_id x y = false -> find x (update d y o) = find x d.
 Proof.
- (* FILL IN HERE *) Admitted.
+  simpl. intros. now rewrite H. Qed.
 (** [] *)
 End PartialMap.
 
