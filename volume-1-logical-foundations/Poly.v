@@ -1223,7 +1223,6 @@ Example plus_3' :
     which a type contains itself. So leave the type argument
     unchanged. *)
 
-(* Definition mult (n m : cnat) : cnat := fun _ f x => n _ (m _ f) x. *)
 Definition mult (n m : cnat) : cnat := fun _ f x => n _ (m _ f) x.
 
 Example mult_1 : mult one one = one. auto. Qed.
