@@ -333,7 +333,7 @@ Example discriminate_ex3 :
     x :: y :: l = [] ->
     x = z.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros * ? [=]. Qed.
 (** [] *)
 
 (** For a slightly more involved example, we can use [discriminate] to
@@ -598,7 +598,8 @@ Proof.
 Theorem eqb_true : forall n m,
   n =? m = true -> n = m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction n; destruct m; intros; simpl in *; auto; discriminate.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, advanced (eqb_true_informal)
@@ -621,7 +622,11 @@ Theorem plus_n_n_injective : forall n m,
   n + n = m + m ->
   n = m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction n; destruct m; intros; simpl in *; auto; try discriminate.
+  f_equal. apply IHn. repeat rewrite <- plus_n_Sm in H.
+  inversion H. auto.
+  Qed.
+
 (** [] *)
 
 (** The strategy of doing fewer [intros] before an [induction] to
@@ -728,7 +733,10 @@ Theorem nth_error_after_last: forall (n : nat) (X : Type) (l : list X),
   length l = n ->
   nth_error l n = None.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n X l. generalize dependent n. induction l; auto; intros.
+  simpl in H. destruct n; try discriminate.
+  inversion H. apply IHl in H1. simpl. inversion H. subst. auto.
+  Qed.
 (** [] *)
 
 (* ################################################################# *)
@@ -914,7 +922,12 @@ Theorem combine_split : forall X Y (l : list (X * Y)) l1 l2,
   split l = (l1, l2) ->
   combine l1 l2 = l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X Y. induction l; intros.
+  - inversion H; auto.
+  - destruct x. simpl in H. destruct (split l) eqn:E.
+    inversion H; subst; clear H.
+    simpl. f_equal. apply IHl. auto.
+    Qed.
 (** [] *)
 
 (** The [eqn:] part of the [destruct] tactic is optional; although
@@ -989,7 +1002,9 @@ Theorem bool_fn_applied_thrice :
   forall (f : bool -> bool) (b : bool),
   f (f (f b)) = f b.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros f []; destruct (f false) eqn:Efalse; destruct (f true) eqn:Etrue; auto;
+  try rewrite Efalse; try rewrite Etrue; auto.
+  Qed.
 (** [] *)
 
 (* ################################################################# *)
@@ -1070,7 +1085,8 @@ Proof.
 Theorem eqb_sym : forall (n m : nat),
   (n =? m) = (m =? n).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction n; destruct m; auto; simpl. apply IHn.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced, optional (eqb_sym_informal)
@@ -1091,7 +1107,9 @@ Theorem eqb_trans : forall n m p,
   m =? p = true ->
   n =? p = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  apply eqb_true in H,H0; subst. auto using eqb_refl.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced (split_combine)
@@ -1105,14 +1123,25 @@ Proof.
     Your property will need to account for the behavior of [combine]
     in its base cases, which possibly drop some list elements. *)
 
-Definition split_combine_statement : Prop
-  (* ("[: Prop]" means that we are giving a name to a
-     logical proposition here.) *)
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+About combine_split.
+
+Definition split_combine_statement : Prop :=
+  forall X Y (l : list (X * Y)) l1 l2,
+    combine l1 l2 = l -> length l1 = length l2 -> split l = (l1, l2).
 
 Theorem split_combine : split_combine_statement.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros X Y. induction l; intros.
+  - simpl.
+    destruct l1 eqn:El1; destruct l2 eqn:El2; auto; try discriminate.
+  - destruct x.
+    destruct l1 eqn:El1; destruct l2 eqn:El2; auto; try discriminate.
+    subst. simpl in H,H0. inversion H; subst. inversion H0. clear H0.
+    simpl.
+    rewrite (IHl l0 l3); auto.
+    Qed.
+    
+
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_split_combine : option (nat*string) := None.
@@ -1124,7 +1153,10 @@ Theorem filter_exercise : forall (X : Type) (test : X -> bool)
   filter test l = x :: lf ->
   test x = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X test x. induction l; try discriminate; intros.
+  simpl in *. destruct (test x0) eqn:E; auto; inversion H; subst; auto.
+  apply IHl with lf; auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced, especially useful (forall_exists_challenge)
@@ -1153,42 +1185,66 @@ Proof.
     [existsb'] and [existsb] have the same behavior.
 *)
 
-Fixpoint forallb {X : Type} (test : X -> bool) (l : list X) : bool
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint forallb {X : Type} (test : X -> bool) (l : list X) : bool :=
+  match l with
+  | [] => true
+  | h :: t => test h && forallb test t
+  end.
 
 Example test_forallb_1 : forallb odd [1;3;5;7;9] = true.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. auto. Qed.
 
 Example test_forallb_2 : forallb negb [false;false] = true.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. auto. Qed.
 
 Example test_forallb_3 : forallb even [0;2;4;5] = false.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. auto. Qed.
 
 Example test_forallb_4 : forallb (eqb 5) [] = true.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. auto. Qed.
 
-Fixpoint existsb {X : Type} (test : X -> bool) (l : list X) : bool
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint existsb {X : Type} (test : X -> bool) (l : list X) : bool :=
+  match l with
+  | [] => false
+  | h :: t => if test h then true else existsb test t
+  end.
 
 Example test_existsb_1 : existsb (eqb 5) [0;2;3;6] = false.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. auto. Qed.
 
 Example test_existsb_2 : existsb (andb true) [true;true;false] = true.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. auto. Qed.
 
 Example test_existsb_3 : existsb odd [1;0;0;0;0;3] = true.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. auto. Qed.
 
 Example test_existsb_4 : existsb even [] = false.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. auto. Qed.
 
-Definition existsb' {X : Type} (test : X -> bool) (l : list X) : bool
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition existsb' {X : Type} (test : X -> bool) (l : list X) : bool :=
+  negb (forallb (fun x => negb (test x)) l).
+
+Example test_existsb_1' : existsb' (eqb 5) [0;2;3;6] = false.
+Proof. auto. Qed.
+
+Example test_existsb_2' : existsb' (andb true) [true;true;false] = true.
+Proof. auto. Qed.
+
+Example test_existsb_3' : existsb' odd [1;0;0;0;0;3] = true.
+Proof. auto. Qed.
+
+Example test_existsb_4' : existsb' even [] = false.
+Proof. auto. Qed.
 
 Theorem existsb_existsb' : forall (X : Type) (test : X -> bool) (l : list X),
   existsb test l = existsb' test l.
-Proof. (* FILL IN HERE *) Admitted.
+Proof. 
+  intros X test. induction l; auto.
+  simpl. destruct (test x) eqn:E.
+  - unfold existsb'. simpl. rewrite E. simpl. auto.
+  - unfold existsb'. simpl. rewrite E. simpl.
+    rewrite IHl. reflexivity.
+  Qed.
 
 (** [] *)
 
