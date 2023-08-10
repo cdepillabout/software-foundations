@@ -70,6 +70,7 @@ Proof. reflexivity.  Qed.
 Definition is_three (n : nat) : Prop :=
   n = 3.
 Check is_three : nat -> Prop.
+Check forall n, n = 3.
 
 (** In Coq, functions that return propositions are said to define
     _properties_ of their arguments.
@@ -79,6 +80,10 @@ Check is_three : nat -> Prop.
 
 Definition injective {A B} (f : A -> B) :=
   forall x y : A, f x = f y -> x = y.
+
+Check injective.
+
+Check (nat -> Prop).
 
 Lemma succ_inj : injective S.
 Proof.
@@ -94,6 +99,8 @@ Qed.
     polymorphic: *)
 
 Check @eq : forall A : Type, A -> A -> Prop.
+
+Print "/\".
 
 (** (Notice that we wrote [@eq] instead of [eq]: The type
     argument [A] to [eq] is declared as implicit, and we need to turn
@@ -148,7 +155,8 @@ Qed.
 Example and_exercise :
   forall n m : nat, n + m = 0 -> n = 0 /\ m = 0.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. apply conj; destruct n eqn:En; destruct m eqn:Em; try discriminate; auto.
+  Qed.
 (** [] *)
 
 (** So much for proving conjunctive statements.  To go in the other
@@ -226,8 +234,8 @@ Proof.
 Lemma proj2 : forall P Q : Prop,
   P /\ Q -> Q.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  intros ? ? []. auto.
+  Qed. (** [] *)
 
 (** Finally, we sometimes need to rearrange the order of conjunctions
     and/or the grouping of multi-way conjunctions.  The following
@@ -253,8 +261,9 @@ Theorem and_assoc : forall P Q R : Prop,
   P /\ (Q /\ R) -> (P /\ Q) /\ R.
 Proof.
   intros P Q R [HP [HQ HR]].
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  split; auto.
+  Qed.
+  (** [] *)
 
 (** By the way, the infix notation [/\] is actually just syntactic
     sugar for [and A B].  That is, [and] is a Coq operator that takes
@@ -301,6 +310,8 @@ Proof.
   apply HA.
 Qed.
 
+Print "\/".
+
 (** ... and here is a slightly more interesting example requiring both
     [left] and [right]: *)
 
@@ -317,14 +328,18 @@ Qed.
 Lemma mult_is_O :
   forall n m, n * m = 0 -> n = 0 \/ m = 0.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction n; simpl; intros; auto.
+  right.
+  apply and_exercise in H as []; auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 1 star, standard (or_commut) *)
 Theorem or_commut : forall P Q : Prop,
   P \/ Q  -> Q \/ P.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros ? ? []; auto.
+  Qed.
 (** [] *)
 
 (* ================================================================= *)
@@ -383,7 +398,8 @@ Proof.
 Theorem not_implies_our_not : forall (P:Prop),
   ~ P -> (forall (Q:Prop), P -> Q).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold not. intros. exfalso. auto.
+  Qed.
 (** [] *)
 
 (** Inequality is a frequent enough form of negated statement
@@ -452,14 +468,16 @@ Definition manual_grade_for_double_neg_inf : option (nat*string) := None.
 Theorem contrapositive : forall (P Q : Prop),
   (P -> Q) -> (~Q -> ~P).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold not. intros. auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 1 star, standard (not_both_true_and_false) *)
 Theorem not_both_true_and_false : forall P : Prop,
   ~ (P /\ ~P).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold not. intros ? []; auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 1 star, advanced (informal_not_PNP)
@@ -484,7 +502,9 @@ Definition manual_grade_for_informal_not_PNP : option (nat*string) := None.
 Theorem de_morgan_not_or : forall (P Q : Prop),
     ~ (P \/ Q) -> ~P /\ ~Q.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold not. intros. split; intros; apply H; auto.
+  Qed.
+
 (** [] *)
 
 (** Since inequality involves a negation, it also requires a little
