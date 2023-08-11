@@ -655,19 +655,25 @@ Qed.
 Theorem iff_refl : forall P : Prop,
   P <-> P.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. split; auto.
+  Qed.
 
 Theorem iff_trans : forall P Q R : Prop,
   (P <-> Q) -> (Q <-> R) -> (P <-> R).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. split; intros; try apply H0; try apply H; try apply H0; auto.
+  Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (or_distributes_over_and) *)
 Theorem or_distributes_over_and : forall P Q R : Prop,
   P \/ (Q /\ R) <-> (P \/ Q) /\ (P \/ R).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros ? ? ?. split.
+  - intros [|[]]; auto.
+  - intros [[] []]; auto.
+  Qed.
 (** [] *)
 
 (* ================================================================= *)
@@ -764,7 +770,8 @@ Theorem exists_example_2 : forall n,
   (exists o, n = 2 + o).
 Proof.
   (* WORKED IN CLASS *)
-  intros n [m Hm]. (* note implicit [destruct] here *)
+  intros n [m Hm].
+  (* note implicit [destruct] here *)
   exists (2 + m).
   apply Hm.  Qed.
 
@@ -777,7 +784,9 @@ Proof.
 Theorem dist_not_exists : forall (X:Type) (P : X -> Prop),
   (forall x, P x) -> ~ (exists x, ~ P x).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold not. intros ? ? ? [].
+  apply H0. apply H.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard (dist_exists_or)
@@ -788,18 +797,35 @@ Proof.
 Theorem dist_exists_or : forall (X:Type) (P Q : X -> Prop),
   (exists x, P x \/ Q x) <-> (exists x, P x) \/ (exists x, Q x).
 Proof.
-   (* FILL IN HERE *) Admitted.
-(** [] *)
+  intros ? ? ?. split.
+  - intros [? []].
+    + left. eexists. apply H.
+    + eauto.
+  - intros [[]|[]]; eauto.
+  Qed. 
 
 (** **** Exercise: 3 stars, standard, optional (leb_plus_exists) *)
 Theorem leb_plus_exists : forall n m, n <=? m = true -> exists x, m = n+x.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros. exists (m - n). Search "+" "-". simpl.
+  enough (forall o p, o <=? p = true -> p = o + (p - o)).
+  apply H0; auto.
+  {
+    clear H n m. intros o p. generalize dependent o. induction p; intros.
+    - simpl. Search (_ + 0 = _). rewrite add_0_r. unfold "<=?" in H.
+      destruct o; auto; discriminate.
+    - simpl. simpl in H. destruct o; auto.
+      simpl. simpl in H. apply IHp in H. f_equal. auto.
+  }
+  Qed.
 
 Theorem plus_exists_leb : forall n m, (exists x, m = n+x) -> n <=? m = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
-
+  induction n; intros.
+  - simpl in *; auto.
+  - destruct H. simpl in *. destruct m; try discriminate.
+    inversion H. clear H. subst. apply IHn. eauto.
+  Qed.
 (** [] *)
 
 (* ################################################################# *)
@@ -884,16 +910,28 @@ Theorem In_map_iff :
          exists x, f x = y /\ In x l.
 Proof.
   intros A B f l y. split.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  - induction l; simpl; intros [].
+    + subst. exists x. eauto.
+    + apply IHl in H as [? []]. subst. eauto.
+  - induction l; simpl; intros [? []]. auto.
+    destruct H0; subst; auto.
+    right. apply IHl. eauto.
+  Qed.
+  (** [] *)
 
 (** **** Exercise: 2 stars, standard (In_app_iff) *)
 Theorem In_app_iff : forall A l l' (a:A),
   In a (l++l') <-> In a l \/ In a l'.
 Proof.
-  intros A l. induction l as [|a' l' IH].
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  intros A l. induction l as [|a' l' IH]; simpl; intros; split; auto.
+  - intros [[]|]; auto.
+  - intros []; subst; auto.
+    apply IH in H as []; auto.
+  - intros [[]|]; subst; auto.
+    + right. apply IH. auto.
+    + right. apply IH. auto. 
+  Qed.  
+  (** [] *)
 
 (** **** Exercise: 3 stars, standard, especially useful (All)
 
@@ -907,15 +945,25 @@ Proof.
     lemma below.  (Of course, your definition should _not_ just
     restate the left-hand side of [All_In].) *)
 
-Fixpoint All {T : Type} (P : T -> Prop) (l : list T) : Prop
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint All {T : Type} (P : T -> Prop) (l : list T) : Prop :=
+  match l with
+  | [] => True
+  | h :: t => P h /\ All P t
+  end.
 
 Theorem All_In :
   forall T (P : T -> Prop) (l : list T),
     (forall x, In x l -> P x) <->
     All P l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros ? ?. induction l; simpl; split; intros; auto; try discriminate.
+  - destruct H0.
+  - split; auto. apply IHl. intros. apply H. auto.
+  - destruct H,H0; subst; auto.
+    destruct IHl. specialize (H3 H1). apply H3; auto.
+  Qed. 
+    
+         
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (combine_odd_even)
@@ -926,8 +974,8 @@ Proof.
     equivalent to [Podd n] when [n] is [odd] and equivalent to [Peven n]
     otherwise. *)
 
-Definition combine_odd_even (Podd Peven : nat -> Prop) : nat -> Prop
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition combine_odd_even (Podd Peven : nat -> Prop) : nat -> Prop :=
+  fun n => if odd n then Podd n else Peven n.
 
 (** To test your definition, prove the following facts: *)
 
@@ -937,7 +985,8 @@ Theorem combine_odd_even_intro :
     (odd n = false -> Peven n) ->
     combine_odd_even Podd Peven n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros ? ? n ? ?. destruct (odd n) eqn:E; unfold combine_odd_even; rewrite E; auto.
+  Qed.
 
 Theorem combine_odd_even_elim_odd :
   forall (Podd Peven : nat -> Prop) (n : nat),
@@ -945,7 +994,8 @@ Theorem combine_odd_even_elim_odd :
     odd n = true ->
     Podd n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold combine_odd_even. intros. rewrite H0 in H; auto.
+  Qed.
 
 Theorem combine_odd_even_elim_even :
   forall (Podd Peven : nat -> Prop) (n : nat),
@@ -953,7 +1003,7 @@ Theorem combine_odd_even_elim_even :
     odd n = false ->
     Peven n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold combine_odd_even. intros. rewrite H0 in H; auto. Qed.
 (** [] *)
 
 (* ################################################################# *)
@@ -1259,7 +1309,24 @@ Definition tr_rev {X} (l : list X) : list X :=
 
 Theorem tr_rev_correct : forall X, @tr_rev X = @rev X.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros X.
+  apply functional_extensionality.
+  unfold tr_rev.
+  induction x; auto.
+  simpl. rewrite <- IHx.
+  clear IHx.
+  induction x0; simpl; auto.
+  assert (forall X (l1 : list X) l2 l3, rev_append l1 l2 ++ l3 = rev_append l1 (l2 ++ l3)).
+  { clear IHx0 x1 x0 x X. intros X.
+    (* intros X l1 l2. generalize dependent l1. induction l2; auto.
+    - simpl. destruct l1; auto. unfold rev_append. *)
+    induction l1; auto; simpl; intros.
+    apply IHl1.
+
+  }
+  rewrite H. simpl. auto.
+  Qed.
+  
 (** [] *)
 
 (* ================================================================= *)
