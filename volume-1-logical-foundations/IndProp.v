@@ -162,6 +162,8 @@ Inductive Perm3 {X : Type} : list X -> list X -> Prop :=
     According to this definition, is [[1;2;3]] a permutation of
     [[3;2;1]]?  Is [[1;2;3]] a permutation of itself? *)
 
+Example perm_example_1 : Perm3 [1;2;3] [1;2;3].
+Proof. constructor 3 with ([2;1;3]); constructor. Qed.
 (* FILL IN HERE
 
     [] *)
