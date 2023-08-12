@@ -285,7 +285,8 @@ Qed.
 Theorem ev_double : forall n,
   ev (double n).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction n; simpl; constructor; auto.
+  Qed.
 (** [] *)
 
 (* ################################################################# *)
@@ -405,7 +406,9 @@ Proof.
 Theorem SSSSev__even : forall n,
   ev (S (S (S (S n)))) -> ev n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. inversion H; subst; clear H.
+  inversion H1; subst; clear H1. auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 1 star, standard (ev5_nonsense)
@@ -415,7 +418,8 @@ Proof.
 Theorem ev5_nonsense :
   ev 5 -> 2 + 2 = 9.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. inversion H. inversion H1. inversion H3.
+  Qed.
 (** [] *)
 
 (** The [inversion] tactic does quite a bit of work. For
@@ -579,7 +583,10 @@ Qed.
 (** **** Exercise: 2 stars, standard (ev_sum) *)
 Theorem ev_sum : forall n m, ev n -> ev m -> ev (n + m).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m En. induction En; simpl; intros; auto.
+  apply IHEn in H.
+  constructor; auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced, optional (ev'_ev)
@@ -599,9 +606,21 @@ Inductive ev' : nat -> Prop :=
     technique works with constructors of inductively defined
     propositions. *)
 
+Theorem ev_plus_plus' : forall n m, ev n -> ev m -> ev (n + m).
+Proof.
+  intros n m En. induction En; auto; intros.
+  simpl. constructor. auto.
+  Qed.
+
 Theorem ev'_ev : forall n, ev' n <-> ev n.
 Proof.
- (* FILL IN HERE *) Admitted.
+  intros n; split; intros; induction H; simpl in *; auto; try constructor; try constructor.
+  - apply ev_plus_plus'; auto.
+  - replace (S (S n)) with (2 + n).
+    + constructor; auto. constructor.
+    + auto.
+  Qed.
+     
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced, especially useful (ev_ev__ev) *)
@@ -610,7 +629,10 @@ Theorem ev_ev__ev : forall n m,
   (* Hint: There are two pieces of evidence you could attempt to induct upon
       here. If one doesn't work, try the other. *)
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m H En. generalize dependent H. induction En; simpl; auto; intros.
+  apply IHEn. inversion H; auto.
+  Qed.
+  
 (** [] *)
 
 (** **** Exercise: 3 stars, standard, optional (ev_plus_plus)
@@ -622,7 +644,19 @@ Proof.
 Theorem ev_plus_plus : forall n m p,
   ev (n+m) -> ev (n+p) -> ev (m+p).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  assert (ev ((n + m) + (n + p))).
+  { apply ev_sum; auto. }
+  rewrite add_assoc in H1.
+  assert (n + m + n + p = (n + n) + (m + p)).
+  { rewrite add_assoc. rewrite <- (add_assoc n n m).
+    rewrite (add_comm n m) at 2. 
+    rewrite (add_assoc n m n). auto.
+  }
+  apply ev_ev__ev with (n + n).
+  - rewrite <- H2. auto.
+  - rewrite <- double_plus. apply ev_double.
+  Qed.  
 (** [] *)
 
 (* ################################################################# *)
