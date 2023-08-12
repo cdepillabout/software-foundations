@@ -1404,8 +1404,12 @@ Lemma even_double_conv : forall n, exists k,
   n = if even n then double k else S (double k).
 Proof.
   (* Hint: Use the [even_S] lemma from [Induction.v]. *)
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  induction n.
+  - now exists 0.
+  - destruct IHn. rewrite even_S. destruct (even n) eqn:E; simpl in *; subst; eauto.
+    exists (S x). simpl. auto.
+  Qed. 
+  (** [] *)
 
 (** Now the main theorem: *)
 Theorem even_bool_prop : forall n,
@@ -1535,6 +1539,29 @@ Proof.
   discriminate H.
 Qed.
 
+Lemma doubleSSMinus : forall x n, S (S n) = double x -> n = double (x - 1).
+Proof.
+  induction x; simpl in *; intros; auto.
+  - inversion H.
+  - injection H. intros. Search (_ - 0). rewrite PeanoNat.Nat.sub_0_r. auto.
+Qed.
+
+
+
+Example Even_plus_one : forall n, Even n -> ~ (Even (S n)).
+Proof.
+  unfold Even, not. induction n; intros [] [].
+  - clear H x. destruct x0; simpl in H0; discriminate.
+  - apply IHn.
+    + exists (x0 - 1). apply doubleSSMinus. auto.   
+    + exists x. auto.
+Qed.  
+
+Example not_even_1001'' : ~(Even 1001).
+Proof.
+  apply Even_plus_one. unfold Even. exists 500. auto.
+Qed.
+
 (** Equality provides a complementary example, where it is sometimes
     easier to work in the propositional world.
 
@@ -1568,12 +1595,16 @@ Qed.
 Theorem andb_true_iff : forall b1 b2:bool,
   b1 && b2 = true <-> b1 = true /\ b2 = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros [] []; split; simpl; intros; auto.
+  all: destruct H; auto.
+  Qed.
 
 Theorem orb_true_iff : forall b1 b2,
   b1 || b2 = true <-> b1 = true \/ b2 = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros [] []; split; simpl; intros; auto.
+  destruct H; auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 1 star, standard (eqb_neq)
@@ -1585,7 +1616,11 @@ Proof.
 Theorem eqb_neq : forall x y : nat,
   x =? y = false <-> x <> y.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold not; intros; split; intros; subst.
+  - Search (?a =? ?a). rewrite eqb_refl in H. discriminate.
+  - destruct (x =? y) eqn:E; auto.
+    rewrite eqb_eq in E. exfalso; apply H; apply E.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, standard (eqb_list)
@@ -1597,16 +1632,29 @@ Proof.
     definition is correct, prove the lemma [eqb_list_true_iff]. *)
 
 Fixpoint eqb_list {A : Type} (eqb : A -> A -> bool)
-                  (l1 l2 : list A) : bool
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+                  (l1 l2 : list A) : bool :=
+  match l1,l2 with
+  | [],[] => true
+  | l1h :: l1t, l2h :: l2t =>
+    eqb l1h l2h && eqb_list eqb l1t l2t
+  | _, _ => false
+  end.
 
 Theorem eqb_list_true_iff :
   forall A (eqb : A -> A -> bool),
     (forall a1 a2, eqb a1 a2 = true <-> a1 = a2) ->
     forall l1 l2, eqb_list eqb l1 l2 = true <-> l1 = l2.
 Proof.
-(* FILL IN HERE *) Admitted.
-
+  intros A eqb F. induction l1; destruct l2; auto; split; intros; auto; try discriminate.
+  - simpl in H. Search "&&" "=". apply andb_true_iff in H as []. f_equal.
+    + apply F. auto.
+    + apply IHl1. auto.
+  - simpl. inversion H; subst. clear H.
+    assert (eqb x0 x0 = true).
+    { apply F. auto. }
+    rewrite H. simpl. apply IHl1. auto.
+  Qed.
+    
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, especially useful (All_forallb)
@@ -1617,13 +1665,20 @@ Proof.
 
 (** Copy the definition of [forallb] from your [Tactics] here
     so that this file can be graded on its own. *)
-Fixpoint forallb {X : Type} (test : X -> bool) (l : list X) : bool
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint forallb {X : Type} (test : X -> bool) (l : list X) : bool :=
+  match l with
+  | [] => true
+  | h :: t => test h && forallb test t
+  end.
 
 Theorem forallb_true_iff : forall X test (l : list X),
   forallb test l = true <-> All (fun x => test x = true) l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X test. induction l; split; simpl; intros; auto.
+  - apply andb_true_iff in H as []. split; auto.
+    apply IHl; auto.
+  - destruct H. rewrite H. simpl. apply IHl. auto.
+  Qed. 
 
 (** (Ungraded thought question) Are there any important properties of
     the function [forallb] which are not captured by this
@@ -1764,7 +1819,9 @@ Qed.
 Theorem excluded_middle_irrefutable: forall (P : Prop),
   ~ ~ (P \/ ~ P).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold not. intros. apply H. right. intros.
+  apply H. left. auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced (not_exists_dist)
@@ -1785,7 +1842,9 @@ Theorem not_exists_dist :
   forall (X:Type) (P : X -> Prop),
     ~ (exists x, ~ P x) -> (forall x, P x).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold excluded_middle,not. intros. destruct (H (P x)); auto.
+  exfalso. apply H0. eauto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 5 stars, standard, optional (classical_axioms)
@@ -1807,14 +1866,56 @@ Proof.
 Definition peirce := forall P Q: Prop,
   ((P -> Q) -> P) -> P.
 
+Lemma excluded_middle_to_pierce: excluded_middle -> peirce.
+Proof.
+  unfold excluded_middle, peirce, not; intros.
+  destruct (H P); auto. apply H0. intros. exfalso. apply H1. auto.
+  Qed.
+
 Definition double_negation_elimination := forall P:Prop,
   ~~P -> P.
+
+Lemma pierce_to_dne: peirce -> double_negation_elimination.
+Proof.
+  unfold peirce, double_negation_elimination, not. intros.
+  apply H with False; intros. exfalso. apply H0; auto.
+  Qed.
 
 Definition de_morgan_not_and_not := forall P Q:Prop,
   ~(~P /\ ~Q) -> P \/ Q.
 
+Lemma dne_to_dmnn: double_negation_elimination -> de_morgan_not_and_not.
+Proof.
+  unfold double_negation_elimination, de_morgan_not_and_not, not. intros.
+  assert (P \/ ~P).
+  - apply H. intros. apply (excluded_middle_irrefutable P). auto.
+  - destruct H1.
+    + left; auto.
+    + right. apply H. intros. apply H0. auto.
+  Qed.
+
 Definition implies_to_or := forall P Q:Prop,
   (P -> Q) -> (~P \/ Q).
+
+Lemma dmnn_to_implies_to_or: de_morgan_not_and_not -> implies_to_or.
+Proof.
+  unfold de_morgan_not_and_not, implies_to_or, not. intros.
+  (* apply H. intros []. apply H2. apply H0. *)
+  (* apply (excluded_middle_irrefutable P).*)
+  assert (P \/ ~P).
+  - apply H. intros []. apply (excluded_middle_irrefutable P).
+    unfold not in *. auto.
+  - destruct H1.
+    + right. auto.
+    + left. auto.
+  Qed.  
+
+
+Lemma implies_to_or_to_excluded_middle: implies_to_or -> excluded_middle.
+Proof.
+  unfold implies_to_or, excluded_middle, not. intros.
+  apply or_commut. apply H. auto.
+  Qed.
 
 (* FILL IN HERE
 
