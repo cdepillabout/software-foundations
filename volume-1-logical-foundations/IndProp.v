@@ -659,6 +659,94 @@ Proof.
   Qed.  
 (** [] *)
 
+Module MyFoundMod.
+
+Inductive found (A : Set): Set :=
+  | notFound : found A
+  | foundOne : A -> found A
+  | foundBoth : A -> A -> found A
+  .
+
+Arguments notFound {A}.
+Arguments foundOne {A}.
+Arguments foundBoth {A}.
+  
+Inductive prod (F : Set -> Type) (G : Set -> Type) (A : Set): Type :=
+  | pear : F A -> G A -> prod F G A.
+
+Arguments pear {F} {G} {A}.
+
+About option.
+
+Check option.
+
+Inductive my_option (A : Set): Type :=
+  | myNone : my_option A
+  | mySome : A -> my_option A
+  .
+
+Print my_option.
+Print option.
+
+Arguments myNone {A}.
+Arguments mySome {A}.
+
+Check my_option nat.
+Check @myNone nat.
+Check mySome 1.
+
+Check pear (mySome 1) (myNone).
+
+Inductive myId (A : Set): Type :=
+  | iDDD : A -> myId A.
+
+Arguments iDDD {A}.
+
+Check iDDD 3.
+
+Definition mydt (A : Set): Type := option (prod my_option myId A).
+
+Definition foundToProd {A} (find : found A): mydt A :=
+  match find with
+  | notFound => None
+  | foundOne b => Some (pear (@myNone A) (iDDD b))
+  | foundBoth a b => Some (pear (mySome a) (iDDD b))
+  end.
+
+Compute foundToProd notFound.
+Compute foundToProd (foundOne 1).
+Compute foundToProd (foundBoth 100 1).
+
+Definition prodToFoundTry {A} (dt : mydt A): found A :=
+  match dt return found A with
+  | None => notFound
+  | Some x =>
+    match x return found A with
+    | pear y (iDDD b) =>
+      match y with
+      | myNone => foundOne b
+      | mySome a => foundBoth a b
+      end
+    end
+  end.
+
+Compute prodToFoundTry (None).
+Compute prodToFoundTry (Some (pear myNone (iDDD 1))).
+Compute prodToFoundTry (Some (pear (mySome 100) (iDDD 1))).
+
+
+Theorem myIsoOneWay : forall A (a : found A), prodToFoundTry (foundToProd a) = a.
+Proof.
+  intros ? []; simpl; auto.
+  Qed.
+
+Theorem myIsoOtherWay : forall A (a : mydt A), foundToProd (prodToFoundTry a) = a.
+Proof.
+  intros ? [[[] []]|]; simpl; auto.
+  Qed.
+
+End MyFoundMod.
+
 (* ################################################################# *)
 (** * Inductive Relations *)
 
