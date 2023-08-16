@@ -821,12 +821,12 @@ End Playground.
     between every pair of natural numbers. *)
 
 Inductive total_relation : nat -> nat -> Prop :=
-  (* FILL IN HERE *)
-.
+  totrel : forall n m, total_relation n m.
 
 Theorem total_relation_is_total : forall n m, total_relation n m.
-  Proof.
-  (* FILL IN HERE *) Admitted.
+Proof.
+  intros. constructor.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (empty_relation)
@@ -835,12 +835,12 @@ Theorem total_relation_is_total : forall n m, total_relation n m.
     that never holds. *)
 
 Inductive empty_relation : nat -> nat -> Prop :=
-  (* FILL IN HERE *)
-.
+  neverHolds : forall n m, False -> empty_relation n m.
 
 Theorem empty_relation_is_empty : forall n m, ~ empty_relation n m.
   Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold not. intros. inversion H. inversion H0.
+  Qed. 
 (** [] *)
 
 (** From the definition of [le], we can sketch the behaviors of
@@ -862,44 +862,125 @@ Theorem empty_relation_is_empty : forall n m, ~ empty_relation n m.
 (** **** Exercise: 5 stars, standard, optional (le_and_lt_facts) *)
 Lemma le_trans : forall m n o, m <= n -> n <= o -> m <= o.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros m n o H G. generalize dependent m. induction G; intros.
+  - auto.
+  - constructor. apply IHG. auto.
+  (* intros m n o. generalize dependent n. generalize dependent m. induction o; intros.
+  - inversion H0; subst. inversion H; auto.
+  - constructor. apply IHo with n; auto.
+    inversion H0; subst; auto. inversion H0; subst.
+    + 
+  *)
+  Qed. 
+
 
 Theorem O_le_n : forall n,
   0 <= n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction n; auto.
+  Qed.
 
 Theorem n_le_m__Sn_le_Sm : forall n m,
   n <= m -> S n <= S m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  (* induction on H does work: *)
+  (*
+  intros n m H. induction H.
+  - auto.
+  - constructor; auto.
+  *)
+  (* induction on n doesn't work: *)
+  (* induction n; intros; auto. *)
+  (* induction on m and inversion on H does work: *)
+  intros n m; generalize dependent n; induction m; intros; auto.
+  - inversion H; auto.
+  - inversion H; subst; auto. 
+  Qed. 
 
 Theorem Sn_le_Sm__n_le_m : forall n m,
   S n <= S m -> n <= m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  (* induction on m DOES work: *)
+  intros n m; generalize dependent n; induction m; intros.
+  - inversion H; subst.
+    + constructor.
+    + inversion H1.
+  - inversion H; subst.
+    + auto.
+    + constructor. apply IHm. auto.
+  
+  (* induction and/or inversion on H does NOT work: *)
+  (* intros n m H; inversion H; auto; subst. *)
+  Qed.
 
 Theorem lt_ge_cases : forall n m,
   n < m \/ n >= m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  (* inducting on m DOES work: *)
+  (* intros n m; generalize dependent n; unfold ">=", "<"; induction m; intros.
+  - right. apply O_le_n.
+  - destruct n.
+    + left. apply n_le_m__Sn_le_Sm. apply O_le_n.
+    + destruct (IHm n).
+      * left. apply n_le_m__Sn_le_Sm. auto.
+      * right. apply n_le_m__Sn_le_Sm. auto. *)
+  
+  (* inducting on n DOES work: *)
+  intros n; unfold ">=", "<". induction n; intros.
+  - destruct m.
+    + right; auto.
+    + left. apply n_le_m__Sn_le_Sm. apply O_le_n.
+  - destruct m.
+    + right. auto using O_le_n.
+    + destruct (IHn m); auto using n_le_m__Sn_le_Sm, O_le_n, Sn_le_Sm__n_le_m.
+  Qed.
+ 
 
 Theorem le_plus_l : forall a b,
   a <= a + b.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction a; intros; simpl; auto using n_le_m__Sn_le_Sm, O_le_n, Sn_le_Sm__n_le_m.
+  Qed.
 
 Theorem plus_le : forall n1 n2 m,
   n1 + n2 <= m ->
   n1 <= m /\ n2 <= m.
 Proof.
- (* FILL IN HERE *) Admitted.
+  (* induction on m DOES work: *)
+  (* intros n1 n2 m; generalize dependent n2; generalize dependent n1; induction m;
+  simpl; intros.
+  - inversion H; subst; split; auto using le_plus_l.
+    replace (n1 + n2) with (n2 + n1). auto using le_plus_l.
+    rewrite add_comm. auto.
+  - inversion H; subst.
+    + split; auto using le_plus_l.
+      replace (n1 + n2) with (n2 + n1). auto using le_plus_l.
+      rewrite add_comm. auto.
+    + specialize (IHm _ _ H1) as []. auto.
+  *)
+  intros n1 n2 m H; induction H.
+  - split; auto using le_plus_l.
+    replace (n1 + n2) with (n2 + n1). auto using le_plus_l.
+    rewrite add_comm. auto.
+  - destruct IHle. split; constructor; assumption. 
+  Qed. 
 
 Theorem add_le_cases : forall n m p q,
   n + m <= p + q -> n <= p \/ m <= q.
   (** Hint: May be easiest to prove by induction on [n]. *)
 Proof.
-(* FILL IN HERE *) Admitted.
+  induction n; intros; auto.
+  - simpl in *; left. apply O_le_n.
+  - destruct p.
+    + replace (0 + q) with (q) in H by reflexivity.
+      apply plus_le in H as [].
+      right. auto.
+    + simpl in H.
+      apply Sn_le_Sm__n_le_m in H.
+      specialize (IHn _ _ _ H) as [].
+      * left. now apply n_le_m__Sn_le_Sm.
+      * auto.
+  Qed.
 
 Theorem plus_le_compat_l : forall n m p,
   n <= m ->
