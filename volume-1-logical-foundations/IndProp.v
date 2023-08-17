@@ -986,57 +986,128 @@ Theorem plus_le_compat_l : forall n m p,
   n <= m ->
   p + n <= p + m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  (* induction on H DOES work: *)
+  (* intros n m p H. generalize dependent p. induction H; auto.
+  intros.
+  replace (p + S m ) with (S (p + m)).
+  - constructor. auto.
+  - rewrite PeanoNat.Nat.add_succ_r. auto.
+  *)
+  (* induction on m DOES work: *)
+  intros n m. generalize dependent n. induction m; intros; auto.
+  - inversion H; subst. auto.
+  - inversion H; subst; auto.
+    apply (IHm n p) in H1.
+    rewrite PeanoNat.Nat.add_succ_r.
+    constructor. auto.
+  Qed.
 
 Theorem plus_le_compat_r : forall n m p,
   n <= m ->
   n + p <= m + p.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  replace (n + p) with (p + n).
+  - replace (m + p) with (p + m); auto using plus_le_compat_l, add_comm.
+  - rewrite add_comm. auto.
+  Qed. 
 
 Theorem le_plus_trans : forall n m p,
   n <= m ->
   n <= m + p.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  (* induction on H DOES work: *)
+  (* intros. induction H; subst; auto.
+  - apply le_plus_l.
+  - simpl; auto. *)
+  (* induction on m DOES work: *)
+  intros n m; generalize dependent n; induction m; intros; auto.
+  - simpl. inversion H; subst; auto. apply O_le_n.
+  - inversion H; subst.
+    + apply le_plus_l.
+    + clear H. simpl. constructor. apply IHm; auto.
+  Qed.  
 
 Theorem n_lt_m__n_le_m : forall n m,
   n < m ->
   n <= m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold "<".
+  intros n m H. inversion H; subst.
+  - constructor. auto.
+  - constructor. apply le_trans with (S n); auto.
+  Qed. 
 
 Theorem plus_lt : forall n1 n2 m,
   n1 + n2 < m ->
   n1 < m /\ n2 < m.
 Proof.
-(* FILL IN HERE *) Admitted.
+  unfold "<".
+  (* Induction on H DOES work *)
+  intros n1 n2 m H. induction H.
+  - split.
+    + apply n_le_m__Sn_le_Sm. apply le_plus_trans. auto.
+    + apply n_le_m__Sn_le_Sm. rewrite add_comm. apply le_plus_trans. auto.
+  - destruct IHle. split; auto.
+  (* induction n1; intros; auto; simpl in *.
+  - split; auto. admit.
+  -  *) 
+  Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars, standard, optional (more_le_exercises) *)
 Theorem leb_complete : forall n m,
   n <=? m = true -> n <= m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  (* induction on m DOES seem to work *)
+  (* intros n m. generalize dependent n. induction m; intros; auto.
+  - destruct n; auto. simpl in H. discriminate.
+  - destruct n.
+    + admit.
+    + simpl in H. apply IHm in H. apply n_le_m__Sn_le_Sm. apply H. *)
+  (* induction on n DOES seem to work *)
+  induction n; intros; auto.
+  - apply O_le_n.
+  - destruct m.
+    + discriminate.
+    + simpl in H. apply IHn in H. apply n_le_m__Sn_le_Sm; auto.  
+  Qed.
+  
 
 Theorem leb_correct : forall n m,
   n <= m ->
   n <=? m = true.
   (** Hint: May be easiest to prove by induction on [m]. *)
 Proof.
-  (* FILL IN HERE *) Admitted.
+  (* inversion on H does not work. *)
+  (* intros n m H. inversion H; subst.
+  - apply leb_refl.
+  - clear H. rename m0 into m. *)
+  (* induction on H does NOT easily work (at least without other helper theorems) *)
+  (* intros n m H. induction H.
+  - apply leb_refl.
+  - unfold "<=?". *)
+  (* induction on n DOES work *)
+  induction n; intros.
+  - simpl. auto.
+  - inversion H; subst.
+    + apply leb_refl.
+    + simpl. apply IHn. apply Sn_le_Sm__n_le_m. apply H.
+  Qed.
 
 (** Hint: The next two can easily be proved without using [induction]. *)
 
 Theorem leb_iff : forall n m,
   n <=? m = true <-> n <= m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros; split; intros; auto using leb_correct, leb_complete.
+  Qed.
 
 Theorem leb_true_trans : forall n m o,
   n <=? m = true -> m <=? o = true -> n <=? o = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. rewrite leb_iff in *. eauto using le_trans.
+  Qed.
 (** [] *)
 
 Module R.
