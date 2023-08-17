@@ -1150,12 +1150,23 @@ Definition manual_grade_for_R_provability : option (nat*string) := None.
     Figure out which function; then state and prove this equivalence
     in Coq. *)
 
-Definition fR : nat -> nat -> nat
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition fR : nat -> nat -> nat := fun x y => x + y.
 
 Theorem R_equiv_fR : forall m n o, R m n o <-> fR m n = o.
 Proof.
-(* FILL IN HERE *) Admitted.
+  unfold fR. intros. split; intros.
+  - induction H; subst; simpl; auto.
+    + simpl in IHR. replace (m + S n) with (S (m + n)) in IHR.
+      inversion IHR; auto.
+      { rewrite (add_comm m (S n)). simpl. rewrite add_comm. auto. }
+    + rewrite add_comm; auto.
+  - generalize dependent o. generalize dependent n; induction m; simpl; intros.
+    + subst. induction o.
+      * constructor.
+      * apply c3. auto.  
+    + destruct o; try discriminate.
+      apply c2. apply IHm. auto.
+  Qed.     
 (** [] *)
 
 End R.
