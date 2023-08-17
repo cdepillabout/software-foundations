@@ -1208,18 +1208,52 @@ End R.
       is a subsequence of [l3], then [l1] is a subsequence of [l3]. *)
 
 Inductive subseq : list nat -> list nat -> Prop :=
-(* FILL IN HERE *)
-.
+  | subseq_base : forall l, subseq l l
+  | subseq_same_elem : forall l1 l2 a, subseq l1 l2 -> subseq (a :: l1) (a :: l2)
+  | subseq_other : forall l1 l2 x, subseq l1 l2 -> subseq (l1) (x :: l2)
+  .
+
+Goal subseq [1;2;3] [1;2;3]. constructor. Qed.
+Goal subseq [1;2;3] [1;1;2;2;3].
+  constructor. repeat apply subseq_same_elem. repeat constructor. Qed.
+Goal subseq [1;2;3] [1;2;7;3]. repeat constructor. Qed.
+Goal subseq [1;2;3] [5;6;1;9;9;2;7;3;8]. repeat constructor. Qed.
+Goal ~ subseq [1;2;3] [1;2].
+  unfold not. intros. inversion H; subst.
+  - inversion H1; subst.
+    + inversion H2.
+    + inversion H3.
+  - inversion H2; subst. inversion H3.
+  Qed.
 
 Theorem subseq_refl : forall (l : list nat), subseq l l.
-Proof.
-  (* FILL IN HERE *) Admitted.
+Proof.  constructor. Qed.
 
 Theorem subseq_app : forall (l1 l2 l3 : list nat),
   subseq l1 l2 ->
   subseq l1 (l2 ++ l3).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  (* induction on H does NOT easily work *)
+  (* intros l1 l2 l3 H; induction H; subst. *)
+  (* induction on l1 does NOT easily work *)
+  (* induction l1; simpl; auto; intros.
+  - inversion H; subst. simpl. *)
+  (* induction on l2 does NOT easily work *)
+  (* intros l1 l2. generalize dependent l1. induction l2; simpl; intros; auto.
+  - inversion H; subst. *)
+  intros l1 l2 l3. generalize dependent l2. generalize dependent l1.
+  induction l3; simpl; intros; auto.
+  - rewrite app_nil_r. auto. 
+  - replace (x :: l3) with ([x] ++ l3) by reflexivity.
+    rewrite app_assoc. apply IHl3.
+    clear IHl3 l3. generalize dependent l1.
+    induction l2; simpl; intros.
+    + constructor. auto.
+    + inversion H; subst.
+      * constructor. apply IHl2. constructor.
+      * constructor. apply IHl2. auto.
+      * clear H. constructor. apply IHl2. auto.       
+  Qed.
 
 Theorem subseq_trans : forall (l1 l2 l3 : list nat),
   subseq l1 l2 ->
@@ -1228,8 +1262,8 @@ Theorem subseq_trans : forall (l1 l2 l3 : list nat),
 Proof.
   (* Hint: be careful about what you are doing induction on and which
      other things need to be generalized... *)
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  Admitted.
+     (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (R_provability2)
 
