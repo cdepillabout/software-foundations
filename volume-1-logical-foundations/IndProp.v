@@ -1262,7 +1262,37 @@ Theorem subseq_trans : forall (l1 l2 l3 : list nat),
 Proof.
   (* Hint: be careful about what you are doing induction on and which
      other things need to be generalized... *)
-  Admitted.
+  (* induction on H0 does NOT seem to work. *)
+  (* intros l1 l2 l3 H0. generalize dependent l3. induction H0; intros l3 H1; auto.
+  - inversion H1; subst; clear H1.
+    + constructor. apply IHsubseq; constructor.
+    + constructor. apply IHsubseq; auto.
+    + *)    
+  (* induction on H1 DOES work. *)
+  (* intros l1 l2 l3 H0 H1. generalize dependent l1. induction H1; intros lx ?; auto.
+  - inversion H0; subst; clear H0.
+    + constructor. apply IHsubseq. constructor.
+    + constructor. apply IHsubseq. auto.
+    + apply IHsubseq in H3. constructor. auto.
+  - apply IHsubseq in H0. constructor. apply H0.   *)
+  (* induction on l2 does NOT appear to work. *)
+  (* intros l1 l2. generalize dependent l1. induction l2; simpl; intros; auto.
+  - inversion H; subst. auto.
+  - inversion H; inversion H0; subst; auto.
+    + constructor. apply IHl2; auto.
+    + *)
+  (* induction on l3 DOES work. *)
+  intros l1 l2 l3. generalize dependent l2. generalize dependent l1.
+  induction l3; simpl; intros; auto.
+  - inversion H0; subst; auto.
+  - inversion H0; subst; auto; clear H0.
+    + rename l0 into l2.
+      inversion H; subst; auto; clear H.
+      * constructor; auto.
+      * constructor; apply IHl3 with l2; auto.
+      * constructor; apply IHl3 with l2; auto. 
+    + constructor. apply IHl3 with l2; auto.
+  Qed.            
      (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (R_provability2)
@@ -1513,13 +1543,17 @@ Qed.
 Lemma empty_is_empty : forall T (s : list T),
   ~ (s =~ EmptySet).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold not. intros. inversion H.
+  Qed.
 
 Lemma MUnion' : forall T (s : list T) (re1 re2 : reg_exp T),
   s =~ re1 \/ s =~ re2 ->
   s =~ Union re1 re2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. destruct H.
+  - apply MUnionL. auto.
+  - apply MUnionR. auto.
+  Qed.
 
 (** The next lemma is stated in terms of the [fold] function from the
     [Poly] chapter: If [ss : list (list T)] represents a sequence of
@@ -1530,7 +1564,12 @@ Lemma MStar' : forall T (ss : list (list T)) (re : reg_exp T),
   (forall s, In s ss -> s =~ re) ->
   fold app ss [] =~ Star re.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros T; induction ss; simpl; intros; auto.
+  - apply MStar0.
+  - apply MStarApp.
+    + apply H. left. auto.
+    + apply IHss. intros. apply H. right. auto.
+  Qed.   
 (** [] *)
 
 (** Since the definition of [exp_match] has a recursive
