@@ -1658,13 +1658,40 @@ Qed.
     regular expression matches some string. Prove that your function
     is correct. *)
 
-Fixpoint re_not_empty {T : Type} (re : reg_exp T) : bool
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Print reg_exp.
+
+Fixpoint re_not_empty {T : Type} (re : reg_exp T) : bool := 
+  match re with
+  | EmptySet => false
+  | App re1 re2 => re_not_empty re1 && re_not_empty re2
+  | Union re1 re2 => re_not_empty re1 || re_not_empty re2
+  | _ => true
+  end.
 
 Lemma re_not_empty_correct : forall T (re : reg_exp T),
   (exists s, s =~ re) <-> re_not_empty re = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros ? re. split.
+  - induction re; simpl; intros; auto.
+    + destruct H. inversion H.
+    + destruct H. inversion H; subst.
+      rewrite andb_true_iff.
+      split.
+      * apply IHre1; eauto.
+      * apply IHre2; eauto.
+    + destruct H. inversion H; subst; rewrite orb_true_iff.
+      * left. apply IHre1. eauto.
+      * right. apply IHre2. eauto.
+  - induction re; simpl; intros; eauto;
+    try discriminate; try solve [ (eexists; constructor) ].
+    + rewrite andb_true_iff in H. destruct H.
+      apply IHre1 in H as []. apply IHre2 in H0 as [].
+      eexists. constructor; eauto.
+    + rewrite orb_true_iff in H. destruct H.
+      * apply IHre1 in H as []. exists x. constructor. auto.
+      * apply IHre2 in H as []. exists x. apply MUnionR. auto.
+  Qed.
+
 (** [] *)
 
 (* ================================================================= *)
@@ -1806,7 +1833,16 @@ Lemma MStar'' : forall T (s : list T) (re : reg_exp T),
     s = fold app ss []
     /\ forall s', In s' ss -> s' =~ re.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros T s re H. remember (Star re) as starry.
+  induction H; try discriminate; inversion Heqstarry; subst; clear Heqstarry.
+  - exists []. simpl. split; auto.
+    intros. destruct H.
+  - specialize (IHexp_match2 eq_refl).
+    destruct IHexp_match2 as [? []]; subst.
+    exists (s1 :: x). simpl. split; auto.
+    intros.
+    inversion H1; subst; auto.
+  Qed. 
 (** [] *)
 
 (** **** Exercise: 5 stars, advanced (weak_pumping)
@@ -1901,7 +1937,8 @@ Qed.
 
 Lemma napp_star :
   forall T m s1 s2 (re : reg_exp T),
-    s1 =~ re -> s2 =~ Star re ->
+    s1 =~ re ->
+    s2 =~ Star re ->
     napp m s1 ++ s2 =~ Star re.
 Proof.
   intros T m s1 s2 re Hs1 Hs2.
