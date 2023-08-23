@@ -2003,11 +2003,15 @@ Proof.
   *)
 *)
 
+Require Import Lia.
+
 Lemma le_all : forall n p q, n <= p + q ->
   (n <= p) \/
   (n <= q) \/
   (n > p /\ n > q).
 Proof.
+  intros. lia.
+  
   (* induction on p does NOT seem to work *)
   (* intros n p. generalize dependent n. induction p; simpl; intros.
   - destruct n.
@@ -2024,7 +2028,24 @@ Proof.
   (* intros n p q H. remember (p + q) as r. induction H.
   - subst. right. right. admit.
   - destruct IHle. *)
-  Admitted.
+  Qed.
+
+Print MStarApp.
+
+Lemma star_test : forall T (re : reg_exp T) x (s s1 s2 : list T), x :: s =~ Star re -> 
+  exists y s1 s2, ((y :: s1) ++ s2 = x :: s) /\ ((y :: s1) =~ re) /\ (s2 =~ Star re).
+Proof.
+  intros T re x s s1 s2 H. remember (Star re) as starry. remember (x :: s) as appp.
+  induction H; try discriminate.
+  inversion Heqstarry. subst.
+  specialize (IHexp_match2 eq_refl).
+  destruct s0.
+  + simpl in Heqappp. apply IHexp_match2 in Heqappp.
+    destruct Heqappp as [? [? [? [? []]]]].
+    exists x0, x1, x2. simpl. split; auto.
+  + exists x0, s0, s3. split; auto.
+Qed.
+
 
 (** The (weak) pumping lemma itself says that, if [s =~ re] and if the
     length of [s] is at least the pumping constant of [re], then [s]
@@ -2081,213 +2102,48 @@ Proof.
     exists x,x0,x1; split; try split; auto; intros; auto using MUnionR.
   - simpl. intros. inversion H. apply pumping_constant_0_false in H1.
     destruct H1.
-  (* TODO: Maybe I should just try destructing and inverting 
-     everything all at once. *)
-  (* - unfold not. intros. simpl in *.
-    assert (1 <= pumping_constant re). { admit. }
-    assert (1 <= length (s1 ++ s2)).
-    { apply le_trans with (pumping_constant re); auto. }
+  - intros. simpl in *.
     rewrite app_length in H.
-    rewrite app_length in H1.
-    apply le_all in H as [|[|[]]].
-    + admit.
-    + admit.
-    + unfold ">", "<" in *.
-      destruct re; simpl in *.
-      * admit.
-      * admit.
-      * apply Sn_le_Sm__n_le_m in H. apply Sn_le_Sm__n_le_m in H2.
-        clear IH1 IH2 H0.
-        exists [],s1,s2.
-        admit. (* I THINK I CAN PROVE THIS?? *)  
-      * inversion Hmatch1; subst.  *)
-    (* + unfold ">", "<" in *.
-      inversion Hmatch2; subst; simpl in *.
-    
-    
-    clear IH1 IH2. destruct s1,s2.
-      * simpl in H1. inversion H1.
-      * simpl in H1. apply Sn_le_Sm__n_le_m in H1.
-        simpl in H,H2. clear H.
-        inversion Hmatch2; subst; clear Hmatch2.
-        clear IH1 IH2 Hmatch1.
-        unfold ">", "<" in H2.
-        clear H0. simpl.
-        destruct s1.
-        --  simpl in *. subst. inversion H5; subst.
-        exists [],s1,s0. split; auto.     *)
-  (*
-  - unfold not.
-    intros. simpl in *.
-    assert (1 <= pumping_constant re). { admit. }
-    assert (1 <= length (s1 ++ s2)).
-    { apply le_trans with (pumping_constant re); auto. }
-    assert (1 <= length s1 \/ 1 <= length s2). { admit. }
-    destruct H2.
-    + exists [], s1, s2. simpl. split; auto; split; intros.
-      * subst. simpl in *. inversion H2.
-      * apply napp_star; auto.
-    + exists [], (s1 ++ s2), []. simpl. split.
-      * rewrite app_nil_r. auto.
-      * split.
-        --  intros; rewrite H3 in H1. simpl in H1. inversion H1.
-        --  intros. rewrite app_nil_r.
-            destruct m.
-            ++  simpl. constructor.
-            ++  simpl. destruct s2.
-                **  simpl in *. inversion H2.
-                **  simpl in *. apply Sn_le_Sm__n_le_m in H2.
-                    inversion H2.
-                    --- assert (s2 = []). { admit. }
-                        subst. clear H4. clear H2.
-                        inversion Hmatch2; subst.               
-    
-    inversion Hmatch2; subst.
-      * rewrite app_nil_r. rewrite app_nil_r in H1,H.
-        admit.
-      *   
-  *)
-    (* + exists s1, s2, []. simpl; split.
-      * rewrite app_nil_r; auto.
-      * split.
-        -- intros. subst. inversion H2.
-        -- intros. rewrite app_nil_r. apply MStarApp; auto.
-           assert (forall T m s (re : reg_exp T), s =~ Star re -> napp m s =~ Star re).
-           { 
-             clear. intros T.
-             induction m; simpl; intros.
-             - apply MStar0.
-             - apply IHm in H.
-             
-             destruct s; simpl.
-               + admit.
-               + inversion H; subst.
-                 replace
-                   (x :: s ++ napp m (s1 ++ s2)) with
-                   ((x :: s) ++ napp m (s1 ++ s2)).
-                 apply MStarApp.
-    *)
-                 
-                 
-             (* intros m s re. generalize dependent s. generalize dependent m.
-             induction re; simpl; intros.
-             + inversion H; subst.
-               * admit.
-               * inversion H2.
-             + inversion H; subst.
-               * admit.
-               * inversion H2; subst. simpl in *.  
-             *)
-             (*intros m s re H.
-             remember (Star re) as starry.
-             induction H; try discriminate.
-             - admit.
-             - inversion Heqstarry; subst. specialize (IHexp_match2 eq_refl).
-               clear Heqstarry. clear IHexp_match1.
-               destruct m; simpl in *.
-               + apply MStar0.
-               + rewrite <- app_assoc. apply MStarApp; auto.  
-               inversion IHexp_match2; subst.
-               + destruct  
-             *)
-    
-    (* + exists s1, s0, s3; split; auto; split.
-      * unfold not. intros. subst. clear Hmatch2.
-        simpl in *.
-        inversion H2; subst; simpl in *.
-        -- inversion Hmatch1; subst. simpl in *. admit.
-        -- assert (s0 = []). admit. assert (s2 = []). admit. subst.
-           
-      * intros m. apply MStarApp; auto.
-        apply  napp_star; auto. 
-    *)
-
-  
-  (*- simpl in *. intros. rewrite app_length in H.
-    apply le_all in H as [|[|[]]].
-    + apply IH1 in H as [? [? [? [? []]]]]; clear IH1 IH2; subst.
-      exists x, x0, (x1 ++ s2). split; try split; auto.
-      * rewrite app_assoc. rewrite app_assoc. rewrite app_assoc. auto.
-      * About napp_star. intros. rewrite app_assoc. rewrite app_assoc.
-        apply MStarApp; auto. rewrite <- app_assoc. apply H1.
-    + apply IH2 in H as [? [? [? [? []]]]]; clear IH1 IH2; subst.
-      exists (s1 ++ x), x0, x1. split; try split; auto.
-      * rewrite app_assoc. auto.
-      * intros. rewrite <- app_assoc. apply MStarApp; auto.
-    + inversion Hmatch2; subst; simpl in *.
-  *)
-    (* remember (Star re) as starry.
-      inversion Hmatch2; subst; simpl in *; try discriminate.
-      * rewrite app_nil_r.
-        inversion Hmatch1; subst; simpl in *.*)
-  (* - simpl in *. intros. rewrite app_length in H.
-    inversion Hmatch1; subst; clear Hmatch1; simpl in *; try discriminate; auto.
-    * apply Sn_le_Sm__n_le_m in  H.
-      destruct s2; simpl in *; try solve [inversion H].
-      inversion Hmatch2; subst. inversion H2; subst.
-      replace ([x] ++ s0) with (x :: s0) in *.
-      inversion H1; subst. clear H1.
-      admit.
-      { admit. }
-    * inversion Hmatch2; subst; clear Hmatch2; simpl in *; try discriminate; auto.
-      + admit.
-      + inversion H3; subst.
-        Search (_ + _ <= _ + _).
-        admit.
-    * inversion Hmatch2; subst; clear Hmatch2; simpl in *; try discriminate; auto.
-      + admit.
-      + inversion H2; subst; clear H2.
-        --    
-    *
-  *)      
-  (* - simpl in *. intros. rewrite app_length in H.
-    inversion Hmatch2; subst; clear Hmatch2.
-    + simpl in *. rewrite add_0_r in H.
-      apply IH1 in H as [? [? [? [? []]]]]. subst; clear IH1 IH2.
-      exists x,x0,x1. split; try split; auto using app_nil_r.
-      intros. replace (x ++ napp m x0 ++ x1) with ((x ++ napp m x0 ++ x1) ++ []).
-      apply MStarApp; auto. constructor.
-      { apply app_nil_r. }
-    + inversion Hmatch1; subst; clear Hmatch1; simpl in *; try discriminate; auto.
-      * admit.
-      *  
-  *)
-
-  (* - simpl in *. intros. rewrite app_length in H.
-    apply le_all in H as [|[|[]]].
-    + apply IH1 in H as [? [? [? [? []]]]]; clear IH1 IH2; subst.
-      exists x, x0, (x1 ++ s2). split; try split; auto.
-      * rewrite app_assoc. rewrite app_assoc. rewrite app_assoc. auto.
-      * About napp_star. intros. rewrite app_assoc. rewrite app_assoc.
-        apply MStarApp; auto. rewrite <- app_assoc. apply H1.
-    + apply IH2 in H as [? [? [? [? []]]]]; clear IH1 IH2; subst.
-      exists (s1 ++ x), x0, x1. split; try split; auto.
-      * rewrite app_assoc. auto.
-      * intros. rewrite <- app_assoc. apply MStarApp; auto.
-    + inversion Hmatch2; subst. simpl in *.
-  *)
-    (* + unfold ">", "<" in *.
-      remember re as HHH.
-      destruct re; simpl in *.
-      * subst. inversion Hmatch1.
-      * replace HHH with EmptyStrapply Sn_le_Sm__n_le_m in H. apply Sn_le_Sm__n_le_m in H0.
-        inversion H; inversion H0; subst.
-        destruct s1,s2; try discriminate.
-    *)
-       
-    (*
-    Search (_ <= _ + _ -> _).
-    Search "napp".
-    assert (forall m, napp m s1 ++ s2 =~ Star re).
-    { intros. apply napp_star; auto. }
-    assert (0)
-    exists s1,s1,s2.
-    destruct s1 as [|]; simpl in *.
-    + clear H0. apply IH2 in H as [? [? [? [? []]]]]; subst.
-      exists x,x0,x1; split; try split; auto.
-    + 
-    +  
-    *)
+    unfold not in *. 
+    assert ((pumping_constant re <= length s1) \/
+    (pumping_constant re <= length s2) \/
+    (pumping_constant re > length s1 /\ pumping_constant re > length s2)).
+    { apply le_all. auto. }
+    destruct H0 as [|[|[]]].
+    + apply IH1 in H0 as [? [? [? [? []]]]].
+      exists x, x0, (x1 ++ s2).
+      split; try split; try auto.
+      * subst. rewrite app_assoc. rewrite app_assoc. rewrite app_assoc. auto.
+      * intros. rewrite app_assoc. rewrite app_assoc. apply MStarApp; auto.
+        rewrite <- app_assoc. apply H2.
+    + apply IH2 in H0 as [? [? [? [? []]]]].
+      exists (s1 ++ x), x0, x1.
+      split; try split; try auto.
+      * subst. rewrite app_assoc. auto.
+      * intros. subst. rewrite <- app_assoc.
+        apply MStarApp; auto.
+    + assert (pumping_constant re >= 1).
+      { apply pumping_constant_ge_1. }
+      assert (length s1 >= 1 \/ length s2 >= 1).
+      { lia. }
+      destruct H3.
+      * exists [], s1, s2. split; auto. split; intros.
+        -- subst. simpl in *. inversion H3.
+        -- simpl. apply napp_star; auto.
+      * destruct s2.
+        -- simpl in H3. inversion H3.
+        -- About star_test.
+           assert (exists (y : T) (s3 s4 : list T),
+           (y :: s3) ++ s4 = x :: s2 /\ (y :: s3 =~ re) /\ s4 =~ Star re).
+           { apply star_test; auto. }
+           destruct H4 as [? [? [? [? []]]]].
+           exists s1, (x0 :: x1), x2.
+           split.
+           { rewrite H4; auto. }
+           split; intros; try discriminate.
+           apply MStarApp; auto.
+           apply napp_star; auto.
+Qed.
 
 (** **** Exercise: 5 stars, advanced, optional (pumping)
 
