@@ -2169,7 +2169,73 @@ Proof.
        | re | s1 s2 re Hmatch1 IH1 Hmatch2 IH2 ].
   - (* MEmpty *)
     simpl. intros contra. inversion contra.
-  (* FILL IN HERE *) Admitted.
+  - simpl. intros. inversion H. inversion H1.
+  - simpl in *. intros.
+    rewrite app_length in H.
+    apply add_le_cases in H as [].
+    * apply IH1 in H as [? [? [? [? [? []]]]]].
+      unfold not in H0.
+      clear IH2. subst.
+      exists x, x0, (x1 ++ s2). split; try split; try split; auto.
+      + rewrite app_assoc. rewrite app_assoc. rewrite app_assoc. auto.
+      + lia. 
+      + clear H0. intros.
+        rewrite app_assoc. rewrite app_assoc. apply MApp; auto.
+        rewrite <- app_assoc. auto.
+    * apply IH2 in H as [? [? [? [? [? []]]]]].
+      unfold not in H0.
+      subst.
+      exists (s1 ++ x), x0, x1. split; try split; try split; auto.
+      + rewrite app_assoc. auto.
+      + rewrite app_length.
+        admit. (* I'm pretty sure I can solve this. *) 
+      + clear H0. intros. rewrite <- app_assoc. constructor; auto.
+  - simpl. intros. apply plus_le in H as [].
+    specialize (IH H). destruct IH as [? [? [? [? [? []]]]]].
+    exists x,x0,x1; split; try split; try split; auto; intros; auto using MUnionL.
+    lia.
+  - simpl. intros. apply plus_le in H as [].
+    specialize (IH H0). destruct IH as [? [? [? [? [? []]]]]].
+    subst.
+    exists x,x0,x1; split; try split; try split; auto; intros; auto using MUnionR.
+    lia.
+  - simpl. intros. inversion H. apply pumping_constant_0_false in H1.
+    destruct H1.
+  - intros. simpl in *.
+    rewrite app_length in H.
+    unfold not in *. 
+    assert ((pumping_constant re <= length s1) \/
+    (pumping_constant re <= length s2 /\ pumping_constant re >= length s1) \/
+    (pumping_constant re > length s1 /\ pumping_constant re > length s2)).
+    { lia. }
+    destruct H0 as [|[[]|[]]].
+    + apply IH1 in H0 as [? [? [? [? [? []]]]]].
+      exists x, x0, (x1 ++ s2).
+      split; try split; try split; auto.
+      * subst. rewrite app_assoc. rewrite app_assoc. rewrite app_assoc. auto.
+      * intros. rewrite app_assoc. rewrite app_assoc. apply MStarApp; auto.
+        rewrite <- app_assoc. apply H3.
+    + destruct re.
+      * inversion Hmatch1.
+      * inversion Hmatch1. subst. simpl in *. clear H0. clear H1.
+        admit.
+      * simpl in *.
+        specialize (IH2 H0) as [? [? [? [? [? []]]]]].
+        subst.
+        unfold ">=" in *.
+        destruct x0; try destruct (H3 eq_refl). clear H3.
+        simpl in *.
+        replace (length x + S (length x2)) with (S (length x + length x2)) in H4; try lia.
+        apply Sn_le_Sm__n_le_m in H4.
+        inversion H1; subst; clear H1.
+        -- rewrite H3 in *. destruct s1; try discriminate. destruct s1; try discriminate. destruct s1; try discriminate.
+           clear H3.
+           admit.
+        -- destruct s1; try inversion Hmatch1; subst.
+  Admitted.
+    
+    
+    
 
 End Pumping.
 (** [] *)
