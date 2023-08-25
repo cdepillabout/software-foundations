@@ -2318,7 +2318,10 @@ Qed.
 (** **** Exercise: 2 stars, standard, especially useful (reflect_iff) *)
 Theorem reflect_iff : forall P b, reflect P b -> (P <-> b = true).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros P. destruct b; intros; inversion H; split; unfold not;
+  try intros; auto; try discriminate.
+  - destruct (H0 H1).
+  Qed.
 (** [] *)
 
 (** We can think of [reflect] as a kind of variant of the usual "if
@@ -2377,8 +2380,16 @@ Theorem eqbP_practice : forall n l,
   count n l = 0 -> ~(In n l).
 Proof.
   intros n l Hcount. induction l as [| m l' IHl'].
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  - simpl in *. unfold not. intros. destruct H.
+  - unfold not in *. intros. destruct (eqbP n m); subst; simpl in *.
+    + replace (m =? m) with true in Hcount.
+      * discriminate.
+      * rewrite eqb_refl. auto.
+    + unfold not in H0. replace (n =? m) with (false) in Hcount; simpl in *.
+      * destruct H; auto.
+      * symmetry. apply eqb_neq. unfold not. apply H0.
+  Qed.   
+  (** [] *)
 
 (** This small example shows reflection giving us a small gain in
     convenience; in larger developments, using [reflect] consistently
@@ -2410,8 +2421,11 @@ Proof.
     [nostutter]. *)
 
 Inductive nostutter {X:Type} : list X -> Prop :=
- (* FILL IN HERE *)
-.
+  | nostutter_empty : nostutter []
+  | nostutter_single : forall a, nostutter [a]
+  | nostutter_app :
+      forall l a b, a <> b -> nostutter (b :: l) -> nostutter (a :: b :: l)
+  .
 (** Make sure each of these tests succeeds, but feel free to change
     the suggested proof (in comments) if the given one doesn't work
     for you.  Your definition might be different from ours and still
@@ -2423,34 +2437,22 @@ Inductive nostutter {X:Type} : list X -> Prop :=
     example with more basic tactics.)  *)
 
 Example test_nostutter_1: nostutter [3;1;4;1;5;6].
-(* FILL IN HERE *) Admitted.
-(* 
   Proof. repeat constructor; apply eqb_neq; auto.
   Qed.
-*)
 
 Example test_nostutter_2:  nostutter (@nil nat).
-(* FILL IN HERE *) Admitted.
-(* 
   Proof. repeat constructor; apply eqb_neq; auto.
   Qed.
-*)
 
 Example test_nostutter_3:  nostutter [5].
-(* FILL IN HERE *) Admitted.
-(* 
   Proof. repeat constructor; auto. Qed.
-*)
 
 Example test_nostutter_4:      not (nostutter [3;1;1;4]).
-(* FILL IN HERE *) Admitted.
-(* 
   Proof. intro.
   repeat match goal with
     h: nostutter _ |- _ => inversion h; clear h; subst
   end.
   contradiction; auto. Qed.
-*)
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_nostutter : option (nat*string) := None.
@@ -2486,8 +2488,11 @@ Definition manual_grade_for_nostutter : option (nat*string) := None.
     others.  Do this with an inductive relation, not a [Fixpoint].  *)
 
 Inductive merge {X:Type} : list X -> list X -> list X -> Prop :=
-(* FILL IN HERE *)
-.
+  | merge_empty_fst : forall l, merge [] l l
+  | merge_empty_snd : forall l, merge l [] l
+  | merge_both :
+      forall a l1 b l2 l, merge l1 l2 l -> merge (a :: l1) (b :: l2) (a :: b :: l)
+  .
 
 Theorem merge_filter : forall (X : Set) (test: X->bool) (l l1 l2 : list X),
   merge l1 l2 l ->
@@ -2495,9 +2500,29 @@ Theorem merge_filter : forall (X : Set) (test: X->bool) (l l1 l2 : list X),
   All (fun n => test n = false) l2 ->
   filter test l = l1.
 Proof.
-  (* FILL IN HERE *) Admitted.
-
-(* FILL IN HERE *)
+  (*
+  intros X test l l1 l2; destruct l1; intros.
+  + inversion H; subst; clear H.
+    Search All. Search filter.
+    rewrite <- All_In in H0,H1.
+  *)
+  (*
+  intros X test l; induction l; intros.
+  - simpl in *. inversion H; subst; auto.
+  - destruct l.
+    + simpl in *. inversion H; subst; clear H.
+      * simpl in H0. destruct H1 as []. simpl in H1. rewrite H. auto.
+      * simpl in H0. destruct H0 as []. rewrite H. auto.
+    +  inversion H; subst.
+      * simpl in H1. destruct H1. destruct H2. simpl. rewrite H1. rewrite H2.       
+  *)
+  intros X test l l1 l2 H. induction H; simpl in *; intros.
+  - clear H. generalize dependent H0. induction l; intros; auto.
+    destruct H0. simpl. rewrite H. apply IHl; auto.
+  - clear H0. generalize dependent H. induction l; intros; auto.
+    simpl in *. destruct H. rewrite H. f_equal. apply IHl; auto.
+  - destruct H0, H1. rewrite H0. rewrite H1. f_equal. auto.
+  Qed. 
 
 (** [] *)
 
@@ -2536,17 +2561,25 @@ Proof.
 *)
 
 Inductive pal {X:Type} : list X -> Prop :=
-(* FILL IN HERE *)
-.
+  | pal_empty : pal []
+  | pal_single : forall x, pal [x]
+  | pal_app : forall x l, pal l -> pal (x :: l ++ [x])
+  .
 
 Theorem pal_app_rev : forall (X:Type) (l : list X),
   pal (l ++ (rev l)).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X. induction l; simpl; auto; try constructor.
+  - replace (x :: l ++ rev l ++ [x]) with (x :: (l ++ rev l) ++ [x]).
+    + constructor. auto.
+    + admit. (* This is provable. *)  
+  Admitted.
 
 Theorem pal_rev : forall (X:Type) (l: list X) , pal l -> l = rev l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X l H. induction H; auto.
+  simpl. Search rev. rewrite rev_app_distr. simpl. rewrite <- IHpal. auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 5 stars, standard, optional (palindrome_converse)
@@ -2558,10 +2591,260 @@ Proof.
      forall l, l = rev l -> pal l.
 *)
 
+Lemma split_list_three :
+  forall X a b (l : list X), exists x l' y, x :: l' ++ [y] = a :: b :: l.
+Proof.
+  intros X a b l. generalize dependent b. generalize dependent a.
+  induction l.
+  - intros. exists a, [], b; auto.
+  - intros. specialize (IHl a b) as [? [? []]].
+    rename x1 into ls.
+    assert (x0 = a).
+    { admit. (* this is provable *) }
+    subst.
+    assert (ls ++ [x2] = b :: l). { admit. (* provable *)}
+    exists a. clear H. destruct ls.
+    + simpl in H0. inversion H0; subst; clear H0.
+      exists [b],x. auto.
+    + assert (x0 = b). { admit. (* provable *)}
+      assert (ls ++ [x2] = l). { admit. (* provable *)}
+      subst. exists (b :: x :: ls). exists x2. auto.
+  Admitted.
+
+Print list_ind.
+
+(* TODO: is list_ind_3 slow because this is admitted??? *)
+
+Definition unsnoc :
+  forall {X} y (l : list X), exists l' z, l' ++ [z] = y :: l.
+Proof.
+  intros X y l. generalize dependent y. induction l; intros.
+  - exists [],y. auto.
+  - specialize (IHl y). destruct IHl as [l' [z H]].
+    destruct l'; simpl in *.
+    + inversion H; subst. exists [y], x. auto.
+    + assert (x0 = y). { admit. (* provable *)} subst.
+      assert (l' ++ [z] = l). { admit. (* provable*)} subst.
+      exists (y :: x :: l'), z. auto.
+  Admitted.
+
+Print unsnoc.
+
+Inductive double_cons_list {A} : list A -> Prop :=
+  | dcl_nil : double_cons_list []
+  | dcl_single : forall x, double_cons_list [x]
+  | dcl_double : forall x y l, double_cons_list l -> double_cons_list (x :: l ++ [y])
+  .
+
+(*
+Definition list_to_double_cons_list {A} (l : list A): double_cons_list l.
+Proof.
+  induction l.
+  - constructor.
+  - destruct l.
+    + constructor.
+    + inversion IHl; subst.
+      * apply (dcl_double x x0 []). constructor.
+      * 
+  destruct l; try constructor. destruct l; try constructor.
+  rename x0 into y.
+  assert (exists l' z, l' ++ [z] = y :: l).
+  { apply unsnoc. }
+  destruct H as [l' [z H]].
+*)
+
+Print ex_intro.
+
+Theorem gotomam :
+  forall {X} {P} x (l'' : list X) z y l,
+  l'' ++ [z] = y :: l ->
+  P (x :: l'' ++ [z]) ->
+  P (x :: y :: l).
+Proof.
+  intros.
+  rewrite H in X0.
+  auto.
+Qed.
+
+Require Import Program Recdef.
+
+Program Fixpoint list_ind_3
+  (X : Type)
+  (P : list X -> Prop)
+  (f0 : P [])
+  (f1 : forall (x : X), P [x])
+  (fall : forall (x y : X) (l : list X), P l -> P (x :: l ++ [y]))
+  l { measure (length l) }: P l :=
+    (match l as b return (l = b -> _) with
+      | [] => (fun H : l = [] => f0)
+      | [x] => (fun H : l = [x] => f1 x)
+      | x :: y :: l' =>
+          (fun H : l = x :: y :: l' =>
+            match unsnoc y l' with
+            | ex_intro _ l'' (ex_intro _ z mam) =>
+                fall x z l'' (list_ind_3 X P f0 f1 fall l'')
+            end
+          )
+      end
+    ) (eq_refl l).
+
+  Obligation 1.
+  Proof.
+    unfold "<". simpl.
+    apply n_le_m__Sn_le_Sm.
+    constructor.
+    enough (length l'' = length l').
+    rewrite H. constructor.
+    { clear Heq_anonymous l0 list_ind_3 fall f1 f0 P x.
+      generalize dependent z. generalize dependent y. generalize dependent l'.
+      induction l''; intros.
+      - simpl in *. inversion mam; subst. auto.
+      - simpl in mam. inversion mam; subst.
+        replace (y :: l'') with ([y] ++ l''); auto.
+        rewrite app_length. rewrite app_length. simpl in *. lia.   
+    }
+  Qed.
+
+  Obligation 2.
+  Proof. rewrite mam. auto. Qed.
+
+Check list_ind_3.
+    
+  (*
+  (match x as y return (x = y -> _) with
+  | 0 => fun H : x = 0 -> t
+  | S n => fun H : x = S n -> u
+  end) (eq_refl x).
+  *)
+
+(* Program Fixpoint list_ind_3
+  (X : Type)
+  (P : list X -> Prop)
+  (f0 : P [])
+  (f1 : forall (x : X), P [x])
+  (fall : forall (x y : X) (l : list X), P l -> P (x :: l ++ [y]))
+  l { measure (length l) }: P l :=
+    match l return (P l) with
+    | [] => f0
+    | [x] => f1 x
+    | (x :: y :: l') as b => 
+        match unsnoc y l' with
+        | ex_intro _ l'' (ex_intro _ z mam) =>
+            fall x z l'' (list_ind_3 X P f0 f1 fall l'')
+        end
+    end.
+
+  Obligation 1.
+    clear f0 f1 fall list_ind_3.
+
+
+Print list_ind_3.
+*)
+(*    
+Definition list_ind_3 :
+  forall (X : Type) (P : list X -> Prop),
+  P [] ->
+  (forall (x : X), P [x]) ->
+  (forall (x y : X) (l : list X), P l -> P (x :: l ++ [y])) ->
+  forall l : list X, P l :=
+  fun X P f0 f1 fall =>
+    fix F l : P l :=
+      match l return (P l) with
+      | [] => f0
+      | [x] => f1 x
+      | x :: y :: l' => 
+          match unsnoc y l with
+          | ex_intro _ l'' (ex_intro _ z mam) =>
+              gotomam x l'' z y l mam (fall x z l'' (F l''))
+          end
+      end.
+
+Definition list_ind_3 :
+  forall (X : Type) (P : list X -> Prop),
+  P [] ->
+  (forall (x : X), P [x]) ->
+  (forall (x y : X) (l : list X), P l -> P (x :: l ++ [y])) ->
+  forall l : list X, P l.
+Proof.
+  intros X P H0 H1 HAll l. destruct l; auto.
+  assert (exists l' z, l' ++ [z] = x :: l). { apply unsnoc. }
+  destruct H as [l' [z H]].
+  rewrite <- H. destruct l'; simpl; auto.
+  assert (x = x0). { admit. (*provable*)} subst.
+  assert (l = l' ++ [z]). { admit. (* provable *)}
+  rename x0 into x.
+  generalize dependent z. generalize dependent x.
+  induction l'; auto; intros.
+  simpl in *. subst. clear H. apply HAll. apply IHl'.
+*)
+ 
+
 Theorem palindrome_converse: forall {X: Type} (l: list X),
     l = rev l -> pal l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros X l. induction l using list_ind_3.
+  + intros; constructor.
+  + intros; constructor.
+  + intros. simpl in H. rewrite rev_app_distr in H. simpl in H.
+    inversion H. subst. constructor. apply IHl.
+    clear H. clear IHl.
+    assert (forall (g : list X) m n h, g ++ [m] = h ++ [n] -> g = h).
+    { clear H2. induction g; simpl; intros.
+      - destruct h; try discriminate; auto. simpl in H. inversion H; subst.
+        destruct h. simpl in *. discriminate. simpl in *. discriminate.
+      - destruct h.
+        + simpl in H. inversion H; subst. admit.
+        + inversion H; subst. f_equal. apply IHg with m n. auto. 
+
+    }
+    apply H with y y. auto.
+
+  (*
+  intros X []; try solve [(intros ; constructor)].
+  rename x into a. destruct l; try solve [(intros ; constructor)].
+  rename x into b.
+  assert (exists x l' y, x :: l' ++ [y] = a :: b :: l).
+  { apply split_list_three. }
+  destruct H as [x [l' [y H]]].
+  assert (x = a). { admit. (* provable *)}
+  subst. rewrite <- H. clear H. intros.
+  simpl in H.
+  rewrite rev_app_distr in H. simpl in *.
+  assert (y = a). { admit. }
+  subst. constructor.
+  - 
+  *) 
+  (* intros X. induction l; simpl; intros; try solve [constructor].
+  destruct l.
+  - apply pal_single.
+  - rename x into a, x0 into b.
+    assert (exists x l' y, x :: l' ++ [y] = a :: b :: l).
+    { clear IHl. clear H. generalize dependent b. generalize dependent a.
+      induction l.
+      - intros. exists a, [], b; auto.
+      - intros. specialize (IHl a b) as [? [? []]].
+        rename x1 into ls.
+        assert (x0 = a).
+        { admit. (* this is provable *) }
+        subst.
+        assert (ls ++ [x2] = b :: l). { admit. (* provable *)}
+        exists a. clear H. destruct ls.
+        + simpl in H0. inversion H0; subst; clear H0.
+          exists [b],x. auto.
+        + assert (x0 = b). { admit. (* provable *)}
+          assert (ls ++ [x2] = l). { admit. (* provable *)}
+          subst. exists (b :: x :: ls). exists x2. auto.
+    }
+    destruct H0 as [x [l' [y H0]]].
+    assert (x = a). { admit. (* provable*)}
+    subst.
+    assert (b :: l = l' ++ [y]). { admit. (* provable *)}
+    rewrite H1 in *.
+    assert (a = y). { admit. (* provable *)}
+    subst.
+    apply pal_app.
+    rewrite rev_app_distr in H. simpl in H. inversion H.
+    *)
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced, optional (NoDup)
