@@ -2572,8 +2572,8 @@ Proof.
   intros X. induction l; simpl; auto; try constructor.
   - replace (x :: l ++ rev l ++ [x]) with (x :: (l ++ rev l) ++ [x]).
     + constructor. auto.
-    + admit. (* This is provable. *)  
-  Admitted.
+    + rewrite app_assoc. auto.
+  Qed.
 
 Theorem pal_rev : forall (X:Type) (l: list X) , pal l -> l = rev l.
 Proof.
@@ -2591,6 +2591,7 @@ Proof.
      forall l, l = rev l -> pal l.
 *)
 
+(*
 Lemma split_list_three :
   forall X a b (l : list X), exists x l' y, x :: l' ++ [y] = a :: b :: l.
 Proof.
@@ -2610,6 +2611,7 @@ Proof.
       assert (ls ++ [x2] = l). { admit. (* provable *)}
       subst. exists (b :: x :: ls). exists x2. auto.
   Admitted.
+*)
 
 Print list_ind.
 
@@ -2623,10 +2625,10 @@ Proof.
   - specialize (IHl y). destruct IHl as [l' [z H]].
     destruct l'; simpl in *.
     + inversion H; subst. exists [y], x. auto.
-    + assert (x0 = y). { admit. (* provable *)} subst.
-      assert (l' ++ [z] = l). { admit. (* provable*)} subst.
+    + assert (x0 = y). { inversion H. auto. } subst.
+      assert (l' ++ [z] = l). { inversion H. auto. } subst.
       exists (y :: x :: l'), z. auto.
-  Admitted.
+  Qed.
 
 Print unsnoc.
 
@@ -2668,6 +2670,8 @@ Qed.
 
 Require Import Program Recdef.
 
+Unset Program Cases.
+
 Program Fixpoint list_ind_3
   (X : Type)
   (P : list X -> Prop)
@@ -2692,21 +2696,11 @@ Program Fixpoint list_ind_3
   Proof.
     unfold "<". simpl.
     apply n_le_m__Sn_le_Sm.
-    constructor.
-    enough (length l'' = length l').
-    rewrite H. constructor.
-    { clear Heq_anonymous l0 list_ind_3 fall f1 f0 P x.
-      generalize dependent z. generalize dependent y. generalize dependent l'.
-      induction l''; intros.
-      - simpl in *. inversion mam; subst. auto.
-      - simpl in mam. inversion mam; subst.
-        replace (y :: l'') with ([y] ++ l''); auto.
-        rewrite app_length. rewrite app_length. simpl in *. lia.   
-    }
+    rewrite app_length.
+    simpl.
+    rewrite add_comm.
+    constructor. auto.
   Qed.
-
-  Obligation 2.
-  Proof. rewrite mam. auto. Qed.
 
 Check list_ind_3.
     
@@ -2793,7 +2787,8 @@ Proof.
       - destruct h; try discriminate; auto. simpl in H. inversion H; subst.
         destruct h. simpl in *. discriminate. simpl in *. discriminate.
       - destruct h.
-        + simpl in H. inversion H; subst. admit.
+        + simpl in H. inversion H; subst.
+          destruct g; simpl in *; try discriminate.
         + inversion H; subst. f_equal. apply IHg with m n. auto. 
 
     }
@@ -2845,6 +2840,7 @@ Proof.
     apply pal_app.
     rewrite rev_app_distr in H. simpl in H. inversion H.
     *)
+  Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced, optional (NoDup)
