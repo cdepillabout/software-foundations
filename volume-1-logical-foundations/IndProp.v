@@ -2950,10 +2950,35 @@ Inductive repeats {X:Type} : list X -> Prop :=
   | repeats_cons : forall x l, repeats l -> repeats (x :: l)
   .
 
+Goal repeats [1;2;1].
+Proof. constructor. right. left. auto. Qed.
+
+Goal repeats [2;3;1;1].
+Proof. apply repeats_cons. apply repeats_cons. constructor. left. auto. Qed.
+
+Goal ~ repeats [1;2].
+Proof.
+  unfold not. intros. inversion H.
+  - subst. inversion H1; auto; discriminate.
+  - subst. inversion H1. subst. inversion H2; subst. inversion H2.
+  Qed.  
+
 (* Do not modify the following line: *)
 Definition manual_grade_for_check_repeats : option (nat*string) := None.
 
+Theorem In_app_comm :
+  forall X a (l1 l2 : list X), In a (l1 ++ l2) -> In a (l2 ++ l1).
+Proof.
+  intros X a l1. generalize dependent a. induction l1; simpl; intros; auto.
+  - now rewrite app_nil_r. 
+  - inversion H; subst; clear H.
+    + rewrite In_app_iff. right. left. auto.
+    + rewrite In_app_iff. apply IHl1 in H0. rewrite In_app_iff in H0.
+      destruct H0; auto. right. right. auto.
+  Qed.  
+
 Print excluded_middle.
+
 
 (** Now, here's a way to formalize the pigeonhole principle.  Suppose
     list [l2] represents a list of pigeonhole labels, and list [l1]
@@ -2973,6 +2998,113 @@ Theorem pigeonhole_principle: excluded_middle ->
   length l2 < length l1 ->
   repeats l1.
 Proof.
+  intros. destruct l1. { simpl in *. inversion H1. }
+  rename x into a.
+  generalize dependent l2. generalize dependent a. induction l1.
+  - intros. simpl in *.
+    destruct l2.
+    + simpl in *. exfalso. apply (H0 a). left. auto.
+    + simpl in H1. inversion H1; subst. inversion H3.
+  - intros.
+    assert (In a l2). { apply H0. left. auto. }
+    assert (In x l2). { apply H0. right. left. auto. }
+    destruct l2. { inversion H2. }
+    rename x0 into y.
+    rename l2 into lr.
+    destruct H2, H3; subst.
+    + admit.
+    +
+      assert (repeats (a :: l1)).
+      
+      (* TODO: Can I specialize IHl1 while passing  l1 for l2?? *)
+
+
+
+
+
+  intros _ X l1 l2. generalize dependent l1. induction l2.
+  - intros. destruct l1. { simpl in H0. inversion H0. }
+    specialize (H x).
+    enough (In x []). { inversion H1. }
+    apply H. left. auto.
+  - intros. simpl in H0.
+    destruct l1. { simpl in H0. inversion H0. }
+    rename x0 into a. simpl in H0.
+    assert (length l2 < length l1) by lia.
+    clear H0.
+    assert (In a (x :: l2)).
+    { apply H. left. auto. }
+    destruct l1.
+    { simpl in H1. inversion H1. }
+    rename x0 into y.
+    assert (In y (x :: l2)).
+    { apply H. right. left. auto.  }
+    destruct H0,H2; subst.
+    + apply repeats_repeated. left. auto.
+    + destruct l2.
+      { inversion H2. }
+
+      
+
+      assert (repeats (y :: l1)).
+      { apply IHl2.
+        - intros z H3.
+          inversion H3; subst; clear H3.
+          + inversion H2; subst; clear H2.
+            * left. auto.
+            * right. auto.
+          + inversion H2; subst; clear H2.
+            * simpl in H1. assert (length l2 < length l1). { lia. }
+              clear H1.      
+
+      assert (repeats (a :: l1)).
+      { apply IHl2.
+        - intros z H3.
+          inversion H3.
+          + subst.   
+
+      }
+
+      assert (repeats (x :: l1)).
+      { apply IHl2.
+        - intros z H3.
+          specialize (H z).
+          inversion H3.
+          + subst. left. auto.
+          + assert (In z (a :: x :: l2)).
+            { apply H. right. right. auto. }
+
+
+      }
+
+      
+
+      assert (repeats (y :: l1)).
+      { apply IHl2.
+        - intros. rename x0 into z. 
+      }
+
+
+
+    inversion H0.
+    + (* subst. clear H0.*)
+      
+      (* try 1: (IHl2 l1) *)
+      (* assert (repeats l1).
+      { apply IHl2; auto.
+        intros.
+      }*)
+
+      (* try 2: (IHl2 (a :: l1))*)
+      apply IHl2.
+      * intros. subst.
+        inversion H3.
+        -- subst.  
+      * simpl. lia. 
+
+      (* try 3: (IHl2 (x :: l1)) ?? *)
+
+
   intros EM X l1. induction l1 as [|x l1' IHl1'].
   all: clear EM. (* try it first without EM *)
   - simpl. intros. inversion H0.
@@ -2983,10 +3115,103 @@ Proof.
     { apply H; auto. simpl. left; auto. }
     simpl in H0.
     apply Sn_le_Sm__n_le_m in H0.
+    destruct lv. { inversion H1. }
+    inversion H1; subst; clear H1.
+    { simpl in H0. specialize (IHl1' lv).
+
+     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+    destruct l1.
+    { simpl in H0. inversion H0. destruct lv; try discriminate.
+      destruct H1.
+    }
     assert (exists lo lp, lv = lo ++ a :: lp).
     { apply in_split. auto. }
     destruct H2 as [lo [lp H2]].
     subst.
+
+    rewrite app_length in H0. simpl in H0.
+    rewrite add_comm in H0.
+    simpl in H0. rewrite add_comm in H0. rewrite <- app_length in H0.
+    apply Sn_le_Sm__n_le_m in H0. simpl in IHl1'.
+    clear H1.
+    assert (In x (lo ++ a :: lp)).
+    { apply H. right. left. auto. }
+    apply In_app_iff in H1.
+    destruct H1.
+    + 
+    (*+ assert (exists lq lr, lo = lq ++ x :: lr).
+      { apply in_split. auto. }
+      destruct H2 as [lq [lr H2]].
+      subst.
+      rewrite app_length in H0.
+      rewrite app_length in H0. simpl in H0.
+      rewrite <- add_assoc in H0.
+      rewrite add_comm in H0. simpl in H0.
+      assert (repeats (x :: l1)).
+      { apply (IHl1' (lq ++ lr ++ lp)).
+        - intros. destruct H2.
+          + subst. admit.
+          +   
+      }*)
+
+
+    destruct l1.
+    { simpl in H0. inversion H0. }
+    rename x into b.
+    assert (In b (lo ++ a :: lp)).
+    { apply H. right. left. auto. }
+
+    apply In_app_comm in H2; simpl in H2. destruct H2.
+    { subst. apply repeats_repeated. left. auto. }
+    enough (repeats (b :: l1)).
+    { apply repeats_cons. auto. }
+
+    apply IHl1' with (lp ++ lo); auto.
+    intros.
+    assert (In x (lo ++ a :: lp)).
+    {apply H. right. auto.  }
+
+    apply In_app_iff.
+    apply In_app_iff in H4.
+    destruct H4.
+    + right. auto.
+    + destruct H4; try auto.
+      subst.
+      destruct H3.
+      * subst. apply In_app_iff in H2 as []; auto.
+      * simpl in H0. apply Sn_le_Sm__n_le_m in H0. 
+
+
+      apply IHl1' with (lo ++ lp).
+      - intros.
+        assert (exists lq lr, l1 = lq ++ x :: lr).
+        { apply in_split. auto. }
+        destruct H3 as [lq [lr H3]].
+        subst.
+        
+    }
+
+
+    apply In_app_comm in H1. simpl in H1.
+    destruct H1.
+    + admit.
+    +  
+
+
+
     assert (forall x : X, In x l1 -> (In x (lo ++ lp) \/ a = x)).
     { intros. simpl in H.
       Search In "++". 
