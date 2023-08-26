@@ -2860,7 +2860,11 @@ Proof.
     lists (with elements of type X) that have no elements in
     common. *)
 
-(* FILL IN HERE *)
+Fixpoint disjoint {A : Type} (l1 l2 : list A) : Prop :=
+  match l1 with
+  | [] => True
+  | h :: t => ~ (In h l2) /\ disjoint t l2
+  end.
 
 (** Next, use [In] to define an inductive proposition [NoDup X
     l], which should be provable exactly when [l] is a list (with
@@ -2869,12 +2873,45 @@ Proof.
     bool []] should be provable, while [NoDup nat [1;2;1]] and
     [NoDup bool [true;true]] should not be.  *)
 
-(* FILL IN HERE *)
+Inductive NoDup {X} : list X -> Prop :=
+  | NoDup_nil : NoDup []
+  | NoDup_cons : forall h t, ~ (In h t) -> NoDup t -> NoDup (h :: t)
+  .
 
 (** Finally, state and prove one or more interesting theorems relating
     [disjoint], [NoDup] and [++] (list append).  *)
 
-(* FILL IN HERE *)
+Theorem disjoint_NoDup :
+  forall X (l1 l2 : list X),
+  disjoint l1 l2 ->
+  NoDup l1 ->
+  NoDup l2 ->
+  NoDup (l1 ++ l2).
+Proof.
+  intros X l1 l2 Hdj Hnol1. generalize dependent Hdj. generalize dependent l2.
+  induction Hnol1; intros; auto.
+  simpl in *.
+  destruct Hdj.
+  apply NoDup_cons.
+  - unfold not in *. intros. Search In "++". rewrite In_app_iff in H3.
+    destruct H3; auto.
+  - apply IHHnol1; auto.
+  Qed. 
+
+Theorem NoDup_disjoint :
+  forall X (l1 l2 : list X),
+  NoDup (l1 ++ l2) ->
+  disjoint l1 l2.
+Proof.
+  intros X l1. induction l1.
+  - simpl. intros. auto.
+  - simpl. intros.
+    inversion H; subst; clear H.
+    unfold not in *.
+    split.
+    + intros. apply H2. rewrite In_app_iff.  auto.
+    + apply IHl1. auto.
+  Qed.
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_NoDup_disjoint_etc : option (nat*string) := None.
@@ -2894,17 +2931,29 @@ Lemma in_split : forall (X:Type) (x:X) (l:list X),
   In x l ->
   exists l1 l2, l = l1 ++ x :: l2.
 Proof.
-  (* FILL IN HERE *) Admitted.
-
+  intros X x. induction l; simpl; intros; auto; destruct H.
+  - subst. exists [], l. auto.
+  - apply IHl in H. destruct H as [l1 [l2 H]]. subst.
+    eexists (x0 :: l1). exists l2. reflexivity.
+  Qed.
+    
 (** Now define a property [repeats] such that [repeats X l] asserts
     that [l] contains at least one repeated element (of type [X]).  *)
+(* 
+Inductive repeats {X:Type} : list X -> Prop :=
+  | repeats_repeat : forall a l, repeats (a :: a :: l)
+  | repeats_cons : forall x l, repeats l -> repeats (x :: l)
+  . *)
 
 Inductive repeats {X:Type} : list X -> Prop :=
-  (* FILL IN HERE *)
-.
+  | repeats_repeated : forall a l, In a l -> repeats (a :: l)
+  | repeats_cons : forall x l, repeats l -> repeats (x :: l)
+  .
 
 (* Do not modify the following line: *)
 Definition manual_grade_for_check_repeats : option (nat*string) := None.
+
+Print excluded_middle.
 
 (** Now, here's a way to formalize the pigeonhole principle.  Suppose
     list [l2] represents a list of pigeonhole labels, and list [l1]
@@ -2925,7 +2974,56 @@ Theorem pigeonhole_principle: excluded_middle ->
   repeats l1.
 Proof.
   intros EM X l1. induction l1 as [|x l1' IHl1'].
-  (* FILL IN HERE *) Admitted.
+  all: clear EM. (* try it first without EM *)
+  - simpl. intros. inversion H0.
+  - intros. unfold "<" in *.
+    rename l1' into l1. rename x into a.
+    rename l2 into lv.
+    assert (In a lv).
+    { apply H; auto. simpl. left; auto. }
+    simpl in H0.
+    apply Sn_le_Sm__n_le_m in H0.
+    assert (exists lo lp, lv = lo ++ a :: lp).
+    { apply in_split. auto. }
+    destruct H2 as [lo [lp H2]].
+    subst.
+    assert (forall x : X, In x l1 -> (In x (lo ++ lp) \/ a = x)).
+    { intros. simpl in H.
+      Search In "++". 
+      specialize (H x). specialize (H (or_intror H2)). rewrite In_app_iff in H.
+      destruct H.
+      - left. rewrite In_app_iff. left. auto.
+      - destruct H; auto. rewrite In_app_iff. auto.  
+    }
+    rewrite In_app_iff in H1. simpl in H1.
+    rewrite app_length in H0. simpl in H0.
+
+    destruct lv.
+    + simpl in *. apply Sn_le_Sm__n_le_m in H0.
+      exfalso. apply (H a); auto.
+    + simpl in H0.
+      apply Sn_le_Sm__n_le_m in H0.
+      rename x into z.
+      destruct H1.
+      * subst. admit.
+      *   
+      assert (repeats l1).
+      { apply (IHl1' l2).
+        - intros. simpl in H. 
+
+      } 
+
+    (*
+    destruct l1.
+    + simpl in *. apply Sn_le_Sm__n_le_m in H0. inversion H0.
+      rewrite H2 in *.
+      enough (l2 = []).
+      * subst. specialize (H a).
+        clear H2 H0. specialize (H (or_introl eq_refl)) .
+        destruct H.
+      * destruct l2; auto. discriminate.
+    + destruct l2.
+    *)
 (** [] *)
 
 (* ================================================================= *)
