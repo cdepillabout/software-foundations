@@ -175,10 +175,10 @@ Print ev_4'''.
 
 Theorem ev_8 : ev 8.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  repeat constructor.
+  Qed.
 
-Definition ev_8' : ev 8
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition ev_8' : ev 8 := ev_8.
 (** [] *)
 
 (* ################################################################# *)
@@ -395,9 +395,11 @@ Definition and_comm' P Q : P /\ Q <-> Q /\ P :=
 
     Construct a proof object for the following proposition. *)
 
-Definition conj_fact : forall P Q R, P /\ Q -> Q /\ R -> P /\ R
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
-(** [] *)
+Definition conj_fact : forall P Q R, P /\ Q -> Q /\ R -> P /\ R :=
+  fun _ _ _ HPQ HQR =>
+    let (p, _) := HPQ in
+    let 'conj _ r := HQR in
+    conj p r.
 
 (* ================================================================= *)
 (** ** Disjunction *)
@@ -452,9 +454,12 @@ End Or.
 
     Construct a proof object for the following proposition. *)
 
-Definition or_commut' : forall P Q, P \/ Q -> Q \/ P
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
-(** [] *)
+Definition or_commut' : forall P Q, P \/ Q -> Q \/ P :=
+  fun _ _ HPQ =>
+    match HPQ with
+    | or_introl p => or_intror p
+    | or_intror q => or_introl q
+    end.
 
 (* ================================================================= *)
 (** ** Existential Quantification *)
@@ -488,6 +493,11 @@ End Ex.
     involving [ex]: *)
 
 Check ex (fun n => ev n) : Prop.
+Check ex.
+About ex.
+Check ex ev.
+Check ex_intro.
+About ex_intro.
 
 (** Here's how to define an explicit proof object involving [ex]: *)
 
@@ -498,9 +508,9 @@ Definition some_nat_is_even : exists n, ev n :=
 
     Construct a proof object for the following proposition. *)
 
-Definition ex_ev_Sn : ex (fun n => ev (S n))
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
-(** [] *)
+Definition ex_ev_Sn : ex (fun n => ev (S n)) :=
+  ex_intro (fun n => ev (S n)) 1 (ev_SS 0 ev_0).
+  (** [] *)
 
 (* ================================================================= *)
 (** ** [True] and [False] *)
@@ -517,9 +527,7 @@ Inductive True : Prop :=
 
     Construct a proof object for the following proposition. *)
 
-Definition p_implies_true : forall P, P -> True
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
-(** [] *)
+Definition p_implies_true : forall P, P -> True := fun _ _ => I.
 
 (** [False] is equally simple -- indeed, so simple it may look
     syntactically wrong at first glance! *)
@@ -552,9 +560,8 @@ Definition false_implies_zero_eq_one : False -> 0 = 1 :=
 
     Construct a proof object for the following proposition. *)
 
-Definition ex_falso_quodlibet' : forall P, False -> P
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
-(** [] *)
+Definition ex_falso_quodlibet' : forall P, False -> P :=
+  fun _ F => match F with end.
 
 End Props.
 
