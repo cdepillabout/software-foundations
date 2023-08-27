@@ -658,9 +658,11 @@ Qed.
     against the equality hypotheses. *)
 
 Definition eq_cons : forall (X : Type) (h1 h2 : X) (t1 t2 : list X),
-    h1 == h2 -> t1 == t2 -> h1 :: t1 == h2 :: t2
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
-
+    h1 == h2 -> t1 == t2 -> h1 :: t1 == h2 :: t2 :=
+    fun _ _ _ _ _ Hh Ht =>
+      let 'eq_refl h := Hh in
+      let 'eq_refl t := Ht in
+      eq_refl (h :: t).
 (** [] *)
 
 (** **** Exercise: 2 stars, standard (equality__leibniz_equality)
@@ -673,7 +675,9 @@ Definition eq_cons : forall (X : Type) (h1 h2 : X) (t1 t2 : list X),
 Lemma equality__leibniz_equality : forall (X : Type) (x y: X),
   x == y -> forall (P : X -> Prop), P x -> P y.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  destruct H. auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard (equality__leibniz_equality_term)
@@ -683,9 +687,13 @@ Proof.
     proof term constructed by tactics in the previous exercise is
     needessly complicated. Hint: pattern-match as soon as possible. *)
 Definition equality__leibniz_equality_term : forall (X : Type) (x y: X),
-    x == y -> forall P : (X -> Prop), P x -> P y
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
-(** [] *)
+    x == y -> forall P : (X -> Prop), P x -> P y :=
+  fun _ _ _ H =>
+    match H with
+    | eq_refl _ => fun _ HP => HP
+    end.
+
+    (** [] *)
 
 (** **** Exercise: 3 stars, standard, optional (leibniz_equality__equality)
 
@@ -697,7 +705,8 @@ Definition equality__leibniz_equality_term : forall (X : Type) (x y: X),
 Lemma leibniz_equality__equality : forall (X : Type) (x y: X),
   (forall P:X->Prop, P x -> P y) -> x == y.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros. eapply H. apply eq_refl.
+  Qed.
 (** [] *)
 
 End EqualityPlayground.
@@ -842,14 +851,17 @@ Definition or_distributes_over_and : forall P Q R : Prop,
   (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
 (** [] *)
 
+About "~".  Print not.
+
 (** **** Exercise: 3 stars, standard (negations) *)
 Definition double_neg : forall P : Prop,
-    P -> ~~P
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+    P -> ~~P :=
+  fun _ H f => f H.
 
 Definition contradiction_implies_anything : forall P Q : Prop,
-    (P /\ ~P) -> Q
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+    (P /\ ~P) -> Q :=
+  fun _ _ H =>
+    let (p, f) := H in match f p with end.
 
 Definition de_morgan_not_or : forall P Q : Prop,
     ~ (P \/ Q) -> ~P /\ ~Q
@@ -891,7 +903,10 @@ Theorem pe_implies_or_eq :
   propositional_extensionality ->
   forall (P Q : Prop), (P \/ Q) = (Q \/ P).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold propositional_extensionality.
+  intros. unfold "<->" in H.
+  apply H. split; intros; destruct H0; auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 1 star, advanced (pe_implies_true_eq)
@@ -902,7 +917,10 @@ Proof.
 Lemma pe_implies_true_eq :
   propositional_extensionality ->
   forall (P : Prop), P -> True = P.
-Proof. (* FILL IN HERE *) Admitted.
+Proof.
+  unfold propositional_extensionality, "<->".
+  intros. apply H. split; intros; auto.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced (pe_implies_pi)
@@ -925,7 +943,15 @@ Definition proof_irrelevance : Prop :=
 
 Theorem pe_implies_pi :
   propositional_extensionality -> proof_irrelevance.
-Proof. (* FILL IN HERE *) Admitted.
+Proof.
+  unfold proof_irrelevance.
+  intros.
+  assert (True = P).
+  { apply pe_implies_true_eq; auto. }
+  generalize dependent pf2. generalize dependent pf1.
+  rewrite <- H0.
+  intros [] []. auto.
+  Qed.
 (** [] *)
 
 (* 2023-03-25 11:11 *)
