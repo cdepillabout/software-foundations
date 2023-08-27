@@ -2998,6 +2998,7 @@ Theorem pigeonhole_principle: excluded_middle ->
   length l2 < length l1 ->
   repeats l1.
 Proof.
+  (*
   intros. destruct l1. { simpl in *. inversion H1. }
   rename x into a.
   generalize dependent l2. generalize dependent a. induction l1.
@@ -3019,8 +3020,9 @@ Proof.
       (* TODO: Can I specialize IHl1 while passing  l1 for l2?? *)
 
 
+  *)
 
-
+  (*
 
   intros _ X l1 l2. generalize dependent l1. induction l2.
   - intros. destruct l1. { simpl in H0. inversion H0. }
@@ -3249,6 +3251,8 @@ Proof.
       * destruct l2; auto. discriminate.
     + destruct l2.
     *)
+  *)
+  Admitted.
 (** [] *)
 
 (* ================================================================= *)
