@@ -50,6 +50,8 @@ Set Default Goal Selector "!".
 
 Locate "+".
 
+Print sum.
+
 (** (There are several uses of the [+] notation, but only one for
     naturals.) *)
 
@@ -79,6 +81,9 @@ Check String.eqb_neq :
 Check String.eqb_spec :
   forall x y : string, reflect (x = y) (String.eqb x y).
 
+
+Print reflect.
+Print eqb_spec.
 (* ################################################################# *)
 (** * Total Maps *)
 
@@ -188,8 +193,9 @@ Proof. reflexivity. Qed.
 Lemma t_apply_empty : forall (A : Type) (x : string) (v : A),
   (_ !-> v) x = v.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  auto.
+  Qed.
+  (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (t_update_eq)
 
@@ -200,8 +206,17 @@ Proof.
 Lemma t_update_eq : forall (A : Type) (m : total_map A) x v,
   (x !-> v ; m) x = v.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. unfold t_update. rewrite String.eqb_refl. auto.
+  Qed.
 (** [] *)
+
+Ltac destr_str_spec x y :=
+  unfold t_update in *; 
+  destruct (String.eqb_spec x y); subst;
+  try (rewrite String.eqb_refl);
+  auto; 
+  try discriminate;
+  try contradiction.
 
 (** **** Exercise: 2 stars, standard, optional (t_update_neq)
 
@@ -212,9 +227,10 @@ Proof.
 Theorem t_update_neq : forall (A : Type) (m : total_map A) x1 x2 v,
   x1 <> x2 ->
   (x1 !-> v ; m) x2 = m x2.
-Proof.
-  (* FILL IN HERE *) Admitted.
+Proof. intros. destr_str_spec x1 x2. Qed.
 (** [] *)
+
+
 
 (** **** Exercise: 2 stars, standard, optional (t_update_shadow)
 
@@ -227,7 +243,9 @@ Proof.
 Lemma t_update_shadow : forall (A : Type) (m : total_map A) x v1 v2,
   (x !-> v2 ; x !-> v1 ; m) = (x !-> v2 ; m).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. apply functional_extensionality. intros.
+  destr_str_spec x x0.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard (t_update_same)
@@ -244,8 +262,12 @@ Proof.
 Theorem t_update_same : forall (A : Type) (m : total_map A) x,
   (x !-> m x ; m) = m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. apply functional_extensionality. intros.
+  destr_str_spec x x0.
+  Qed.
 (** [] *)
+
+(* Theorem neq_symmetry : x <> y -> y <> x*)
 
 (** **** Exercise: 3 stars, standard, especially useful (t_update_permute)
 
@@ -260,7 +282,13 @@ Theorem t_update_permute : forall (A : Type) (m : total_map A)
   =
   (x2 !-> v2 ; x1 !-> v1 ; m).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros; apply functional_extensionality. intros.
+  destr_str_spec x x1.
+  - destr_str_spec x2 x1.
+  - apply not_eq_sym in n. rewrite <- String.eqb_neq in n.
+    rewrite n.
+    destr_str_spec x2 x.
+  Qed. 
 (** [] *)
 
 (* ################################################################# *)
