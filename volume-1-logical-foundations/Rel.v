@@ -104,14 +104,21 @@ Proof.
 
 (** Copy the definition of [total_relation] from your [IndProp]
     here so that this file can be graded on its own.  *)
-Inductive total_relation : nat -> nat -> Prop :=
+(* Inductive total_relation : nat -> nat -> Prop :=
   (* FILL IN HERE *)
-.
+. *)
+
+Inductive total_relation : nat -> nat -> Prop :=
+  totrel : forall n m, total_relation n m.
 
 Theorem total_relation_not_partial_function :
   ~ (partial_function total_relation).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold not, partial_function. intros.
+  assert (0 = 1).
+  { apply H with 3; constructor. }
+  discriminate.
+  Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (empty_relation_partial_function)
@@ -121,14 +128,19 @@ Proof.
 
 (** Copy the definition of [empty_relation] from your [IndProp]
     here so that this file can be graded on its own.  *)
-Inductive empty_relation : nat -> nat -> Prop :=
+(* Inductive empty_relation : nat -> nat -> Prop :=
   (* FILL IN HERE *)
-.
+. *)
+
+Inductive empty_relation : nat -> nat -> Prop :=
+  neverHolds : forall n m, False -> empty_relation n m.
+
 
 Theorem empty_relation_partial_function :
   partial_function empty_relation.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold partial_function. intros. inversion H. destruct H1.
+  Qed.
 (** [] *)
 
 (* ----------------------------------------------------------------- *)
@@ -184,8 +196,13 @@ Proof.
   unfold lt. unfold transitive.
   intros n m o Hnm Hmo.
   induction Hmo as [| m' Hm'o].
-    (* FILL IN HERE *) Admitted.
-(** [] *)
+  - constructor; auto.
+  - inversion Hnm; subst.
+    + constructor; auto.
+    + constructor; auto.
+  Qed.   
+
+  (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (lt_trans'')
 
@@ -196,9 +213,11 @@ Theorem lt_trans'' :
 Proof.
   unfold lt. unfold transitive.
   intros n m o Hnm Hmo.
-  induction o as [| o'].
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  induction o as [| o']; inversion Hmo; subst.
+  - constructor; auto.
+  - constructor. apply IHo'. auto.
+  Qed.
+  (** [] *)
 
 (** The transitivity of [le], in turn, can be used to prove some facts
     that will be useful later (e.g., for the proof of antisymmetry
@@ -215,7 +234,10 @@ Qed.
 Theorem le_S_n : forall n m,
   (S n <= S m) -> (n <= m).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m. generalize dependent n. induction m.
+  - intros. inversion H; subst; auto. inversion H1.
+  -intros. inversion H; subst; auto.
+  Qed.   
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (le_Sn_n_inf)
@@ -236,7 +258,15 @@ Proof.
 Theorem le_Sn_n : forall n,
   ~ (S n <= n).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  (* unfold not. induction n; intros.
+  - inversion H.
+  - inversion H; subst.
+    + apply IHn. rewrite H1 in H. auto.
+    + *)
+  unfold not. induction n; intros.
+  - inversion H.
+  - apply le_S_n in H. apply IHn. auto.
+  Qed. 
 (** [] *)
 
 (** Reflexivity and transitivity are the main concepts we'll need for
@@ -255,7 +285,11 @@ Definition symmetric {X: Type} (R: relation X) :=
 Theorem le_not_symmetric :
   ~ (symmetric le).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold not, symmetric. intros. 
+  assert (0 <= 1). { auto. }
+  specialize (H 0 1 H0).
+  inversion H.
+  Qed.
 (** [] *)
 
 (** A relation [R] is _antisymmetric_ if [R a b] and [R b a] together
@@ -269,7 +303,21 @@ Definition antisymmetric {X: Type} (R: relation X) :=
 Theorem le_antisymmetric :
   antisymmetric le.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold antisymmetric.
+  (* intros. inversion H; inversion H0; subst; auto. *)
+  (* intros a b H. induction H; intros.
+  - inversion H; auto.
+  - inversion H0; subst; auto. *)
+  (* intros a b H0 H1; generalize dependent H0; induction H1; intros. auto. *)
+  intros a b. generalize dependent a. induction b; intros.
+  - inversion H. auto.
+  - inversion H; auto; subst.
+    assert (b <= a). { apply le_Sn_le. auto. }
+    assert (a = b). { apply IHb. auto. auto. }
+    subst. exfalso. apply (le_Sn_n b). auto.
+  Qed.
+
+       
 (** [] *)
 
 (** **** Exercise: 2 stars, standard, optional (le_step) *)
@@ -278,7 +326,11 @@ Theorem le_step : forall n m p,
   m <= S p ->
   n <= p.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold "<".
+  intros.
+  assert (S n <= S p). { apply le_trans with m; auto. }
+  apply le_S_n. auto.
+  Qed.
 (** [] *)
 
 (* ----------------------------------------------------------------- *)
@@ -335,7 +387,7 @@ Inductive clos_refl_trans {A: Type} (R: relation A) : relation A :=
     [next_nat] relation coincides with the [le] relation. *)
 
 Theorem next_nat_closure_is_le : forall n m,
-  (n <= m) <-> ((clos_refl_trans next_nat) n m).
+  (n <= m) <-> (clos_refl_trans next_nat n m).
 Proof.
   intros n m. split.
   - (* -> *)
@@ -394,7 +446,18 @@ Lemma rsc_trans :
       clos_refl_trans_1n R y z ->
       clos_refl_trans_1n R x z.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  (* intros. inversion H; subst; auto; clear H.
+  inversion H0; subst; auto; clear H0.
+  - apply rt1n_trans with y0; auto.
+  -   *)
+  (* intros X R x y z H G. generalize dependent x.
+  induction G; intros; auto.
+  inversion H; subst.
+  - apply IHG. apply rsc_R. auto.
+  -   *)
+  intros X R x y z H. induction H; intros; auto.
+  apply rt1n_trans with y; auto.
+  Qed.
 (** [] *)
 
 (** Then we use these facts to prove that the two definitions of
@@ -406,7 +469,15 @@ Theorem rtc_rsc_coincide :
   forall (X:Type) (R: relation X) (x y : X),
     clos_refl_trans R x y <-> clos_refl_trans_1n R x y.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros; split; intros.
+  - induction H.
+    + apply rt1n_trans with y; auto. constructor.
+    + constructor.
+    + apply rsc_trans with y; auto.
+  - induction H.
+    + apply rt_refl.
+    + apply rt_trans with y; auto. apply rt_step; auto.
+  Qed.    
 (** [] *)
 
 (* 2023-03-25 11:11 *)

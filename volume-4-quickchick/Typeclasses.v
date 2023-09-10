@@ -118,6 +118,8 @@ Inductive primary := Red | Green | Blue.
 
 Compute (show Green).
 
+Compute (nat : Type).
+
 (* Compute (@show nat showNat 3). *)
 
 (** The [show] function is sometimes said to be _overloaded_, since it
